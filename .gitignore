@@ -1,0 +1,83 @@
+# UniApp 项目的 .gitignore 文件
+
+# 编译产物目录
+unpackage/
+
+# HBuilderX 相关
+.hbuilderx/
+.hbuilder/
+
+# VS Code 相关
+.vscode/
+
+# IDE 相关
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 依赖目录
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 日志文件
+logs/
+*.log
+
+# 缓存文件
+.cache/
+.temp/
+.tmp/
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 打包文件
+*.zip
+*.rar
+*.7z
+*.tar.gz
+
+# 备份文件
+*.bak
+*.backup
+*~
+
+# 编译器临时文件
+*.orig
+
+# 微信开发者工具相关
+project.config.json
+
+# 支付宝小程序相关
+.tea/
+
+# 百度小程序相关
+project.swan.json
+
+# 字节跳动小程序相关
+project.config.json
+
+# QQ小程序相关
+project.config.json
+
+# 自定义忽略文件（可根据项目需要添加）
+# /custom-ignore-file
+.github
