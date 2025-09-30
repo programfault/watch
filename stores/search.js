@@ -56,13 +56,13 @@ export const useSearchStore = defineStore('search', {
         // 添加到搜索历史
         this.addToHistory(keyword)
 
-        // 这里可以调用API进行搜索
-        // const results = await searchAPI(keyword, this.searchType, this.filters)
-
-        // 模拟搜索结果 - 实际使用时替换为真实的API调用
-        await this.simulateSearch(keyword)
-
-      } catch (error) {
+        // 调用真实搜索 API
+        // 在开发阶段可以切换为模拟搜索
+        if (process.env.NODE_ENV === 'development') {
+          await this.simulateSearch(keyword)
+        } else {
+          await this.performRealSearch(keyword)
+        }      } catch (error) {
         console.error('搜索失败:', error)
         this.searchResults = []
       } finally {
@@ -70,7 +70,25 @@ export const useSearchStore = defineStore('search', {
       }
     },
 
-    // 模拟搜索 - 实际项目中应替换为真实API
+    // 执行真实搜索 - 调用产品 store 的搜索方法
+    async performRealSearch(keyword) {
+      try {
+        // 这里可以调用产品 store 的搜索方法
+        // 或者直接调用搜索 API
+        const { useProductStore } = await import('./product.js')
+        const productStore = useProductStore()
+
+        const results = await productStore.searchProductsByKeyword(keyword, this.searchType)
+        this.searchResults = results
+        return results
+      } catch (error) {
+        console.error('搜索失败:', error)
+        this.searchResults = []
+        throw error
+      }
+    },
+
+    // 模拟搜索 - 开发阶段使用
     async simulateSearch(keyword) {
       return new Promise((resolve) => {
         setTimeout(() => {
