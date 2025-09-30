@@ -167,7 +167,10 @@ export default {
 
       await this.searchStore.performSearch(keyword)
       this.searchStore.hidePanel()
+
+      // 只在需要时发射搜索事件（用于特定页面的业务处理）
       this.$emit('search', keyword)
+      console.log('执行搜索:', keyword)
     },
 
     // 清空输入
@@ -207,7 +210,8 @@ export default {
       this.searchStore.setKeyword(keyword)
       await this.searchStore.performSearch(keyword)
       this.searchStore.hidePanel()
-      this.$emit('select-history', keyword)
+      // 组件内部处理，不再向父组件发射事件
+      console.log('选择历史关键词:', keyword)
     },
 
     // 删除历史记录
@@ -233,12 +237,39 @@ export default {
       this.searchStore.setKeyword(keyword)
       await this.searchStore.performSearch(keyword)
       this.searchStore.hidePanel()
-      this.$emit('select-hot', keyword)
+      // 组件内部处理，不再向父组件发射事件
+      console.log('选择热门关键词:', keyword)
     },
 
     // 选择搜索结果
     selectResult(result) {
-      this.$emit('select-result', result)
+      console.log('选择搜索结果:', result)
+      // 组件内部处理页面跳转
+      this.searchStore.hidePanel()
+
+      switch(result.type) {
+        case 'maintenance':
+          uni.navigateTo({
+            url: '/pages/maintenance/maintenance'
+          })
+          break
+        case 'rolex':
+          uni.navigateTo({
+            url: '/pages/rolex/rolex'
+          })
+          break
+        case 'customer':
+          uni.navigateTo({
+            url: '/pages/customer/customer'
+          })
+          break
+        default:
+          // 返回首页
+          uni.switchTab({
+            url: '/pages/index/index'
+          })
+          break
+      }
     },
 
     // 获取类型文本

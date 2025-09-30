@@ -1,18 +1,10 @@
 <template>
 	<view class="product-list-container">
-		<view class="header">
-			<text class="title">产品列表</text>
-		</view>
+		<!-- 搜索组件 -->
+		<SearchComponent @search="onSearch" />
 
 		<view class="content">
-			<view class="info-card">
-				<text class="label">品牌ID:</text>
-				<text class="value">{{ brandId }}</text>
-			</view>
 
-			<view class="placeholder">
-				<text class="placeholder-text">产品列表将在这里显示...</text>
-			</view>
 		</view>
 
 		<view class="actions">
@@ -22,7 +14,19 @@
 </template>
 
 <script>
+import SearchComponent from '@/components/SearchComponent.vue'
+import { useSearchStore } from '@/stores'
+
 export default {
+	components: {
+		SearchComponent
+	},
+	setup() {
+		const searchStore = useSearchStore()
+		return {
+			searchStore
+		}
+	},
 	data() {
 		return {
 			brandId: ''
@@ -36,6 +40,16 @@ export default {
 		console.log('品牌ID:', this.brandId)
 	},
 	methods: {
+		// 搜索事件 - 可选的业务处理
+		onSearch(keyword) {
+			console.log('产品页面搜索:', keyword)
+			// 可以在这里处理特定于产品页面的搜索逻辑
+			uni.showToast({
+				title: `在品牌${this.brandId}中搜索: ${keyword}`,
+				icon: 'none'
+			})
+		},
+
 		goBack() {
 			uni.navigateBack()
 		}
@@ -45,47 +59,10 @@ export default {
 
 <style lang="scss">
 .product-list-container {
-	padding: 20px;
+	padding: 10px;
 	min-height: 100vh;
-	background-color: #f5f5f5;
-
-	.header {
-		margin-bottom: 30px;
-		text-align: center;
-
-		.title {
-			font-size: 24px;
-			font-weight: bold;
-			color: #333;
-		}
-	}
-
 	.content {
 		margin-bottom: 40px;
-
-		.info-card {
-			background: #fff;
-			padding: 20px;
-			margin-bottom: 15px;
-			border-radius: 8px;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-			display: flex;
-			align-items: center;
-
-			.label {
-				font-size: 16px;
-				font-weight: bold;
-				color: #666;
-				margin-right: 10px;
-				min-width: 100px;
-			}
-
-			.value {
-				font-size: 16px;
-				color: #333;
-				flex: 1;
-			}
-		}
 
 		.placeholder {
 			background: #fff;

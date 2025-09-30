@@ -1,39 +1,41 @@
 <template>
 	<view class="activity-container">
-		<view class="header">
-			<text class="title">活动详情</text>
-		</view>
-
 		<view class="content">
-			<view class="info-card">
-				<text class="label">活动ID:</text>
-				<text class="value">{{ activityId }}</text>
+			<!-- HTML内容渲染区域 -->
+			<view class="html-content" v-if="htmlContent">
+				<rich-text :nodes="htmlContent"></rich-text>
 			</view>
 
-			<view class="info-card" v-if="activityTitle">
-				<text class="label">活动标题:</text>
-				<text class="value">{{ activityTitle }}</text>
+			<!-- 加载状态 -->
+			<view class="loading-section" v-if="loading">
+				<uni-load-more status="loading" />
 			</view>
 
-			<view class="info-card" v-if="activityDesc">
-				<text class="label">活动描述:</text>
-				<text class="value">{{ activityDesc }}</text>
+			<!-- 空状态 -->
+			<view class="empty-section" v-if="!htmlContent && !loading">
+				<text class="empty-text">暂无活动内容</text>
 			</view>
-		</view>
-
-		<view class="actions">
-			<button class="back-btn" @click="goBack">返回</button>
 		</view>
 	</view>
 </template>
 
 <script>
+import { useAppStore } from '@/stores'
+
 export default {
 	data() {
 		return {
 			activityId: '',
 			activityTitle: '',
-			activityDesc: ''
+			activityDesc: '',
+			htmlContent: '',
+			loading: true
+		}
+	},
+	setup() {
+		const appStore = useAppStore()
+		return {
+			appStore
 		}
 	},
 	onLoad(options) {
@@ -43,8 +45,38 @@ export default {
 		this.activityDesc = options.description || ''
 
 		console.log('活动页面参数:', options)
+
+		// 从 store 中获取轮播图内容
+		this.loadCarouselContent()
 	},
 	methods: {
+		// 从 store 中加载轮播图内容
+		loadCarouselContent() {
+			this.loading = true
+
+			try {
+				// 查找对应ID的轮播图
+				const carousel = this.appStore.carouselList.find(item => {
+					return String(item.id) === String(this.activityId)
+				})
+
+				console.log('查找轮播图:', this.activityId, carousel)
+
+				if (carousel && carousel.content) {
+					this.htmlContent = carousel.content
+					console.log('获取到HTML内容:', carousel.content)
+				} else {
+					console.warn('未找到对应的轮播图或内容为空')
+					this.htmlContent = ''
+				}
+			} catch (error) {
+				console.error('加载轮播图内容失败:', error)
+				this.htmlContent = ''
+			} finally {
+				this.loading = false
+			}
+		},
+
 		goBack() {
 			uni.navigateBack()
 		}
@@ -71,42 +103,19 @@ export default {
 
 	.content {
 		margin-bottom: 40px;
-
-		.info-card {
-			background: #fff;
-			padding: 20px;
-			margin-bottom: 15px;
-			border-radius: 8px;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-			display: flex;
-			align-items: center;
-
-			.label {
-				font-size: 16px;
-				font-weight: bold;
-				color: #666;
-				margin-right: 10px;
-				min-width: 80px;
-			}
-
-			.value {
-				font-size: 16px;
-				color: #333;
-				flex: 1;
-			}
+		.loading-section {
+			text-align: center;
+			padding: 40px 0;
 		}
-	}
 
-	.actions {
-		text-align: center;
+		.empty-section {
+			text-align: center;
+			padding: 40px 0;
 
-		.back-btn {
-			background: #007aff;
-			color: #fff;
-			border: none;
-			border-radius: 6px;
-			padding: 12px 30px;
-			font-size: 16px;
+			.empty-text {
+				color: #999;
+				font-size: 14px;
+			}
 		}
 	}
 }
