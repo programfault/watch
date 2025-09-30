@@ -11,13 +11,16 @@ const app = new Vue({
     ...App
 })
 app.$mount()
+
 // #endif
 
 // #ifdef VUE3
 import { createSSRApp } from 'vue'
-import App from './App.vue'
+import pinia from './stores'
+
 export function createApp() {
   const app = createSSRApp(App)
+  app.use(pinia)
   return {
     app
   }

@@ -1,29 +1,92 @@
 <template>
 	<view class="container">
-		
-		<view class="intro">本项目已包含uni ui组件，无需import和注册，可直接使用。在代码区键入字母u，即可通过代码助手列出所有可用组件。光标置于组件名称处按F1，即可查看组件文档。</view>
-		<text class="intro">详见：</text>
-		<uni-link :href="href" :text="href"></uni-link>
+		<!-- 搜索组件 -->
+		<SearchComponent
+			@search="onSearch"
+			@select-result="onSelectResult"
+			@select-history="onSelectHistory"
+			@select-hot="onSelectHot"
+		/>
 	</view>
 </template>
 
 <script>
-	export default {
-		data() {
-			return {
-				href: 'https://uniapp.dcloud.io/component/README?id=uniui'
-			}
-		},
-		methods: {
+import SearchComponent from '@/components/SearchComponent.vue'
+import { useSearchStore } from '@/stores'
+
+export default {
+	components: {
+		SearchComponent
+	},
+	setup() {
+		const searchStore = useSearchStore()
+		return {
+			searchStore
+		}
+	},
+	data() {
+		return {
 
 		}
+	},
+	onLoad() {
+
+	},
+	methods: {
+		// 搜索事件
+		onSearch(keyword) {
+			console.log('搜索:', keyword)
+			// 可以在这里处理搜索结果，比如跳转到搜索结果页面
+		},
+
+		// 选择搜索结果
+		onSelectResult(result) {
+			console.log('选择结果:', result)
+			// 根据结果类型跳转到对应页面
+			switch(result.type) {
+				case 'maintenance':
+					uni.navigateTo({
+						url: '/pages/maintenance/maintenance'
+					})
+					break
+				case 'rolex':
+					uni.navigateTo({
+						url: '/pages/rolex/rolex'
+					})
+					break
+				case 'customer':
+					uni.navigateTo({
+						url: '/pages/customer/customer'
+					})
+					break
+			}
+		},
+
+		// 选择历史记录
+		onSelectHistory(keyword) {
+			console.log('选择历史:', keyword)
+		},
+
+		// 选择热门搜索
+		onSelectHot(keyword) {
+			console.log('选择热门:', keyword)
+		}
 	}
+}
 </script>
 
-<style>
-	.container {
-		padding: 20px;
-		font-size: 14px;
-		line-height: 24px;
+<style lang="scss">
+.container {
+	padding: 20px;
+
+	.header {
+		margin-bottom: 20px;
+
+		.title {
+			font-size: 24px;
+			font-weight: bold;
+			color: #333;
+		}
 	}
+}
 </style>
