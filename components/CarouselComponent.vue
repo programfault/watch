@@ -84,14 +84,10 @@ export default {
     onCarouselClick(carouselItem) {
       console.log('点击轮播图:', carouselItem)
 
-      // 显示轮播图信息提示
-      uni.showToast({
-        title: `点击了: ${carouselItem.title}`,
-        icon: 'none'
+      // 跳转到活动页面，传递轮播图信息
+      uni.navigateTo({
+        url: `/pages/activity/activity?id=${carouselItem.id || 'unknown'}&title=${encodeURIComponent(carouselItem.title || '')}&description=${encodeURIComponent(carouselItem.description || '')}`
       })
-
-      // 如果后续 API 返回跳转信息，可以在这里添加跳转逻辑
-      // 例如: if (carouselItem.link_url) { uni.navigateTo({ url: carouselItem.link_url }) }
     }
   }
 }

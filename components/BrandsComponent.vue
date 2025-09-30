@@ -16,7 +16,7 @@
         :key="brand.id"
         @click="onBrandClick(brand)"
       >
-        <view class="brand-item">
+        <view class="brand-item" @click.stop="onBrandClick(brand)">
           <image
             :src="brand.logo"
             mode="aspectFit"
@@ -24,6 +24,7 @@
             :alt="brand.name_cn"
           />
           <text class="brand-name-cn">{{ brand.name_cn }}</text>
+          <text class="brand-name-en">{{ brand.name_en }}</text>
         </view>
       </uni-grid-item>
     </uni-grid>
@@ -73,16 +74,38 @@ export default {
     onBrandClick(brand) {
       console.log('点击品牌:', brand)
 
-      // 显示品牌信息提示
-      uni.showToast({
-        title: `点击了: ${brand.name_cn}`,
-        icon: 'none'
-      })
+      // 检查品牌数据
+      if (!brand) {
+        console.error('品牌数据为空')
+        uni.showToast({
+          title: '品牌数据错误',
+          icon: 'none'
+        })
+        return
+      }
 
-      // 后续可以跳转到品牌详情页或产品列表页
-      // uni.navigateTo({
-      //   url: `/pages/brand/detail?id=${brand.id}`
-      // })
+      console.log('品牌ID:', brand.id)
+      console.log('品牌中文名:', brand.name_cn)
+      console.log('品牌英文名:', brand.name_en)
+
+      // 构建跳转URL，只传递品牌ID
+      const url = `/pages/product/list?id=${brand.id}`
+      console.log('跳转URL:', url)
+
+      // 跳转到产品列表页面，传递品牌信息
+      uni.navigateTo({
+        url: url,
+        success: (res) => {
+          console.log('页面跳转成功:', res)
+        },
+        fail: (err) => {
+          console.error('页面跳转失败:', err)
+          uni.showToast({
+            title: '页面跳转失败',
+            icon: 'none'
+          })
+        }
+      })
     }
   }
 }

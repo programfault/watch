@@ -24,6 +24,16 @@
 		"style": {
 			"navigationBarTitleText": "客户"
 		}
+	}, {
+		"path": "pages/activity/activity",
+		"style": {
+			"navigationBarTitleText": "活动详情"
+		}
+	}, {
+		"path": "pages/product/list",
+		"style": {
+			"navigationBarTitleText": "产品列表"
+		}
 	}],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
