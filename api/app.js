@@ -3,7 +3,7 @@
  * 包括轮播图、品牌等
  */
 
-import { get } from '@/utils/request'
+import { get, post } from '@/utils/request'
 
 /**
  * 获取轮播图列表
@@ -27,4 +27,49 @@ export function getBrands() {
   })
 }
 
+/**
+ * 获取表的属性筛选选项
+ * @returns {Promise}
+ */
+export function getFilterOptions() {
+  return get('/filter-options', {}, {
+    showLoading: false,
+    showError: true
+  })
+}
 
+/**
+ * 简单查询手表列表
+ * @param {Object} params - 查询参数
+ * @param {number} [params.brand_id] - 品牌ID
+ * @param {string} [params.keyword] - 搜索关键词
+ * @param {number} [params.page=1] - 页码
+ * @param {number} [params.per_page=10] - 每页数量
+ * @returns {Promise}
+ */
+export function getWatches(params = {}) {
+  return get('/watches', params, {
+    showLoading: false,
+    showError: true
+  })
+}
+
+/**
+ * 复杂查询手表列表
+ * @param {Object} filters - 筛选条件
+ * @param {number} [filters.brand_id] - 品牌ID
+ * @param {string} [filters.keyword] - 搜索关键词
+ * @param {Array} [filters.attributes] - 属性筛选条件
+ * @param {Object} [filters.price_range] - 价格范围
+ * @param {string} [filters.sort_by] - 排序字段
+ * @param {string} [filters.sort_order] - 排序方向
+ * @param {number} [filters.page=1] - 页码
+ * @param {number} [filters.per_page=10] - 每页数量
+ * @returns {Promise}
+ */
+export function searchWatches(filters = {}) {
+  return post('/watches/search', filters, {
+    showLoading: false,
+    showError: true
+  })
+}

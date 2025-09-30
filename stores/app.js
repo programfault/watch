@@ -1,5 +1,5 @@
+import { getBrands, getCarousel, getFilterOptions } from '@/api'
 import { defineStore } from 'pinia'
-import { getBrands, getCarousel } from '@/api'
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -10,6 +10,10 @@ export const useAppStore = defineStore('app', {
     // 品牌数据
     brandsList: [],
     brandsLoading: false,
+
+    // 表的属性筛选选项
+    filterOptions: [],
+    filterOptionsLoading: false,
 
     // 全局加载状态
     globalLoading: false,
@@ -51,6 +55,28 @@ export const useAppStore = defineStore('app', {
           grouped[firstLetter] = []
         }
         grouped[firstLetter].push(brand)
+      })
+      return grouped
+    },
+
+    // 所有筛选选项
+    allFilterOptions: (state) => {
+      return state.filterOptions
+    },
+
+    // 是否有筛选选项数据
+    hasFilterOptions: (state) => {
+      return state.filterOptions.length > 0
+    },
+
+    // 按属性类型分组的筛选选项
+    filterOptionsByType: (state) => {
+      const grouped = {}
+      state.filterOptions.forEach(option => {
+        if (!grouped[option.attribute_type]) {
+          grouped[option.attribute_type] = []
+        }
+        grouped[option.attribute_type].push(option)
       })
       return grouped
     }
@@ -124,6 +150,60 @@ export const useAppStore = defineStore('app', {
       this.networkStatus = status
     },
 
+    // 获取表的属性筛选选项
+    async fetchFilterOptions() {
+      this.filterOptionsLoading = true
+      try {
+        const response = await getFilterOptions()
+        console.log('筛选选项API响应:', response)
+
+        // 处理多种可能的响应格式
+        if (response && response.code === 200 && response.data) {
+          // 标准格式: {code: 200, data: {attributes: [...]}}
+          if (response.data.attributes && Array.isArray(response.data.attributes)) {
+            this.filterOptions = response.data.attributes.sort((a, b) => a.sort - b.sort)
+            console.log('筛选选项数据获取成功(标准格式):', this.filterOptions)
+          } else if (Array.isArray(response.data)) {
+            // 数据格式: {code: 200, data: [...]}
+            this.filterOptions = response.data.sort((a, b) => a.sort - b.sort)
+            console.log('筛选选项数据获取成功(数组格式):', this.filterOptions)
+          } else {
+            console.warn('筛选选项数据结构异常 - data字段:', response.data)
+            this.filterOptions = []
+          }
+        } else if (response && response.attributes && Array.isArray(response.attributes)) {
+          // 直接格式: {attributes: [...]}
+          this.filterOptions = response.attributes.sort((a, b) => a.sort - b.sort)
+          console.log('筛选选项数据获取成功(直接格式):', this.filterOptions)
+        } else if (response && Array.isArray(response)) {
+          // 直接数组格式: [...]
+          this.filterOptions = response.sort((a, b) => a.sort - b.sort)
+          console.log('筛选选项数据获取成功(直接数组):', this.filterOptions)
+        } else {
+          console.warn('筛选选项API响应异常:')
+          console.warn('- response.code:', response?.code)
+          console.warn('- 完整响应:', response)
+          this.filterOptions = []
+        }
+      } catch (error) {
+        console.error('获取筛选选项失败:', error)
+        this.filterOptions = []
+        throw error
+      } finally {
+        this.filterOptionsLoading = false
+      }
+    },
+
+    // 根据属性ID获取筛选选项
+    getFilterOptionById(attributeId) {
+      return this.filterOptions.find(option => option.attribute_id === attributeId)
+    },
+
+    // 根据属性名称获取筛选选项
+    getFilterOptionByName(attributeName) {
+      return this.filterOptions.find(option => option.attribute_name === attributeName)
+    },
+
     // 初始化应用数据
     async initApp() {
       if (this.initialized) return
@@ -133,7 +213,8 @@ export const useAppStore = defineStore('app', {
         // 并行获取初始数据
         await Promise.all([
           this.fetchCarousel(),
-          this.fetchBrands()
+          this.fetchBrands(),
+          this.fetchFilterOptions()
         ])
 
         this.initialized = true
@@ -150,7 +231,8 @@ export const useAppStore = defineStore('app', {
       try {
         await Promise.all([
           this.fetchCarousel(),
-          this.fetchBrands()
+          this.fetchBrands(),
+          this.fetchFilterOptions()
         ])
       } catch (error) {
         console.error('刷新应用数据失败:', error)
@@ -162,6 +244,7 @@ export const useAppStore = defineStore('app', {
     resetApp() {
       this.carouselList = []
       this.brandsList = []
+      this.filterOptions = []
       this.initialized = false
       this.globalLoading = false
     }
