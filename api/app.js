@@ -1,6 +1,6 @@
 /**
  * 应用相关 API 接口
- * 包括轮播图等
+ * 包括轮播图、品牌等
  */
 
 import { get } from '@/utils/request'
@@ -16,6 +16,15 @@ export function getCarousel() {
   })
 }
 
-
+/**
+ * 获取品牌列表
+ * @returns {Promise}
+ */
+export function getBrands() {
+  return get('/brands', {}, {
+    showLoading: false,
+    showError: true
+  })
+}
 
 
