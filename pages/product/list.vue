@@ -5,6 +5,13 @@
     <!-- 工具栏 -->
     <ToolbarComponent @priceSort="onPriceSort" @filter="onFilter" @displayModeChange="onDisplayModeChange" />
 
+    <!-- 筛选面板 -->
+    <FilterPanelComponent
+        ref="filterPanel"
+        @filterChange="onFilterChange"
+        @close="onFilterClose"
+    />
+
     <view v-if="currentBrand" class="brand-info">
         <text class="brand-name">{{ currentBrand.name_cn }}</text>
         <text class="total-count">共 {{ pagination.total || 0 }} 款手表</text>
@@ -40,28 +47,31 @@
 </template>
 
 <script>
-import {
-    storeToRefs
-} from "pinia";
+import { storeToRefs } from 'pinia'
+import FilterPanelComponent from "@/components/FilterPanelComponent.vue";
 import SearchComponent from "@/components/SearchComponent.vue";
 import ToolbarComponent from "@/components/ToolbarComponent.vue";
+import {
+    useAppStore
+} from "@/stores"
 import {
     useProductStore
 } from "@/stores/product.js";
 import {
     useToolbarStore
 } from "@/stores/toolbar.js";
-
 export default {
     name: "ProductList",
     components: {
         SearchComponent,
         ToolbarComponent,
+        FilterPanelComponent,
     },
 
     setup() {
         const productStore = useProductStore();
         const toolbarStore = useToolbarStore();
+        const appStore = useAppStore();
 
         const {
             watchesList: watches,
@@ -73,6 +83,7 @@ export default {
         return {
             productStore,
             toolbarStore,
+            appStore,
             watches,
             loading,
             pagination,
@@ -142,18 +153,25 @@ export default {
         },
 
         onFilter(isActive) {
-            // TODO: 显示筛选页面或弹窗
             console.log('筛选状态:', isActive);
             if (isActive) {
-                // 打开筛选页面
-                uni.showToast({
-                    title: '筛选功能待开发',
-                    icon: 'none'
-                });
+                // 打开筛选面板
+                this.$refs.filterPanel.openPanel();
             }
         },
 
-        onDisplayModeChange(mode) {
+        onFilterChange(filterParams) {
+            console.log('筛选参数:', filterParams);
+            // 使用筛选参数重新加载数据
+            this.reloadWithFilters(filterParams);
+        },
+
+        onFilterClose() {
+            // 筛选面板关闭时，通知toolbar更新状态
+            if (this.toolbarStore.isFilterActive) {
+                this.toolbarStore.toggleFilter();
+            }
+        },        onDisplayModeChange(mode) {
             // TODO: 更新列表显示模式
             console.log('显示模式:', mode);
             uni.showToast({
@@ -163,12 +181,13 @@ export default {
         },
 
         // 重新加载数据带筛选条件
-        async reloadWithFilters() {
+        async reloadWithFilters(filterParams = {}) {
             const sortParams = this.toolbarStore.getSortParams;
             const params = {
                 page: 1,
                 per_page: 20,
-                ...sortParams
+                ...sortParams,
+                ...filterParams
             };
 
             // 如果有品牌筛选，添加品牌ID
@@ -181,6 +200,9 @@ export default {
     },
 
     onLoad(options) {
+        // 初始化筛选选项
+        this.appStore.fetchFilterOptions();
+
         if (options.brandId) {
             this.loadBrandWatches(options.brandId);
         } else {
