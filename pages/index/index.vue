@@ -1,7 +1,7 @@
 <template>
 	<view class="container">
 		<!-- 搜索组件 -->
-		<SearchComponent @search="onSearch" />
+		<HomeSearchComponent @search="onSearch" ref="homeSearch" from="home" />
 
 		<!-- 轮播图组件 -->
 		<CarouselComponent v-if="!searchStore.showSearchPanel" />
@@ -19,12 +19,13 @@
 <script>
 import BrandsComponent from '@/components/BrandsComponent.vue'
 import CarouselComponent from '@/components/CarouselComponent.vue'
+import HomeSearchComponent from '@/components/HomeSearchComponent.vue'
 import SearchComponent from '@/components/SearchComponent.vue'
 import { useAppStore, useSearchStore } from '@/stores'
 
 export default {
 	components: {
-		SearchComponent,
+		HomeSearchComponent,
 		BrandsComponent,
 		CarouselComponent
 	},
@@ -42,6 +43,7 @@ export default {
 		}
 	},
 	async onLoad() {
+		console.log('Index页面 onLoad')
 		// 初始化应用数据
 		try {
 			await this.appStore.initApp()
@@ -49,11 +51,22 @@ export default {
 			console.error('初始化失败:', error)
 		}
 	},
+
+	onShow() {
+		console.log('Index页面 onShow')
+		// 从其他页面返回首页时，完全重置搜索框
+		if (this.$refs.homeSearch) {
+			this.$refs.homeSearch.resetSearch()
+		}
+	},
+
+	onHide() {
+		console.log('Index页面 onHide')
+	},
 	methods: {
 		// 搜索事件 - 可选的业务处理
 		onSearch(keyword) {
 			console.log('首页搜索:', keyword)
-			// 可以在这里处理首页特定的搜索逻辑
 		},
         onContact(e) {
             console.log('客服会话触发', e.detail);

@@ -3,12 +3,13 @@
     <!-- 搜索框 -->
     <view class="search-box">
       <uni-search-bar
-        v-model="searchStore.keyword"
+        ref="searchBar"
+        v-model="keyword"
         :placeholder="searchPlaceholder"
         :radius="10"
         :maxlength="50"
         clearButton="auto"
-        cancelButton="auto"
+        :cancelButton="showCancel"
         cancelText="取消"
         bgColor="#f5f5f5"
         textColor="#333"
@@ -22,7 +23,7 @@
     </view>
 
     <!-- 搜索面板 (历史记录和热门搜索) -->
-    <view class="search-panel" v-if="searchStore.showSearchPanel">
+    <view class="search-panel" v-if="showSearchPanel">
       <!-- 热门搜索 -->
       <!-- <view class="hot-search" v-if="showHot">
         <view class="hot-header">
@@ -116,6 +117,10 @@ export default {
     showResults: {
       type: Boolean,
       default: true
+    },
+    from:{
+        type: String,
+        default: '' // 可选值: 'home' (首页), 'product' (商品列表页), 'other' (其他页面)
     }
   },
   setup() {
@@ -127,7 +132,11 @@ export default {
   data() {
     return {
       // 搜索框占位符文本
-      searchPlaceholder: '搜索劳力士、保养服务、客户...'
+      searchPlaceholder: '搜索劳力士、保养服务、客户...',
+      keyword: '',
+      showSearchPanel: false,
+      showCancel: 'none', // 初始隐藏，避免首次加载问题
+      isResetting: false // 标记是否正在重置，用于屏蔽聚焦事件
     }
   },
   mounted() {
@@ -165,47 +174,69 @@ export default {
         })
         return
       }
-
+      if(this.from==='home'){
+          uni.navigateTo({
+              url:`/pages/product/list?keyword=${encodeURIComponent(keyword)}`
+          })
+          this.keyword=''
+          this.searchStore.clearResults()
+          this.searchStore.hidePanel()
+          return
+      }
     //   await this.searchStore.performSearch(keyword)
       this.searchStore.hidePanel()
 
       // 只在需要时发射搜索事件（用于特定页面的业务处理）
       this.$emit('search', keyword)
       console.log('执行搜索:', keyword)
+
     },
 
     // 清空输入
     onClear(e) {
-      this.searchStore.clearResults()
-      this.$emit('clear', e)
+    //   this.searchStore.clearResults()
+    //   this.$emit('clear', e)
     },
 
     // 取消搜索
     onCancel(e) {
-      this.searchStore.clearResults()
-      this.searchStore.hidePanel()
+      this.resetSearch()
       this.$emit('cancel', e)
     },
 
     // 获得焦点
     onFocus(e) {
-      // 显示搜索面板
+      // 如果是重置过程中触发的聚焦，不执行显示逻辑
+      if (this.isResetting) {
+        console.log('正在重置过程中，忽略聚焦事件')
+        return
+      }
+
       console.log("onFocus triggered - test", {
         timestamp: new Date().toLocaleTimeString(),
         event: e,
-        currentKeyword: this.searchStore.keyword
+        currentKeyword: this.keyword
       })
+
+      // 显示取消按钮和搜索面板
+      this.showCancel = 'auto'
+      this.showSearchPanel = true
       this.searchStore.showPanel()
       this.$emit('focus', e)
     },
 
     // 失去焦点
     onBlur(e) {
-      // 失去焦点时不隐藏面板，让用户主动选择操作
       console.log("onBlur triggered", {
         timestamp: new Date().toLocaleTimeString(),
         event: e
       })
+
+      // 如果没有关键词，隐藏取消按钮
+      if (!this.keyword) {
+        this.showCancel = 'none'
+      }
+
       this.$emit('blur', e)
     },
 
@@ -213,6 +244,37 @@ export default {
     closePanel() {
       this.searchStore.hidePanel()
       this.$emit('panel-close')
+    },
+
+    // 重置搜索框
+    resetSearch() {
+      console.log('重置搜索框')
+
+      // 1. 标记为正在重置
+      this.isResetting = true
+
+      // 2. 清空内容
+      this.keyword = ''
+      this.searchStore.setKeyword('')
+
+      // 3. 强制隐藏取消按钮和面板
+      this.showCancel = 'none'
+      this.showSearchPanel = false
+      this.searchStore.hidePanel()
+      this.searchStore.clearResults()
+
+      // 4. 失焦（关键：确保输入框失去焦点）
+      if (this.$refs.searchBar) {
+        this.$refs.searchBar.blur()
+      }
+
+      // 5. 延迟解除重置标记（等待可能的聚焦事件触发后）
+      setTimeout(() => {
+        this.isResetting = false
+        console.log('重置标记已解除')
+      }, 300)
+
+      this.$emit('reset')
     },
 
     // 选择历史记录
