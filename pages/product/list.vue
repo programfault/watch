@@ -40,6 +40,9 @@
 </template>
 
 <script>
+import {
+    storeToRefs
+} from "pinia";
 import SearchComponent from "@/components/SearchComponent.vue";
 import ToolbarComponent from "@/components/ToolbarComponent.vue";
 import {
@@ -48,9 +51,6 @@ import {
 import {
     useToolbarStore
 } from "@/stores/toolbar.js";
-import {
-    storeToRefs
-} from "pinia";
 
 export default {
     name: "ProductList",
@@ -193,7 +193,7 @@ export default {
 <style lang="scss" scoped>
 .container {
     min-height: 100vh;
-    background-color: #f5f5f5;
+    background-color: #fff;
 }
 
 .brand-info {

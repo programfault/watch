@@ -306,7 +306,7 @@ export default {
 <style lang="scss">
 .search-container {
   .search-box {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 
     // 自定义 uni-search-bar 样式
     :deep(.uni-searchbar) {
