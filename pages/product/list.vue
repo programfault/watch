@@ -119,12 +119,19 @@ export default {
             }
 
             const nextPage = this.pagination.current_page + 1;
-            await this.productStore.fetchWatches({
-                    page: nextPage,
-                    per_page: 20,
-                },
-                true,
-            );
+            const sortParams = this.toolbarStore.getSortParams;
+            const params = {
+                page: nextPage,
+                per_page: 20,
+                ...sortParams,
+            };
+
+            // 如果有品牌筛选，添加品牌ID
+            if (this.currentBrand?.id) {
+                params.brand_id = this.currentBrand.id;
+            }
+
+            await this.productStore.fetchWatches(params, true);
         },
 
         onSearch(searchData) {
@@ -201,10 +208,10 @@ export default {
 
     onLoad(options) {
         // 初始化筛选选项
-        this.appStore.fetchFilterOptions();
-
-        if (options.brandId) {
-            this.loadBrandWatches(options.brandId);
+        // this.appStore.fetchFilterOptions();
+        console.log('路由参数:', options);
+        if (options.id) {
+            this.loadBrandWatches(options.id);
         } else {
             this.loadAllWatches();
         }
