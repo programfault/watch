@@ -1,221 +1,284 @@
 <template>
-	<view class="container">
-		<SearchComponent @search="onSearch" />
+<view class="container">
+    <SearchComponent @search="onSearch" />
 
-		<view v-if="currentBrand" class="brand-info">
-			<text class="brand-name">{{ currentBrand.name_cn }}</text>
-			<text class="total-count">共 {{ pagination.total || 0 }} 款手表</text>
-		</view>
+    <!-- 工具栏 -->
+    <ToolbarComponent @priceSort="onPriceSort" @filter="onFilter" @displayModeChange="onDisplayModeChange" />
 
-		<scroll-view scroll-y class="watches-scroll" @scrolltolower="loadMore" lower-threshold="100">
-			<view v-if="hasWatches" class="watches-list">
-				<view v-for="watch in watches" :key="watch.id" class="watch-item" @click="goToDetail(watch.id)">
-					<image :src="getWatchImage(watch)" class="watch-image" mode="aspectFit" lazy-load></image>
-					<view class="watch-info">
-						<text class="watch-name">{{ watch.name_cn || watch.name }}</text>
-						<text class="watch-price">¥{{ watch.price }}</text>
-						<view class="watch-meta">
-							<text class="brand-text">{{ watch.brand?.name_cn }}</text>
-						</view>
-					</view>
-				</view>
-			</view>
+    <view v-if="currentBrand" class="brand-info">
+        <text class="brand-name">{{ currentBrand.name_cn }}</text>
+        <text class="total-count">共 {{ pagination.total || 0 }} 款手表</text>
+    </view>
 
-			<view class="load-status">
-				<view v-if="loading" class="loading">
-					<text>加载中...</text>
-				</view>
-				<view v-else-if="!hasWatches && !loading" class="empty">
-					<text>暂无手表数据</text>
-				</view>
-				<view v-else-if="!pagination.has_next" class="no-more">
-					<text>已显示全部 {{ watches.length }} 款手表</text>
-				</view>
-			</view>
-		</scroll-view>
-	</view>
+    <scroll-view scroll-y class="watches-scroll" @scrolltolower="loadMore" lower-threshold="100">
+        <view v-if="hasWatches" class="watches-list">
+            <view v-for="watch in watches" :key="watch.id" class="watch-item" @click="goToDetail(watch.id)">
+                <image :src="getWatchImage(watch)" class="watch-image" mode="aspectFit" lazy-load></image>
+                <view class="watch-info">
+                    <text class="watch-name">{{ watch.name_cn || watch.name }}</text>
+                    <text class="watch-price">¥{{ watch.price }}</text>
+                    <view class="watch-meta">
+                        <text class="brand-text">{{ watch.brand?.name_cn }}</text>
+                    </view>
+                </view>
+            </view>
+        </view>
+
+        <view class="load-status">
+            <view v-if="loading" class="loading">
+                <text>加载中...</text>
+            </view>
+            <view v-else-if="!hasWatches && !loading" class="empty">
+                <text>暂无手表数据</text>
+            </view>
+            <view v-else-if="!pagination.has_next" class="no-more">
+                <text>已显示全部 {{ watches.length }} 款手表</text>
+            </view>
+        </view>
+    </scroll-view>
+</view>
 </template>
 
 <script>
-import { storeToRefs } from "pinia";
 import SearchComponent from "@/components/SearchComponent.vue";
-import { useProductStore } from "@/stores/product.js";
+import ToolbarComponent from "@/components/ToolbarComponent.vue";
+import {
+    useProductStore
+} from "@/stores/product.js";
+import {
+    useToolbarStore
+} from "@/stores/toolbar.js";
+import {
+    storeToRefs
+} from "pinia";
 
 export default {
-	name: "ProductList",
-	components: {
-		SearchComponent,
-	},
+    name: "ProductList",
+    components: {
+        SearchComponent,
+        ToolbarComponent,
+    },
 
-	setup() {
-		const productStore = useProductStore();
-		const {
-			watchesList: watches,
-			watchesLoading: loading,
-			watchesPagination: pagination,
-			currentBrand,
-		} = storeToRefs(productStore);
+    setup() {
+        const productStore = useProductStore();
+        const toolbarStore = useToolbarStore();
 
-		return {
-			productStore,
-			watches,
-			loading,
-			pagination,
-			currentBrand,
-		};
-	},
+        const {
+            watchesList: watches,
+            watchesLoading: loading,
+            watchesPagination: pagination,
+            currentBrand,
+        } = storeToRefs(productStore);
 
-	computed: {
-		hasWatches() {
-			return this.watches && this.watches.length > 0;
-		},
-	},
+        return {
+            productStore,
+            toolbarStore,
+            watches,
+            loading,
+            pagination,
+            currentBrand,
+        };
+    },
 
-	methods: {
-		async loadAllWatches() {
-			await this.productStore.fetchWatches({ page: 1, per_page: 20 });
-		},
+    computed: {
+        hasWatches() {
+            return this.watches && this.watches.length > 0;
+        },
+    },
 
-		async loadBrandWatches(brandId) {
-			await this.productStore.fetchWatches({
-				page: 1,
-				per_page: 20,
-				brand_id: brandId,
-			});
-		},
+    methods: {
+        async loadAllWatches() {
+            await this.productStore.fetchWatches({
+                page: 1,
+                per_page: 20
+            });
+        },
 
-		async loadMore() {
-			if (this.loading || !this.pagination.has_next) {
-				return;
-			}
+        async loadBrandWatches(brandId) {
+            await this.productStore.fetchWatches({
+                page: 1,
+                per_page: 20,
+                brand_id: brandId,
+            });
+        },
 
-			const nextPage = this.pagination.current_page + 1;
-			await this.productStore.fetchWatches(
-				{
-					page: nextPage,
-					per_page: 20,
-				},
-				true,
-			);
-		},
+        async loadMore() {
+            if (this.loading || !this.pagination.has_next) {
+                return;
+            }
 
-		onSearch(searchData) {
-			this.productStore.searchWatches(searchData);
-		},
+            const nextPage = this.pagination.current_page + 1;
+            await this.productStore.fetchWatches({
+                    page: nextPage,
+                    per_page: 20,
+                },
+                true,
+            );
+        },
 
-		getWatchImage(watch) {
-			if (watch.images && watch.images.length > 0) {
-				return watch.images[0].image_url || watch.images[0].url;
-			}
-			return "/static/logo.png";
-		},
+        onSearch(searchData) {
+            this.productStore.searchWatches(searchData);
+        },
 
-		goToDetail(watchId) {
-			uni.navigateTo({
-				url: `/pages/product/detail?id=${watchId}`,
-			});
-		},
-	},
+        getWatchImage(watch) {
+            if (watch.images && watch.images.length > 0) {
+                return watch.images[0].image_url || watch.images[0].url;
+            }
+            return "/static/logo.png";
+        },
 
-	onLoad(options) {
-		if (options.brandId) {
-			this.loadBrandWatches(options.brandId);
-		} else {
-			this.loadAllWatches();
-		}
-	},
+        goToDetail(watchId) {
+            uni.navigateTo({
+                url: `/pages/product/detail?id=${watchId}`,
+            });
+        },
+
+        // 工具栏事件处理
+        onPriceSort(sortOrder) {
+            // TODO: 重新获取数据，带上排序参数
+            console.log('价格排序:', sortOrder);
+            // 重新加载数据
+            this.reloadWithFilters();
+        },
+
+        onFilter(isActive) {
+            // TODO: 显示筛选页面或弹窗
+            console.log('筛选状态:', isActive);
+            if (isActive) {
+                // 打开筛选页面
+                uni.showToast({
+                    title: '筛选功能待开发',
+                    icon: 'none'
+                });
+            }
+        },
+
+        onDisplayModeChange(mode) {
+            // TODO: 更新列表显示模式
+            console.log('显示模式:', mode);
+            uni.showToast({
+                title: mode === 'single' ? '单列显示' : '网格显示',
+                icon: 'none'
+            });
+        },
+
+        // 重新加载数据带筛选条件
+        async reloadWithFilters() {
+            const sortParams = this.toolbarStore.getSortParams;
+            const params = {
+                page: 1,
+                per_page: 20,
+                ...sortParams
+            };
+
+            // 如果有品牌筛选，添加品牌ID
+            if (this.currentBrand) {
+                params.brand_id = this.currentBrand.id;
+            }
+
+            await this.productStore.fetchWatches(params);
+        },
+    },
+
+    onLoad(options) {
+        if (options.brandId) {
+            this.loadBrandWatches(options.brandId);
+        } else {
+            this.loadAllWatches();
+        }
+    },
 };
 </script>
 
 <style lang="scss" scoped>
 .container {
-	min-height: 100vh;
-	background-color: #f5f5f5;
+    min-height: 100vh;
+    background-color: #f5f5f5;
 }
 
 .brand-info {
-	padding: 20rpx 30rpx;
-	background-color: #fff;
-	border-bottom: 1rpx solid #eee;
+    padding: 20rpx 30rpx;
+    background-color: #fff;
+    border-bottom: 1rpx solid #eee;
 
-	.brand-name {
-		font-size: 32rpx;
-		font-weight: bold;
-		color: #333;
-		margin-right: 20rpx;
-	}
+    .brand-name {
+        font-size: 32rpx;
+        font-weight: bold;
+        color: #333;
+        margin-right: 20rpx;
+    }
 
-	.total-count {
-		font-size: 28rpx;
-		color: #666;
-	}
+    .total-count {
+        font-size: 28rpx;
+        color: #666;
+    }
 }
 
 .watches-scroll {
-	height: calc(100vh - 200rpx);
+    height: calc(100vh - 260rpx);
 }
 
 .watches-list {
-	padding: 20rpx;
+    padding: 20rpx;
 }
 
 .watch-item {
-	display: flex;
-	background-color: #fff;
-	border-radius: 12rpx;
-	margin-bottom: 20rpx;
-	padding: 20rpx;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+    display: flex;
+    background-color: #fff;
+    border-radius: 12rpx;
+    margin-bottom: 20rpx;
+    padding: 20rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 
-	.watch-image {
-		width: 160rpx;
-		height: 160rpx;
-		border-radius: 8rpx;
-		margin-right: 20rpx;
-		background-color: #f9f9f9;
-	}
+    .watch-image {
+        width: 160rpx;
+        height: 160rpx;
+        border-radius: 8rpx;
+        margin-right: 20rpx;
+        background-color: #f9f9f9;
+    }
 
-	.watch-info {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
+    .watch-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
 
-		.watch-name {
-			font-size: 30rpx;
-			font-weight: bold;
-			color: #333;
-			margin-bottom: 10rpx;
-		}
+        .watch-name {
+            font-size: 30rpx;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10rpx;
+        }
 
-		.watch-price {
-			font-size: 28rpx;
-			color: #e74c3c;
-			font-weight: bold;
-			margin-bottom: 10rpx;
-		}
+        .watch-price {
+            font-size: 28rpx;
+            color: #e74c3c;
+            font-weight: bold;
+            margin-bottom: 10rpx;
+        }
 
-		.watch-meta {
-			.brand-text {
-				font-size: 24rpx;
-				color: #666;
-				background-color: #f0f0f0;
-				padding: 4rpx 12rpx;
-				border-radius: 20rpx;
-			}
-		}
-	}
+        .watch-meta {
+            .brand-text {
+                font-size: 24rpx;
+                color: #666;
+                background-color: #f0f0f0;
+                padding: 4rpx 12rpx;
+                border-radius: 20rpx;
+            }
+        }
+    }
 }
 
 .load-status {
-	padding: 40rpx;
-	text-align: center;
+    padding: 40rpx;
+    text-align: center;
 
-	.loading,
-	.empty,
-	.no-more {
-		font-size: 28rpx;
-		color: #999;
-	}
+    .loading,
+    .empty,
+    .no-more {
+        font-size: 28rpx;
+        color: #999;
+    }
 }
 </style>

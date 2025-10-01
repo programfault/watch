@@ -9,4 +9,5 @@ export { useAppStore } from './app.js'
 export { useProductStore } from './product.js'
 // 导出所有 stores
 export { useSearchStore } from './search.js'
+export { useToolbarStore } from './toolbar.js'
 export { useUserStore } from './user.js'
