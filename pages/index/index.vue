@@ -4,10 +4,10 @@
 		<SearchComponent @search="onSearch" />
 
 		<!-- 轮播图组件 -->
-		<CarouselComponent />
+		<CarouselComponent v-if="!searchStore.showSearchPanel" />
 
 		<!-- 品牌组件 -->
-		<BrandsComponent />
+		<BrandsComponent v-if="!searchStore.showSearchPanel" />
 
 		<!-- 客服按钮 -->
         <!-- <view class="container">

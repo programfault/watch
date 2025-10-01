@@ -23,7 +23,9 @@
           />
           <view class="carousel-content" v-if="item.title">
             <text class="carousel-title">{{ item.title }}</text>
-            <text class="carousel-desc" v-if="item.description">{{ item.description }}</text>
+            <text class="carousel-desc" v-if="item.description">{{
+              item.description
+            }}</text>
           </view>
         </swiper-item>
       </swiper>
@@ -35,62 +37,72 @@
     </view>
 
     <!-- 空状态 -->
-    <view class="empty-section" v-if="!appStore.hasCarousel && !appStore.carouselLoading">
+    <view
+      class="empty-section"
+      v-if="!appStore.hasCarousel && !appStore.carouselLoading"
+    >
       <text class="empty-text">暂无轮播内容</text>
     </view>
   </view>
 </template>
 
 <script>
-import { useAppStore } from '@/stores'
+import { useAppStore } from "@/stores";
 
 export default {
-  name: 'CarouselComponent',
+  name: "CarouselComponent",
   props: {
     // 轮播图高度
     height: {
       type: String,
-      default: '200px'
+      default: "200px",
     },
     // 自动播放间隔时间
     interval: {
       type: Number,
-      default: 3000
+      default: 3000,
     },
     // 切换动画时长
     duration: {
       type: Number,
-      default: 500
+      default: 500,
     },
     // 是否显示指示点
     showDots: {
       type: Boolean,
-      default: true
+      default: true,
     },
     // 是否自动播放
     autoplay: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
   setup() {
-    const appStore = useAppStore()
+    const appStore = useAppStore();
     return {
-      appStore
-    }
+      appStore,
+    };
   },
   methods: {
     // 轮播图点击事件
     onCarouselClick(carouselItem) {
-      console.log('点击轮播图:', carouselItem)
-
+      console.log("点击轮播图:", carouselItem);
+      if (carouselItem.has_content === 0) {
+        console.log("无内容可跳转");
+        return;
+      }
       // 跳转到活动页面，传递轮播图信息
       uni.navigateTo({
-        url: `/pages/activity/activity?id=${carouselItem.id || 'unknown'}&title=${encodeURIComponent(carouselItem.title || '')}&description=${encodeURIComponent(carouselItem.description || '')}`
-      })
-    }
-  }
-}
+        url: `/pages/activity/activity?id=${
+          carouselItem.id || "unknown"
+        }&title=${encodeURIComponent(
+          carouselItem.title || ""
+        )}&description=${encodeURIComponent(carouselItem.description || "")}`,
+      });
+    },
+  },
+};
 </script>
 
 <style lang="scss">
@@ -112,7 +124,7 @@ export default {
       bottom: 0;
       left: 0;
       right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.6));
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
       padding: 20px 15px 15px;
       color: white;
 

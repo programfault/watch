@@ -24,7 +24,7 @@
     <!-- 搜索面板 (历史记录和热门搜索) -->
     <view class="search-panel" v-if="searchStore.showSearchPanel">
       <!-- 热门搜索 -->
-      <view class="hot-search" v-if="showHot">
+      <!-- <view class="hot-search" v-if="showHot">
         <view class="hot-header">
           <text class="hot-title">热门搜索</text>
         </view>
@@ -41,7 +41,7 @@
         <view class="empty-hot" v-else>
           <text class="empty-text">暂无热门搜索</text>
         </view>
-      </view>
+      </view> -->
 
       <!-- 搜索历史 -->
       <view class="search-history" v-if="showHistory">
