@@ -9,10 +9,10 @@
       :column="3"
       :square="false"
       :showBorder="false"
-      v-if="appStore.brandsList.length > 0"
+      v-if="sortedBrandsList.length > 0"
     >
       <uni-grid-item
-        v-for="(brand, index) in appStore.brandsList"
+        v-for="(brand, index) in sortedBrandsList"
         :key="brand.id"
         @click="onBrandClick(brand)"
       >
@@ -35,7 +35,7 @@
     </view>
 
     <!-- 品牌空状态 -->
-    <view class="empty-section" v-if="!appStore.brandsList.length && !appStore.brandsLoading">
+    <view class="empty-section" v-if="!sortedBrandsList.length && !appStore.brandsLoading">
       <text class="empty-text">暂无品牌信息</text>
     </view>
   </view>
@@ -67,6 +67,21 @@ export default {
     const appStore = useAppStore()
     return {
       appStore
+    }
+  },
+  computed: {
+    // 根据 sort 字段从小到大排序的品牌列表
+    sortedBrandsList() {
+      if (!this.appStore.brandsList || this.appStore.brandsList.length === 0) {
+        return []
+      }
+
+      return [...this.appStore.brandsList].sort((a, b) => {
+        // 从小到大排序 (升序)
+        const sortA = a.sort || 0
+        const sortB = b.sort || 0
+        return sortA - sortB
+      })
     }
   },
   methods: {
