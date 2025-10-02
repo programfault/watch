@@ -30,47 +30,52 @@
 
         <!-- 消费者列表 -->
         <view class="consumers-list" v-else-if="userStore.hasConsumers">
-          <uni-swipe-action
+          <view
             v-for="consumer in userStore.consumers"
             :key="consumer.id"
+            class="consumer-item-wrapper"
           >
-            <uni-swipe-action-item
-              :right-options="swipeOptions"
-              @click="handleSwipeAction($event, consumer)"
-            >
-              <view class="consumer-item">
-                <view class="consumer-avatar">
-                  <view class="avatar-circle" :class="{ 'avatar-female': consumer.gender === 2 }">
-                    <text class="avatar-text">{{ getAvatarText(consumer) }}</text>
-                  </view>
-                </view>
-                <view class="consumer-content">
-                  <view class="consumer-header">
-                    <view class="consumer-info">
-                      <text class="consumer-phone">{{ consumer.phone }}</text>
-                      <view class="consumer-points">
-                        <text class="points-label">积分:</text>
-                        <text class="points-value">{{ consumer.points }}</text>
+            <view class="consumer-item">
+                  <!-- 上半部分：头像、信息、徽章 -->
+                  <view class="consumer-main">
+                    <view class="consumer-avatar">
+                      <view class="avatar-circle" :class="{ 'avatar-female': consumer.gender === 2 }">
+                        <text class="avatar-text">{{ getAvatarText(consumer) }}</text>
                       </view>
                     </view>
-                    <view class="consumer-badges">
-                      <view class="badge-group">
-                        <text class="badge-label">券</text>
-                        <text class="badge-value error">{{ consumer.coupon_count }}</text>
-                      </view>
-                      <view class="badge-group">
-                        <text class="badge-label">特权</text>
-                        <text class="badge-value warning">{{ consumer.privilege_count }}</text>
+                    <view class="consumer-content">
+                      <view class="consumer-header">
+                        <view class="consumer-info">
+                          <text class="consumer-phone">{{ consumer.phone }}</text>
+                          <view class="consumer-points">
+                            <text class="points-label">积分:</text>
+                            <text class="points-value">{{ consumer.points }}</text>
+                          </view>
+                        </view>
+                        <view class="consumer-badges">
+                          <view class="badge-group">
+                            <text class="badge-label">券</text>
+                            <text class="badge-value error">{{ consumer.coupon_count }}</text>
+                          </view>
+                          <view class="badge-group">
+                            <text class="badge-label">特权</text>
+                            <text class="badge-value warning">{{ consumer.privilege_count }}</text>
+                          </view>
+                        </view>
                       </view>
                     </view>
                   </view>
-                </view>
-                <view class="consumer-arrow">
-                  <text class="arrow-icon">›</text>
-                </view>
+                  <!-- 下半部分：操作按钮 -->
+                  <view class="consumer-actions">
+                    <view class="action-btn gift-btn" @click="handleGift(consumer)">
+                      <text class="btn-text">赠送</text>
+                    </view>
+                    <view class="action-btn verify-btn" @click="handleVerification(consumer)">
+                      <text class="btn-text">核销</text>
+                    </view>
+                  </view>
               </view>
-            </uni-swipe-action-item>
-          </uni-swipe-action>
+            </view>
         </view>
 
         <!-- 空状态 -->
@@ -81,13 +86,25 @@
         <!-- 由于不支持分页，移除加载更多功能 -->
       </view>
     </scroll-view>
+
+    <!-- 消费者面板 -->
+    <ConsumerPanel
+      ref="consumerPanel"
+      :consumerData="selectedConsumer"
+      :actionType="currentActionType"
+      @confirm="handlePanelConfirm"
+    />
   </view>
 </template>
 
 <script>
+import ConsumerPanel from "@/components/ConsumerPanel.vue";
 import { useUserStore } from "@/stores";
 
 export default {
+  components: {
+    ConsumerPanel,
+  },
   setup() {
     const userStore = useUserStore();
     return {
@@ -98,20 +115,8 @@ export default {
     return {
       searchKeyword: "",
       isRefreshing: false,
-      swipeOptions: [
-        {
-          text: "赠送",
-          style: {
-            backgroundColor: "#007aff",
-          },
-        },
-        {
-          text: "核销",
-          style: {
-            backgroundColor: "#ff9500",
-          },
-        },
-      ],
+      selectedConsumer: null,
+      currentActionType: 'gift', // 'gift' 或 'verify'
     };
   },
   async onLoad() {
@@ -186,28 +191,30 @@ export default {
     },
 
 
-    // 处理滑动操作
-    handleSwipeAction(e, consumer) {
-      const { index } = e;
-      if (index === 0) {
-        // 赠送操作
-        this.handleGift(consumer);
-      } else if (index === 1) {
-        // 核销操作
-        this.handleVerification(consumer);
-      }
-    },
-
-    // 赠送操作（暂时为空）
+    // 赠送操作
     handleGift(consumer) {
       console.log("赠送操作:", consumer);
-      // TODO: 实现赠送逻辑
+      this.selectedConsumer = consumer;
+      this.currentActionType = 'gift';
+      this.$refs.consumerPanel.openPanel();
     },
 
-    // 核销操作（暂时为空）
+    // 核销操作
     handleVerification(consumer) {
       console.log("核销操作:", consumer);
-      // TODO: 实现核销逻辑
+      this.selectedConsumer = consumer;
+      this.currentActionType = 'verify';
+      this.$refs.consumerPanel.openPanel();
+    },
+
+    // 处理面板确认事件
+    handlePanelConfirm(data) {
+      console.log('面板确认:', data);
+      // TODO: 根据 currentActionType 和 data 执行相应的业务逻辑
+      uni.showToast({
+        title: this.currentActionType === 'gift' ? '赠送成功' : '核销成功',
+        icon: 'success'
+      });
     },
 
     // 搜索输入事件（暂时为空）
@@ -281,13 +288,30 @@ export default {
 .consumers-list {
   padding: 0 12px;
 
+  // 移除uni-list-item的默认样式
+  ::v-deep .custom-list-item {
+    .uni-list-item {
+      background: transparent !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: none !important;
+
+      .uni-list-item__container {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+      }
+    }
+  }
+
   .consumer-item {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     background: #fff;
-    margin-bottom: 8px;
+    margin: 0 0 12px 0;
     border-radius: 12px;
-    padding: 18px 20px;
+    padding: 16px 18px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     border: 1px solid #f5f5f5;
     transition: all 0.2s ease;
@@ -320,6 +344,12 @@ export default {
           font-weight: 600;
         }
       }
+    }
+
+    .consumer-main {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 16px;
     }
 
     .consumer-content {
@@ -405,13 +435,41 @@ export default {
       }
     }
 
-    .consumer-arrow {
-      margin-left: 12px;
+    .consumer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 12px;
+      margin-top: 8px;
+      border-top: 1px solid #f0f0f0;
 
-      .arrow-icon {
-        font-size: 20px;
-        color: #d9d9d9;
-        font-weight: 300;
+      .action-btn {
+        padding: 8px 16px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        min-width: 56px;
+        text-align: center;
+
+        .btn-text {
+          color: #fff;
+          font-size: 12px;
+          font-weight: 500;
+        }
+
+        &:active {
+          transform: scale(0.95);
+          opacity: 0.8;
+        }
+
+        &.gift-btn {
+          background: linear-gradient(135deg, #007aff 0%, #0056d3 100%);
+        }
+
+        &.verify-btn {
+          background: linear-gradient(135deg, #ff9500 0%, #e6850e 100%);
+        }
       }
     }
   }
@@ -435,6 +493,4 @@ export default {
     align-items: center;
   }
 }
-
-// 滑动操作按钮样式由uni-swipe-action组件自动处理
 </style>
