@@ -52,14 +52,17 @@
         /* 小程序特有相关 */
         "appid" : "wxd0fc2f837ba63c20",
         "setting" : {
-            "urlCheck" : false
+            "urlCheck" : false,
+            "minified" : false,
+            "postcss" : false
         },
         "usingComponents" : true,
         "permission" : {
             "scope.userLocation" : {
                 "desc" : "提供店铺位置以及导航服务"
             }
-        }
+        },
+        "requiredPrivateInfos" : [ "getLocation" ]
     },
     "vueVersion" : "3"
 }
