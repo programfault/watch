@@ -16,7 +16,7 @@
         :key="brand.id"
         @click="onBrandClick(brand)"
       >
-        <view class="brand-item" @click.stop="onBrandClick(brand)">
+        <view class="brand-item" @click.stop="onBrandClick(brand)" :id="index">
           <image
             :src="brand.logo"
             mode="aspectFit"

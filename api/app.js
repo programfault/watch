@@ -6,11 +6,11 @@
 import { get, post } from '@/utils/request'
 
 /**
- * 获取轮播图列表
+ * 获取页面数据（包括轮播图和其他页面）
  * @returns {Promise}
  */
-export function getCarousel() {
-  return get('/carousel', {}, {
+export function getPages() {
+  return get('/pages', {}, {
     showLoading: false,
     showError: true
   })

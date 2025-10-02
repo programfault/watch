@@ -1,4 +1,4 @@
-import { getBrands, getCarousel, getFilterOptions } from '@/api'
+import { getBrands, getFilterOptions, getPages } from '@/api'
 import { defineStore } from 'pinia'
 
 export const useAppStore = defineStore('app', {
@@ -6,6 +6,10 @@ export const useAppStore = defineStore('app', {
     // 轮播图数据
     carouselList: [],
     carouselLoading: false,
+
+    // 页面数据
+    pagesList: [],
+    pagesLoading: false,
 
     // 品牌数据
     brandsList: [],
@@ -34,6 +38,16 @@ export const useAppStore = defineStore('app', {
     // 是否有轮播图
     hasCarousel: (state) => {
       return state.carouselList.length > 0
+    },
+
+    // 有效的页面（is_carousel != 1）
+    activePages: (state) => {
+      return state.pagesList
+    },
+
+    // 是否有页面数据
+    hasPages: (state) => {
+      return state.pagesList.length > 0
     },
 
     // 所有品牌
@@ -83,25 +97,49 @@ export const useAppStore = defineStore('app', {
   },
 
   actions: {
-    // 获取轮播图数据
-    async fetchCarousel() {
-      if (this.carouselLoading) return
+    // 获取页面数据（轮播图和其他页面）
+    async fetchPages() {
+      if (this.pagesLoading) return
 
+      this.pagesLoading = true
       this.carouselLoading = true
+
       try {
-        const data = await getCarousel()
-        // 映射 API 返回的字段到组件期望的字段
-        const mappedData = (data || []).map(item => ({
-          ...item,
-          image: item.carousel_image || item.image // 映射 carousel_image 为 image
-        }))
-        this.carouselList = mappedData
-        return mappedData
-      } catch (error) {
-        console.error('获取轮播图失败:', error)
+        const data = await getPages()
+        console.log('页面API响应:', data)
+
+        // 重置列表
         this.carouselList = []
+        this.pagesList = []
+
+        if (data && Array.isArray(data)) {
+          // 根据 is_carousel 字段分类数据
+          data.forEach(item => {
+            if (item.is_carousel === 1) {
+              // 是轮播图，映射字段到组件期望的格式
+              const carouselItem = {
+                ...item,
+                image: item.carousel_image || item.image || item.page_image
+              }
+              this.carouselList.push(carouselItem)
+            } else {
+              // 不是轮播图，添加到页面列表
+              this.pagesList.push(item)
+            }
+          })
+        }
+
+        console.log('轮播图数据:', this.carouselList)
+        console.log('页面数据:', this.pagesList)
+
+        return { carouselList: this.carouselList, pagesList: this.pagesList }
+      } catch (error) {
+        console.error('获取页面数据失败:', error)
+        this.carouselList = []
+        this.pagesList = []
         throw error
       } finally {
+        this.pagesLoading = false
         this.carouselLoading = false
       }
     },
@@ -138,6 +176,16 @@ export const useAppStore = defineStore('app', {
         brand.name_en.toLowerCase().includes(searchTerm) ||
         brand.name_cn.includes(searchTerm)
       )
+    },
+
+    // 根据 ID 获取页面信息
+    getPageById(pageId) {
+      return this.pagesList.find(page => page.id === pageId)
+    },
+
+    // 根据 ID 获取轮播图信息
+    getCarouselById(carouselId) {
+      return this.carouselList.find(carousel => carousel.id === carouselId)
     },
 
     // 设置全局加载状态
@@ -212,7 +260,7 @@ export const useAppStore = defineStore('app', {
       try {
         // 并行获取初始数据
         await Promise.all([
-          this.fetchCarousel(),
+          this.fetchPages(),
           this.fetchBrands(),
           this.fetchFilterOptions()
         ])
@@ -230,7 +278,7 @@ export const useAppStore = defineStore('app', {
     async refreshApp() {
       try {
         await Promise.all([
-          this.fetchCarousel(),
+          this.fetchPages(),
           this.fetchBrands(),
           this.fetchFilterOptions()
         ])
@@ -243,6 +291,7 @@ export const useAppStore = defineStore('app', {
     // 重置应用状态
     resetApp() {
       this.carouselList = []
+      this.pagesList = []
       this.brandsList = []
       this.filterOptions = []
       this.initialized = false
