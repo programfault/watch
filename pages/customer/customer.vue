@@ -2,15 +2,22 @@
   <view class="page-wrapper">
     <!-- 固定搜索栏 -->
     <view class="fixed-search">
-      <uni-search-bar
-        @input="onSearchInput"
-        @clear="onSearchClear"
-        @confirm="onSearchConfirm"
-        placeholder="请输入手机号码搜索"
-        :focus="false"
-        v-model="searchKeyword"
-        cancelButton="none"
-      />
+      <view class="search-container">
+        <view class="search-bar-wrapper">
+          <uni-search-bar
+            @input="onSearchInput"
+            @clear="onSearchClear"
+            @confirm="onSearchConfirm"
+            placeholder="请输入手机号搜索"
+            :focus="false"
+            v-model="searchKeyword"
+            cancelButton="none"
+          />
+        </view>
+        <view class="scan-btn" @click="handleScan">
+          <uni-icons type="scan" size="24" color="#007aff"></uni-icons>
+        </view>
+      </view>
     </view>
 
     <!-- 可滚动内容区域 -->
@@ -29,9 +36,9 @@
         </view>
 
         <!-- 消费者列表 -->
-        <view class="consumers-list" v-else-if="userStore.hasConsumers">
+        <view class="consumers-list" v-else-if="userStore.hasFilteredConsumers">
           <view
-            v-for="consumer in userStore.consumers"
+            v-for="consumer in userStore.filteredConsumers"
             :key="consumer.id"
             class="consumer-item-wrapper"
           >
@@ -47,6 +54,10 @@
                       <view class="consumer-header">
                         <view class="consumer-info">
                           <text class="consumer-phone">{{ consumer.phone }}</text>
+                          <view class="consumer-card" v-if="consumer.card_number">
+                            <text class="card-label">卡号:</text>
+                            <text class="card-value">{{ consumer.card_number }}</text>
+                          </view>
                           <view class="consumer-points">
                             <text class="points-label">积分:</text>
                             <text class="points-value">{{ consumer.points }}</text>
@@ -79,8 +90,9 @@
         </view>
 
         <!-- 空状态 -->
-        <view class="empty-state" v-else>
-          <text class="empty-text">暂无消费者数据</text>
+        <view class="empty-state" v-else-if="!userStore.consumersLoading">
+          <text class="empty-text" v-if="userStore.consumersSearchKeyword">暂无匹配的消费者</text>
+          <text class="empty-text" v-else>暂无消费者数据</text>
         </view>
 
         <!-- 由于不支持分页，移除加载更多功能 -->
@@ -121,6 +133,7 @@ export default {
   data() {
     return {
       searchKeyword: "",
+      searchCard: "",
       isRefreshing: false,
       selectedConsumer: null,
       currentActionType: 'gift', // 'gift' 或 'verify'
@@ -132,8 +145,14 @@ export default {
     };
   },
   async onLoad() {
-    // 获取消费者数据
-    await this.loadData();
+    console.log('🚀 页面onLoad开始...');
+    try {
+      // 获取消费者数据
+      await this.loadData();
+      console.log('✅ 页面onLoad完成');
+    } catch (error) {
+      console.error('❌ 页面onLoad失败:', error);
+    }
   },
   onPullDownRefresh() {
     // 下拉刷新
@@ -149,11 +168,21 @@ export default {
     // 加载数据
     async loadData() {
       try {
+        console.log('开始加载消费者数据...');
+
         // 并行加载消费者数据和福利数据
         await Promise.all([
           this.userStore.fetchConsumers(),
           this.userStore.fetchBenefits()
         ]);
+
+        console.log('数据加载完成，当前状态:');
+        console.log('- consumers数量:', this.userStore.consumers.length);
+        console.log('- filteredConsumers数量:', this.userStore.filteredConsumers.length);
+        console.log('- hasFilteredConsumers:', this.userStore.hasFilteredConsumers);
+        console.log('- consumersLoading:', this.userStore.consumersLoading);
+        console.log('- searchKeyword:', this.userStore.consumersSearchKeyword);
+
       } catch (error) {
         console.error("加载数据失败:", error);
         uni.showModal({
@@ -269,23 +298,142 @@ export default {
       this.panelPrivileges = [];
     },
 
-    // 搜索输入事件（暂时为空）
+    // 搜索输入事件（本地实时搜索）
     onSearchInput(e) {
-      console.log("搜索输入:", e);
-      // TODO: 实现搜索逻辑
+      const keyword = e.detail?.value || e;
+      console.log("搜索输入:", keyword);
+      this.searchKeyword = keyword;
+      this.userStore.setConsumersSearchKeyword(keyword);
     },
 
-    // 搜索清除事件（暂时为空）
+    // 搜索清除事件
     onSearchClear() {
       console.log("搜索清除");
       this.searchKeyword = "";
-      // TODO: 重置搜索结果
+      this.userStore.clearConsumersSearch();
     },
 
-    // 搜索确认事件（暂时为空）
+    // 搜索确认事件
     onSearchConfirm(e) {
-      console.log("搜索确认:", e);
-      // TODO: 执行搜索
+      const keyword = e.detail?.value || e;
+      console.log("搜索确认:", keyword);
+      this.searchKeyword = keyword;
+      this.userStore.setConsumersSearchKeyword(keyword);
+    },
+
+    // 扫一扫功能
+    async handleScan() {
+      console.log('点击扫一扫');
+
+      try {
+        // 检查摄像头权限
+        const authResult = await this.checkCameraAuth();
+        if (!authResult) {
+          return;
+        }
+
+        // 打开扫码界面
+        const scanResult = await this.openScanCode();
+        if (scanResult?.result) {
+          console.log('扫码结果:', scanResult.result);
+          this.searchCard = scanResult.result;
+          this.userStore.setConsumersSearchKeyword(scanResult.result);
+
+          uni.showToast({
+            title: '扫码成功',
+            icon: 'success'
+          });
+        }
+      } catch (error) {
+        console.error('扫码失败:', error);
+        uni.showToast({
+          title: '扫码失败',
+          icon: 'none'
+        });
+      }
+    },
+
+    // 检查摄像头权限
+    async checkCameraAuth() {
+      return new Promise((resolve) => {
+        uni.getSetting({
+          success: (res) => {
+            console.log('当前权限设置:', res.authSetting);
+
+            if (res.authSetting['scope.camera'] === false) {
+              // 用户曾经拒绝授权，引导到设置页面
+              uni.showModal({
+                title: '需要摄像头权限',
+                content: '请在设置中开启摄像头权限后重试',
+                confirmText: '去设置',
+                success: (modalRes) => {
+                  if (modalRes.confirm) {
+                    uni.openSetting({
+                      success: (settingRes) => {
+                        if (settingRes.authSetting['scope.camera']) {
+                          resolve(true);
+                        } else {
+                          resolve(false);
+                        }
+                      },
+                      fail: () => resolve(false)
+                    });
+                  } else {
+                    resolve(false);
+                  }
+                }
+              });
+            } else if (res.authSetting['scope.camera'] === undefined) {
+              // 未授权，请求授权
+              uni.authorize({
+                scope: 'scope.camera',
+                success: () => {
+                  console.log('摄像头授权成功');
+                  resolve(true);
+                },
+                fail: () => {
+                  console.log('摄像头授权失败');
+                  uni.showToast({
+                    title: '需要摄像头权限才能扫码',
+                    icon: 'none'
+                  });
+                  resolve(false);
+                }
+              });
+            } else {
+              // 已授权
+              resolve(true);
+            }
+          },
+          fail: () => {
+            console.error('获取权限设置失败');
+            resolve(false);
+          }
+        });
+      });
+    },
+
+    // 打开扫码界面
+    async openScanCode() {
+      return new Promise((resolve, reject) => {
+        uni.scanCode({
+          onlyFromCamera: true,
+          scanType: ['barCode', 'qrCode'],
+          success: (res) => {
+            console.log('扫码成功:', res);
+            resolve(res);
+          },
+          fail: (error) => {
+            console.error('扫码失败:', error);
+            if (error.errMsg?.includes('cancel')) {
+              // 用户取消扫码
+              resolve(null);
+            } else {
+              reject(error);
+            }
+          }
+        });
+      });
     },
 
     // 获取头像文本
@@ -320,6 +468,33 @@ export default {
   padding: 10px 16px 8px;
   border-bottom: 1px solid #f0f0f0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  .search-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .search-bar-wrapper {
+      flex: 1;
+    }
+
+    .scan-btn {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+      transition: all 0.2s ease;
+
+      &:active {
+        transform: scale(0.95);
+        background-color: #e9ecef;
+      }
+    }
+  }
 }
 
 .scroll-content {
@@ -422,6 +597,24 @@ export default {
             letter-spacing: 0.3px;
             display: block;
             margin-bottom: 4px;
+          }
+
+          .consumer-card {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 2px;
+
+            .card-label {
+              font-size: 12px;
+              color: #999;
+            }
+
+            .card-value {
+              font-size: 12px;
+              font-weight: 600;
+              color: #999;
+            }
           }
 
           .consumer-points {

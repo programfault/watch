@@ -1,5 +1,5 @@
-import { defineStore } from 'pinia'
 import { addCustomer, getBenefits, getConsumers, getCustomers, getUserInfo, login, updateCustomer } from '@/api'
+import { defineStore } from 'pinia'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -23,6 +23,8 @@ export const useUserStore = defineStore('user', {
 		consumers: [],
 		consumersLoading: false,
 		consumersTotal: 0,
+		consumersSearchKeyword: '', // 消费者搜索关键词
+        consumersCardNumber: '', // 消费者搜索会员卡号
 
 		// 福利管理（优惠券和特权）
 		benefits: {
@@ -83,6 +85,66 @@ export const useUserStore = defineStore('user', {
     // 消费者总数
     consumersCount: (state) => {
       return state.consumers.length
+    },
+
+    // 过滤后的消费者列表（根据搜索关键词）
+    filteredConsumers: (state) => {
+      console.log('filteredConsumers计算开始:', {
+        consumersLength: state.consumers?.length || 0,
+        searchKeyword: state.consumersSearchKeyword,
+        consumersArray: state.consumers
+      })
+
+      if (!state.consumersSearchKeyword && !state.consumersCardNumber) {
+        console.log('无搜索关键词，返回全部consumers:', state.consumers?.length || 0)
+        return state.consumers || []
+      }
+
+      const keyword = state.consumersSearchKeyword.toLowerCase().trim()
+      const filtered = (state.consumers || []).filter(consumer => {
+        // 只搜索手机号和卡号
+        const phone = (consumer.phone || '').toLowerCase()
+        const cardNumber = (consumer.card_number || '').toLowerCase()
+        return phone.includes(keyword) || cardNumber.includes(keyword)
+      })
+
+      console.log('搜索过滤结果:', {
+        keyword: keyword,
+        filteredLength: filtered.length
+      })
+
+      return filtered
+    },    // 过滤后的消费者数量
+    filteredConsumersCount: (_state, getters) => {
+      return getters.filteredConsumers.length
+    },
+
+    // 是否有过滤后的消费者数据
+    hasFilteredConsumers: (state) => {
+      // 直接基于 state 计算，避免 getter 依赖问题
+      if (!state.consumersSearchKeyword) {
+        const hasData = state.consumers && state.consumers.length > 0
+        console.log('hasFilteredConsumers计算(无搜索):', {
+          consumersLength: state.consumers?.length || 0,
+          hasData: hasData
+        })
+        return hasData
+      } else {
+        const keyword = state.consumersSearchKeyword.toLowerCase().trim()
+        const filtered = (state.consumers || []).filter(consumer => {
+          // 只搜索手机号和卡号
+          const phone = (consumer.phone || '').toLowerCase()
+          const cardNumber = (consumer.card_number || '').toLowerCase()
+          return phone.includes(keyword) || cardNumber.includes(keyword)
+        })
+        const hasData = filtered.length > 0
+        console.log('hasFilteredConsumers计算(有搜索):', {
+          keyword: keyword,
+          filteredLength: filtered.length,
+          hasData: hasData
+        })
+        return hasData
+      }
     },
 
     // 福利相关 getters
@@ -302,18 +364,35 @@ export const useUserStore = defineStore('user', {
         const response = await getConsumers(params)
         console.log('收到消费者响应:', response)
 
-        // 处理响应数据 - 直接使用响应数据
+        // 处理响应数据 - 支持多种响应格式
         let consumersData = []
         let total = 0
 
-			if (response?.users) {
-				// 直接使用响应数据
-				consumersData = response.users || []
-				total = response.total || 0
-				console.log('解析出的消费者数据:', consumersData, '总数:', total)
-			} else {
-				console.log('响应格式不符合预期:', response)
-			}        // 更新数据
+        if (response?.users) {
+          // 格式1: { users: [...], total: 123 }
+          consumersData = response.users || []
+          total = response.total || 0
+          console.log('解析出的消费者数据(格式1):', consumersData, '总数:', total)
+        } else if (response?.data?.users) {
+          // 格式2: { data: { users: [...], total: 123 } }
+          consumersData = response.data.users || []
+          total = response.data.total || 0
+          console.log('解析出的消费者数据(格式2):', consumersData, '总数:', total)
+        } else if (Array.isArray(response?.data)) {
+          // 格式3: { data: [...] }
+          consumersData = response.data || []
+          total = consumersData.length
+          console.log('解析出的消费者数据(格式3):', consumersData, '总数:', total)
+        } else if (Array.isArray(response)) {
+          // 格式4: 直接返回数组 [...]
+          consumersData = response || []
+          total = consumersData.length
+          console.log('解析出的消费者数据(格式4):', consumersData, '总数:', total)
+        } else {
+          console.log('响应格式不符合预期:', response)
+          console.log('响应数据类型:', typeof response)
+          console.log('响应数据键:', Object.keys(response || {}))
+        }        // 更新数据
         this.consumers = consumersData
         this.consumersTotal = total
         this.consumersHasMore = false // 不支持分页，所以设为false
@@ -339,6 +418,21 @@ export const useUserStore = defineStore('user', {
       this.consumersPage = 1
       this.consumersTotal = 0
       this.consumersHasMore = true
+      this.consumersSearchKeyword = '' // 重置搜索关键词
+      this.consumersCardNumber = '' // 重置会员卡号
+    },
+
+    // 设置消费者搜索关键词
+    setConsumersSearchKeyword(keyword) {
+      this.consumersSearchKeyword = keyword || ''
+    },
+    setConsumersCardNumber(cardNumber) {
+        this.consumersCardNumber = cardNumber || ''
+    },
+    // 清除消费者搜索
+    clearConsumersSearch() {
+      this.consumersSearchKeyword = ''
+      this.consumersCardNumber = '' // 清除会员卡号
     },
 
     // 获取福利信息（优惠券和特权）
