@@ -3,7 +3,7 @@
 		<view class="consumer-panel">
 			<!-- 头部 -->
 			<view class="consumer-header">
-				<text class="header-title">{{ actionType === 'gift' ? '赠送优惠券' : '核销优惠券' }}</text>
+				<text class="header-title">{{ actionType === 'gift' ? '赠送' : '核销' }}</text>
 				<view class="header-actions">
 					<text class="close-btn" @click="closePanel">×</text>
 				</view>
@@ -11,40 +11,81 @@
 
 			<!-- 内容区域 -->
 			<scroll-view scroll-y class="consumer-content">
-				<!-- 消费者信息 -->
-				<view class="consumer-info-section" v-if="consumerData">
-					<text class="section-title">消费者信息</text>
-					<view class="consumer-info-card">
-						<view class="info-row">
-							<text class="info-label">手机号:</text>
-							<text class="info-value">{{ consumerData.phone }}</text>
-						</view>
-						<view class="info-row">
-							<text class="info-label">积分:</text>
-							<text class="info-value">{{ consumerData.points }}</text>
-						</view>
-						<view class="info-row">
-							<text class="info-label">优惠券:</text>
-							<text class="info-value">{{ consumerData.coupon_count }}</text>
-						</view>
-						<view class="info-row">
-							<text class="info-label">特权:</text>
-							<text class="info-value">{{ consumerData.privilege_count }}</text>
-						</view>
-					</view>
-				</view>
-
 				<!-- 操作区域 -->
-				<view class="action-section">
-					<text class="section-title">{{ actionType === 'gift' ? '选择赠送内容' : '选择核销内容' }}</text>
-
-					<!-- 这里可以根据需要添加具体的操作内容 -->
-					<view class="placeholder-content">
-						<text class="placeholder-text">
-							{{ actionType === 'gift' ? '请选择要赠送的优惠券或特权' : '请选择要核销的优惠券' }}
-						</text>
+				<template v-if="actionType === 'gift'">
+					<!-- 赠送积分区域 -->
+					<view class="gift-section">
+						<text class="section-title">赠送积分</text>
+						<view class="points-input-wrapper">
+							<uni-easyinput
+								v-model="giftPoints"
+								type="number"
+								placeholder="请输入要赠送的积分数量"
+								:clearable="true"
+							/>
+						</view>
 					</view>
-				</view>
+
+					<!-- 赠送优惠券区域 -->
+					<view class="gift-section">
+						<text class="section-title">赠送优惠券</text>
+						<view class="coupons-list">
+							<view
+								v-for="coupon in coupons"
+								:key="coupon.id"
+								class="benefit-card coupon-card"
+								:class="{ 'selected': selectedCoupons.includes(coupon.id) }"
+								@click="toggleCouponSelection(coupon.id)"
+							>
+								<view class="card-content">
+									<text class="card-title">{{ coupon.name }}</text>
+									<text class="card-description">{{ coupon.description }}</text>
+								</view>
+								<view class="card-check" v-if="selectedCoupons.includes(coupon.id)">
+									<text class="check-icon">✓</text>
+								</view>
+							</view>
+							<view v-if="coupons.length === 0" class="empty-list">
+								<text class="empty-text">暂无可用优惠券</text>
+							</view>
+						</view>
+					</view>
+
+					<!-- 赠送特权区域 -->
+					<view class="gift-section">
+						<text class="section-title">赠送特权</text>
+						<view class="privileges-list">
+							<view
+								v-for="privilege in privileges"
+								:key="privilege.id"
+								class="benefit-card privilege-card"
+								:class="{ 'selected': selectedPrivileges.includes(privilege.id) }"
+								@click="togglePrivilegeSelection(privilege.id)"
+							>
+								<view class="card-content">
+									<text class="card-title">{{ privilege.name }}</text>
+									<text class="card-description">{{ privilege.description }}</text>
+								</view>
+								<view class="card-check" v-if="selectedPrivileges.includes(privilege.id)">
+									<text class="check-icon">✓</text>
+								</view>
+							</view>
+							<view v-if="privileges.length === 0" class="empty-list">
+								<text class="empty-text">暂无可用特权</text>
+							</view>
+						</view>
+					</view>
+				</template>
+
+				<!-- 核销区域保持原样 -->
+				<template v-else>
+					<view class="action-section">
+						<text class="section-title">选择核销内容</text>
+						<view class="placeholder-content">
+							<text class="placeholder-text">请选择要核销的优惠券</text>
+						</view>
+					</view>
+				</template>
 			</scroll-view>
 
 			<!-- 底部按钮 -->
@@ -58,8 +99,17 @@
 </template>
 
 <script>
+import { useUserStore } from '@/stores'
+
 export default {
 	name: 'ConsumerPanel',
+
+	setup() {
+		const userStore = useUserStore()
+		return {
+			userStore
+		}
+	},
 
 	props: {
 		visible: {
@@ -76,6 +126,32 @@ export default {
 		}
 	},
 
+	data() {
+		return {
+			// 赠送积分
+			giftPoints: '',
+			// 选中的优惠券
+			selectedCoupons: [],
+			// 选中的特权
+			selectedPrivileges: []
+		}
+	},
+
+	computed: {
+		// 获取优惠券数据
+		coupons() {
+			return this.userStore.benefitsCoupons
+		},
+		// 获取特权数据
+		privileges() {
+			return this.userStore.benefitsPrivileges
+		}
+	},
+
+	mounted() {
+		console.log('ConsumerPanel 组件已加载 - 优惠券:', this.coupons.length, '个, 特权:', this.privileges.length, '个')
+	},
+
 	watch: {
 		visible: {
 			handler(newVal) {
@@ -86,6 +162,10 @@ export default {
 				}
 			},
 			immediate: true
+		},
+		actionType() {
+			// 当操作类型改变时，重置选择状态
+			this.resetSelections()
 		}
 	},
 
@@ -100,18 +180,55 @@ export default {
 			if (this.$refs.consumerPopup) {
 				this.$refs.consumerPopup.close()
 			}
+			this.resetSelections()
 			this.$emit('close')
+		},
+
+		// 切换优惠券选择状态
+		toggleCouponSelection(couponId) {
+			const index = this.selectedCoupons.indexOf(couponId)
+			if (index > -1) {
+				this.selectedCoupons.splice(index, 1)
+			} else {
+				this.selectedCoupons.push(couponId)
+			}
+		},
+
+		// 切换特权选择状态
+		togglePrivilegeSelection(privilegeId) {
+			const index = this.selectedPrivileges.indexOf(privilegeId)
+			if (index > -1) {
+				this.selectedPrivileges.splice(index, 1)
+			} else {
+				this.selectedPrivileges.push(privilegeId)
+			}
+		},
+
+		// 重置选择状态
+		resetSelections() {
+			this.giftPoints = ''
+			this.selectedCoupons = []
+			this.selectedPrivileges = []
 		},
 
 		confirmAction() {
 			// 构建操作数据
 			const actionData = {
 				actionType: this.actionType,
-				consumer: this.consumerData,
-				// 这里可以添加具体的操作数据
+				consumer: this.consumerData
+			}
+
+			// 如果是赠送操作，添加赠送内容
+			if (this.actionType === 'gift') {
+				actionData.giftData = {
+					points: this.giftPoints ? parseInt(this.giftPoints) : 0,
+					coupons: this.selectedCoupons,
+					privileges: this.selectedPrivileges
+				}
 			}
 
 			this.$emit('confirm', actionData)
+			this.closePanel()
 		}
 	}
 }
@@ -124,6 +241,9 @@ export default {
 	max-height: 80vh;
 	display: flex;
 	flex-direction: column;
+	width: 100%;
+	max-width: 100vw;
+	overflow: hidden;
 }
 
 .consumer-header {
@@ -153,8 +273,11 @@ export default {
 
 .consumer-content {
 	flex: 1;
-	padding: 0 30rpx;
+	padding: 0 20rpx;
 	max-height: 60vh;
+	width: 100%;
+	box-sizing: border-box;
+	overflow-x: hidden;
 }
 
 .consumer-info-section,
@@ -213,6 +336,226 @@ export default {
 		font-size: 28rpx;
 		color: #999;
 		text-align: center;
+	}
+}
+
+// 新增的赠送区域样式
+.gift-section {
+	margin-bottom: 40rpx;
+	width: 100%;
+	box-sizing: border-box;
+
+	.section-title {
+		display: block;
+		font-size: 30rpx;
+		font-weight: bold;
+		color: #333;
+		margin-bottom: 20rpx;
+		padding-top: 30rpx;
+	}
+}
+
+// 积分输入框样式
+.points-input-wrapper {
+	margin-bottom: 20rpx;
+	width: 100%;
+	box-sizing: border-box;
+
+	// 修复 uni-easyinput 组件的宽度问题
+	:deep(.uni-easyinput) {
+		width: 100% !important;
+	}
+
+	:deep(.uni-easyinput__content) {
+		width: 100% !important;
+		box-sizing: border-box !important;
+	}
+
+	:deep(.uni-easyinput__content-input) {
+		width: 100% !important;
+		box-sizing: border-box !important;
+	}
+}
+
+// 福利卡片通用样式
+.benefit-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 20rpx;
+	margin-bottom: 16rpx;
+	border-radius: 16rpx;
+	border: 2rpx solid;
+	background-color: #fff;
+	transition: all 0.3s ease;
+	position: relative;
+	width: 100%;
+	box-sizing: border-box;
+	overflow: hidden;
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+
+	.card-content {
+		flex: 1;
+		min-width: 0; /* 允许弹性元素缩小 */
+		padding-right: 15rpx;
+
+		.card-title {
+			display: block;
+			font-size: 28rpx;
+			font-weight: bold;
+			margin-bottom: 8rpx;
+			color: #333;
+			word-break: break-all;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.card-description {
+			display: block;
+			font-size: 24rpx;
+			color: #666;
+			line-height: 1.4;
+			word-break: break-all;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			/* 显示两行 */
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+		}
+	}
+
+	.card-check {
+		width: 36rpx;
+		height: 36rpx;
+		border-radius: 50%;
+		background-color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0; /* 防止缩小 */
+
+		.check-icon {
+			font-size: 20rpx;
+			color: #fff;
+			font-weight: bold;
+		}
+	}
+}
+
+// 优惠券卡片样式（红色主题）
+.coupon-card {
+	// 默认红色主题
+	border-color: #ffcdd2;
+	background-color: #fff5f5;
+
+	.card-title {
+		color: #d32f2f !important;
+	}
+
+	.card-description {
+		color: #757575 !important;
+	}
+
+	&:active {
+		transform: scale(0.98);
+	}
+
+	&.selected {
+		border-color: #d32f2f;
+		background-color: #ffebee;
+		box-shadow: 0 2rpx 8rpx rgba(211, 47, 47, 0.2);
+
+		.card-check {
+			background-color: #d32f2f;
+		}
+
+		.card-title {
+			color: #d32f2f !important;
+		}
+	}
+
+	&:not(.selected) {
+		&:hover {
+			border-color: #ef5350;
+			background-color: #ffebee;
+		}
+	}
+}
+
+// 特权卡片样式（蓝色主题）
+.privilege-card {
+	// 默认蓝色主题
+	border-color: #bbdefb;
+	background-color: #f3f9ff;
+
+	.card-title {
+		color: #1976d2 !important;
+	}
+
+	.card-description {
+		color: #757575 !important;
+	}
+
+	&:active {
+		transform: scale(0.98);
+	}
+
+	&.selected {
+		border-color: #1976d2;
+		background-color: #e3f2fd;
+		box-shadow: 0 2rpx 8rpx rgba(25, 118, 210, 0.2);
+
+		.card-check {
+			background-color: #1976d2;
+		}
+
+		.card-title {
+			color: #1976d2 !important;
+		}
+	}
+
+	&:not(.selected) {
+		&:hover {
+			border-color: #42a5f5;
+			background-color: #e3f2fd;
+		}
+	}
+}
+
+// 列表容器样式
+.coupons-list,
+.privileges-list {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+// 列表容器样式
+.coupons-list,
+.privileges-list {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+// 空列表样式
+.empty-list {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 120rpx;
+	background-color: #f9f9f9;
+	border-radius: 16rpx;
+	border: 1rpx solid #eee;
+	width: 100%;
+	box-sizing: border-box;
+
+	.empty-text {
+		font-size: 28rpx;
+		color: #999;
 	}
 }
 

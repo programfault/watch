@@ -84,3 +84,17 @@ export function searchWatches(filters = {}) {
     showError: true
   })
 }
+
+/**
+ * 获取用户福利信息（优惠券和特权）
+ * @param {Object} params - 查询参数
+ * @param {string} [params.type] - 筛选类型 (coupon, privilege)
+ * @param {string} [params.status] - 状态筛选 (active, expired)
+ * @returns {Promise}
+ */
+export function getBenefits(params = {}) {
+  return get('/benefits', params, {
+    showLoading: false,
+    showError: true
+  })
+}

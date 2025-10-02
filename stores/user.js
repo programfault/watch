@@ -1,5 +1,5 @@
-import { addCustomer, getConsumers, getCustomers, getUserInfo, login, updateCustomer } from '@/api'
 import { defineStore } from 'pinia'
+import { addCustomer, getBenefits, getConsumers, getCustomers, getUserInfo, login, updateCustomer } from '@/api'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -22,7 +22,23 @@ export const useUserStore = defineStore('user', {
 		// 消费者管理
 		consumers: [],
 		consumersLoading: false,
-		consumersTotal: 0,    // 权限相关
+		consumersTotal: 0,
+
+		// 福利管理（优惠券和特权）
+		benefits: {
+			coupons: [],
+			privileges: [],
+			coupons_count: 0,
+			privileges_count: 0,
+			total_count: 0,
+			filters: {
+				type: null,
+				status: 'active'
+			}
+		},
+		benefitsLoading: false,
+
+    // 权限相关
     permissions: [],
 
     // 用户设置
@@ -67,6 +83,31 @@ export const useUserStore = defineStore('user', {
     // 消费者总数
     consumersCount: (state) => {
       return state.consumers.length
+    },
+
+    // 福利相关 getters
+    hasBenefits: (state) => {
+      return state.benefits.coupons.length > 0 || state.benefits.privileges.length > 0
+    },
+
+    // 可用优惠券数量
+    availableCouponsCount: (state) => {
+      return state.benefits.coupons.filter(coupon => coupon.is_valid && coupon.status).length
+    },
+
+    // 可用特权数量
+    availablePrivilegesCount: (state) => {
+      return state.benefits.privileges.filter(privilege => privilege.is_valid && privilege.status).length
+    },
+
+    // 获取所有优惠券（响应式）
+    benefitsCoupons: (state) => {
+      return state.benefits.coupons || []
+    },
+
+    // 获取所有特权（响应式）
+    benefitsPrivileges: (state) => {
+      return state.benefits.privileges || []
     }
   },
 
@@ -298,6 +339,70 @@ export const useUserStore = defineStore('user', {
       this.consumersPage = 1
       this.consumersTotal = 0
       this.consumersHasMore = true
+    },
+
+    // 获取福利信息（优惠券和特权）
+    async fetchBenefits(params = {}) {
+      if (this.benefitsLoading) return
+
+      this.benefitsLoading = true
+      try {
+        console.log('发送福利请求，参数:', params)
+        const response = await getBenefits(params)
+        console.log('收到福利响应:', response)
+
+        // 处理响应数据 - 检查两种可能的数据结构
+        let benefitsData = null
+
+        if (response?.data) {
+          // 数据嵌套在 data 字段中
+          benefitsData = response.data
+        } else if (response?.coupons || response?.privileges) {
+          // 数据直接在根级别
+          benefitsData = response
+        }
+
+        if (benefitsData) {
+          this.benefits = {
+            coupons: benefitsData.coupons || [],
+            privileges: benefitsData.privileges || [],
+            coupons_count: benefitsData.coupons_count || 0,
+            privileges_count: benefitsData.privileges_count || 0,
+            total_count: benefitsData.total_count || 0,
+            filters: benefitsData.filters || { type: null, status: 'active' }
+          }
+
+          console.log('福利数据更新成功:', {
+            coupons: this.benefits.coupons.length,
+            privileges: this.benefits.privileges.length,
+            total: this.benefits.total_count
+          })
+        } else {
+          console.log('福利响应格式不符合预期:', response)
+        }
+
+        return this.benefits
+      } catch (error) {
+        console.error('获取福利信息失败:', error)
+        throw error
+      } finally {
+        this.benefitsLoading = false
+      }
+    },
+
+    // 重置福利数据
+    resetBenefits() {
+      this.benefits = {
+        coupons: [],
+        privileges: [],
+        coupons_count: 0,
+        privileges_count: 0,
+        total_count: 0,
+        filters: {
+          type: null,
+          status: 'active'
+        }
+      }
     }
   }
 })

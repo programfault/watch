@@ -137,9 +137,13 @@ export default {
     // 加载数据
     async loadData() {
       try {
-        await this.userStore.fetchConsumers();
+        // 并行加载消费者数据和福利数据
+        await Promise.all([
+          this.userStore.fetchConsumers(),
+          this.userStore.fetchBenefits()
+        ]);
       } catch (error) {
-        console.error("加载消费者数据失败:", error);
+        console.error("加载数据失败:", error);
         uni.showModal({
           title: "加载失败",
           content: `错误信息: ${error.message || error}`,
@@ -152,8 +156,13 @@ export default {
     async onRefresh() {
       this.isRefreshing = true;
       try {
+        // 重置并刷新所有数据
         this.userStore.resetConsumers();
-        await this.userStore.fetchConsumers();
+        this.userStore.resetBenefits();
+        await Promise.all([
+          this.userStore.fetchConsumers(),
+          this.userStore.fetchBenefits()
+        ]);
         uni.showToast({
           title: "刷新成功",
           icon: "success",
@@ -172,8 +181,13 @@ export default {
     // 刷新数据
     async refreshData() {
       try {
+        // 重置并刷新所有数据
         this.userStore.resetConsumers();
-        await this.userStore.fetchConsumers();
+        this.userStore.resetBenefits();
+        await Promise.all([
+          this.userStore.fetchConsumers(),
+          this.userStore.fetchBenefits()
+        ]);
         uni.showToast({
           title: "刷新成功",
           icon: "success",
