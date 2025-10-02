@@ -76,11 +76,6 @@
         <!-- 空状态 -->
         <view class="empty-state" v-else>
           <text class="empty-text">暂无消费者数据</text>
-          <view class="empty-buttons">
-            <button class="refresh-btn" @click="refreshData">刷新数据</button>
-            <button class="test-btn" @click="testAPI">测试API</button>
-            <button class="mock-btn" @click="loadMockData">加载测试数据</button>
-          </view>
         </view>
 
         <!-- 由于不支持分页，移除加载更多功能 -->
@@ -137,18 +132,7 @@ export default {
     // 加载数据
     async loadData() {
       try {
-        console.log("开始加载消费者数据...");
-        console.log("当前consumers状态:", this.userStore.consumers);
-        console.log(
-          "当前consumersLoading状态:",
-          this.userStore.consumersLoading
-        );
-        console.log("当前hasConsumers状态:", this.userStore.hasConsumers);
-
-        const result = await this.userStore.fetchConsumers();
-        console.log("fetchConsumers返回结果:", result);
-        console.log("加载后consumers状态:", this.userStore.consumers);
-        console.log("加载后hasConsumers状态:", this.userStore.hasConsumers);
+        await this.userStore.fetchConsumers();
       } catch (error) {
         console.error("加载消费者数据失败:", error);
         uni.showModal({
@@ -201,18 +185,6 @@ export default {
       }
     },
 
-    // 移除加载更多方法，因为不支持分页
-    // async loadMore() {
-    // 	try {
-    // 		await this.userStore.fetchConsumers({}, true)
-    // 	} catch (error) {
-    // 		console.error('加载更多失败:', error)
-    // 		uni.showToast({
-    // 			title: '加载更多失败',
-    // 			icon: 'none'
-    // 		})
-    // 	}
-    // },
 
     // 处理滑动操作
     handleSwipeAction(e, consumer) {
@@ -257,30 +229,6 @@ export default {
       // TODO: 执行搜索
     },
 
-    // 测试API调用
-    async testAPI() {
-      try {
-        console.log("开始测试API调用...");
-        // 直接调用API函数
-        const { getConsumers } = await import("@/api");
-        const result = await getConsumers();
-        console.log("直接API调用结果:", result);
-
-        uni.showModal({
-          title: "API测试结果",
-          content: JSON.stringify(result, null, 2),
-          showCancel: false,
-        });
-      } catch (error) {
-        console.error("API测试失败:", error);
-        uni.showModal({
-          title: "API测试失败",
-          content: `错误: ${error.message || error}`,
-          showCancel: false,
-        });
-      }
-    },
-
     // 获取头像文本
     getAvatarText(consumer) {
       if (consumer?.name?.trim()) {
@@ -290,59 +238,6 @@ export default {
         // 如果姓名为空，显示"匿"
         return "匿";
       }
-    },
-
-    // 加载模拟数据（用于测试界面）
-    async loadMockData() {
-      const mockData = {
-        code: 200,
-        message: "success",
-        data: {
-          users: [
-            {
-              id: 1,
-              name: "张三",
-              phone: "130****9901",
-              birthday: "1982-02-20",
-              gender: 1,
-              points: 150,
-              coupon_count: 3,
-              privilege_count: 2,
-            },
-            {
-              id: 2,
-              name: "李美",
-              phone: "138****8888",
-              birthday: "1990-05-15",
-              gender: 2,
-              points: 80,
-              coupon_count: 1,
-              privilege_count: 1,
-            },
-            {
-              id: 3,
-              name: "",
-              phone: "139****7777",
-              birthday: "1985-03-10",
-              gender: 1,
-              points: 200,
-              coupon_count: 2,
-              privilege_count: 3,
-            },
-          ],
-          total: 3,
-        },
-      };
-
-      // 直接设置到store中
-      this.userStore.consumers = mockData.data.users;
-      this.userStore.consumersTotal = mockData.data.total;
-      this.userStore.consumersHasMore = false;
-
-      uni.showToast({
-        title: "模拟数据已加载",
-        icon: "success",
-      });
     },
   },
 };
@@ -366,20 +261,6 @@ export default {
   padding: 10px 16px 8px;
   border-bottom: 1px solid #f0f0f0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-  .color-indicators {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    margin-top: 8px;
-    padding: 6px 0;
-
-    .indicator-item {
-      display: flex;
-      align-items: center;
-    }
-  }
 }
 
 .scroll-content {
@@ -552,36 +433,6 @@ export default {
     flex-direction: column;
     gap: 10px;
     align-items: center;
-  }
-
-  .refresh-btn {
-    background: #007aff;
-    color: #fff;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 20px;
-    font-size: 14px;
-    width: 120px;
-  }
-
-  .test-btn {
-    background: #ff9500;
-    color: #fff;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 20px;
-    font-size: 14px;
-    width: 120px;
-  }
-
-  .mock-btn {
-    background: #34c759;
-    color: #fff;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 20px;
-    font-size: 14px;
-    width: 120px;
   }
 }
 
