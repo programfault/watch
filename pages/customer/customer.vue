@@ -92,6 +92,11 @@
       ref="consumerPanel"
       :consumerData="selectedConsumer"
       :actionType="currentActionType"
+      :coupons="panelCoupons"
+      :privileges="panelPrivileges"
+      :showPoints="true"
+      :showCoupons="true"
+      :showPrivileges="true"
       @confirm="handlePanelConfirm"
     />
   </view>
@@ -117,6 +122,11 @@ export default {
       isRefreshing: false,
       selectedConsumer: null,
       currentActionType: 'gift', // 'gift' 或 'verify'
+      // 面板显示的动态数据，根据操作类型设置不同来源的数据
+      // 赠送时：使用 userStore.benefitsCoupons (系统可用的福利)
+      // 核销时：使用 consumer.coupons/privileges (消费者已有的福利)
+      panelCoupons: [],
+      panelPrivileges: [],
     };
   },
   async onLoad() {
@@ -210,6 +220,9 @@ export default {
       console.log("赠送操作:", consumer);
       this.selectedConsumer = consumer;
       this.currentActionType = 'gift';
+      // 赠送时使用系统可用的福利数据
+      this.panelCoupons = this.userStore.benefitsCoupons || [];
+      this.panelPrivileges = this.userStore.benefitsPrivileges || [];
       this.$refs.consumerPanel.openPanel();
     },
 
@@ -218,17 +231,71 @@ export default {
       console.log("核销操作:", consumer);
       this.selectedConsumer = consumer;
       this.currentActionType = 'verify';
+      // 核销时直接从消费者对象中获取已有的福利数据
+      this.panelCoupons = consumer.coupons || [];
+      this.panelPrivileges = consumer.privileges || [];
       this.$refs.consumerPanel.openPanel();
     },
+
+
 
     // 处理面板确认事件
     handlePanelConfirm(data) {
       console.log('面板确认:', data);
-      // TODO: 根据 currentActionType 和 data 执行相应的业务逻辑
-      uni.showToast({
-        title: this.currentActionType === 'gift' ? '赠送成功' : '核销成功',
-        icon: 'success'
-      });
+
+      if (this.currentActionType === 'gift') {
+        // 赠送操作
+        this.handleGiftConfirm(data);
+      } else {
+        // 核销操作
+        this.handleVerifyConfirm(data);
+      }
+    },
+
+    // 处理赠送确认
+    async handleGiftConfirm(data) {
+      try {
+        // TODO: 调用赠送 API
+        // await giftBenefitsToConsumer(data.consumer.id, data.giftData)
+
+        console.log('赠送数据:', data.giftData);
+        uni.showToast({
+          title: '赠送成功',
+          icon: 'success'
+        });
+
+        // 赠送成功后可以刷新数据
+        // this.loadData();
+      } catch (error) {
+        console.error('赠送失败:', error);
+        uni.showToast({
+          title: '赠送失败',
+          icon: 'error'
+        });
+      }
+    },
+
+    // 处理核销确认
+    async handleVerifyConfirm(data) {
+      try {
+        // TODO: 调用核销 API
+        // await verifyConsumerBenefits(data.consumer.id, data.giftData)
+
+        console.log('核销数据:', data.giftData);
+        uni.showToast({
+          title: '核销成功',
+          icon: 'success'
+        });
+
+        // 核销成功后可以刷新数据
+        // this.loadData();
+      } catch (error) {
+        console.error('核销失败:', error);
+        uni.showToast({
+          title: '核销失败',
+          icon: 'error'
+        });
+      }
     },
 
     // 搜索输入事件（暂时为空）

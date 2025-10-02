@@ -3,7 +3,7 @@
 		<view class="consumer-panel">
 			<!-- 头部 -->
 			<view class="consumer-header">
-				<text class="header-title">{{ actionType === 'gift' ? '赠送' : '核销' }}</text>
+				<text class="header-title">{{ panelTitle }}</text>
 				<view class="header-actions">
 					<text class="close-btn" @click="closePanel">×</text>
 				</view>
@@ -12,86 +12,82 @@
 			<!-- 内容区域 -->
 			<scroll-view scroll-y class="consumer-content">
 				<!-- 操作区域 -->
-				<template v-if="actionType === 'gift'">
-					<!-- 赠送积分区域 -->
-					<view class="gift-section">
-						<text class="section-title">赠送积分</text>
-						<view class="points-input-wrapper">
-							<uni-easyinput
-								v-model="giftPoints"
-								type="number"
-								placeholder="请输入要赠送的积分数量"
-								:clearable="true"
-							/>
-						</view>
+				<!-- 积分区域 -->
+				<view v-if="showPoints" class="action-section">
+					<text class="section-title">{{ pointsTitle }}</text>
+					<view class="points-input-wrapper">
+						<uni-easyinput
+							v-model="giftPoints"
+							type="number"
+							:placeholder="pointsPlaceholder"
+							:clearable="true"
+						/>
 					</view>
+				</view>
 
-					<!-- 赠送优惠券区域 -->
-					<view class="gift-section">
-						<text class="section-title">赠送优惠券</text>
-						<view class="coupons-list">
-							<view
-								v-for="coupon in coupons"
-								:key="coupon.id"
-								class="benefit-card coupon-card"
-								:class="{ 'selected': selectedCoupons.includes(coupon.id) }"
-								@click="toggleCouponSelection(coupon.id)"
-							>
-								<view class="card-content">
-									<text class="card-title">{{ coupon.name }}</text>
-									<text class="card-description">{{ coupon.description }}</text>
-								</view>
-								<view class="card-check" v-if="selectedCoupons.includes(coupon.id)">
-									<text class="check-icon">✓</text>
-								</view>
+				<!-- 优惠券区域 -->
+				<view v-if="showCoupons" class="action-section">
+					<text class="section-title">{{ couponsTitle }}</text>
+					<view class="coupons-list">
+						<view
+							v-for="coupon in coupons"
+							:key="coupon.id"
+							class="benefit-card coupon-card"
+							:class="{ 'selected': selectedCoupons.includes(coupon.id) }"
+							@click="toggleCouponSelection(coupon.id)"
+						>
+							<view class="card-content">
+								<text class="card-title">{{ coupon.name }}</text>
+								<text class="card-description">{{ coupon.description }}</text>
 							</view>
-							<view v-if="coupons.length === 0" class="empty-list">
-								<text class="empty-text">暂无可用优惠券</text>
+							<view class="card-check" v-if="selectedCoupons.includes(coupon.id)">
+								<text class="check-icon">✓</text>
 							</view>
 						</view>
+						<view v-if="coupons.length === 0" class="empty-list">
+							<text class="empty-text">暂无可用优惠券</text>
+						</view>
 					</view>
+				</view>
 
-					<!-- 赠送特权区域 -->
-					<view class="gift-section">
-						<text class="section-title">赠送特权</text>
-						<view class="privileges-list">
-							<view
-								v-for="privilege in privileges"
-								:key="privilege.id"
-								class="benefit-card privilege-card"
-								:class="{ 'selected': selectedPrivileges.includes(privilege.id) }"
-								@click="togglePrivilegeSelection(privilege.id)"
-							>
-								<view class="card-content">
-									<text class="card-title">{{ privilege.name }}</text>
-									<text class="card-description">{{ privilege.description }}</text>
-								</view>
-								<view class="card-check" v-if="selectedPrivileges.includes(privilege.id)">
-									<text class="check-icon">✓</text>
-								</view>
+				<!-- 特权区域 -->
+				<view v-if="showPrivileges" class="action-section">
+					<text class="section-title">{{ privilegesTitle }}</text>
+					<view class="privileges-list">
+						<view
+							v-for="privilege in privileges"
+							:key="privilege.id"
+							class="benefit-card privilege-card"
+							:class="{ 'selected': selectedPrivileges.includes(privilege.id) }"
+							@click="togglePrivilegeSelection(privilege.id)"
+						>
+							<view class="card-content">
+								<text class="card-title">{{ privilege.name }}</text>
+								<text class="card-description">{{ privilege.description }}</text>
 							</view>
-							<view v-if="privileges.length === 0" class="empty-list">
-								<text class="empty-text">暂无可用特权</text>
+							<view class="card-check" v-if="selectedPrivileges.includes(privilege.id)">
+								<text class="check-icon">✓</text>
 							</view>
 						</view>
+						<view v-if="privileges.length === 0" class="empty-list">
+							<text class="empty-text">暂无可用特权</text>
+						</view>
 					</view>
-				</template>
+				</view>
 
-				<!-- 核销区域保持原样 -->
-				<template v-else>
-					<view class="action-section">
-						<text class="section-title">选择核销内容</text>
-						<view class="placeholder-content">
-							<text class="placeholder-text">请选择要核销的优惠券</text>
-						</view>
+				<!-- 默认提示区域（当所有区域都隐藏时） -->
+				<view v-if="!showPoints && !showCoupons && !showPrivileges" class="action-section">
+					<text class="section-title">选择内容</text>
+					<view class="placeholder-content">
+						<text class="placeholder-text">{{ selectHintText }}</text>
 					</view>
-				</template>
+				</view>
 			</scroll-view>
 
 			<!-- 底部按钮 -->
 			<view class="consumer-footer">
 				<view class="confirm-btn" @click="confirmAction">
-					<text class="confirm-text">{{ actionType === 'gift' ? '确定赠送' : '确定核销' }}</text>
+					<text class="confirm-text">{{ confirmText }}</text>
 				</view>
 			</view>
 		</view>
@@ -99,17 +95,12 @@
 </template>
 
 <script>
-import { useUserStore } from '@/stores'
+
 
 export default {
 	name: 'ConsumerPanel',
 
-	setup() {
-		const userStore = useUserStore()
-		return {
-			userStore
-		}
-	},
+
 
 	props: {
 		visible: {
@@ -123,6 +114,31 @@ export default {
 		consumerData: {
 			type: Object,
 			default: null
+		},
+		// 优惠券列表数据
+		coupons: {
+			type: Array,
+			default: () => []
+		},
+		// 特权列表数据
+		privileges: {
+			type: Array,
+			default: () => []
+		},
+		// 是否显示积分区域
+		showPoints: {
+			type: Boolean,
+			default: true
+		},
+		// 是否显示优惠券区域
+		showCoupons: {
+			type: Boolean,
+			default: true
+		},
+		// 是否显示特权区域
+		showPrivileges: {
+			type: Boolean,
+			default: true
 		}
 	},
 
@@ -138,18 +154,38 @@ export default {
 	},
 
 	computed: {
-		// 获取优惠券数据
-		coupons() {
-			return this.userStore.benefitsCoupons
+		// 动态生成标题
+		panelTitle() {
+			return this.actionType === 'gift' ? '赠送' : '核销'
 		},
-		// 获取特权数据
-		privileges() {
-			return this.userStore.benefitsPrivileges
+		// 动态生成积分标题
+		pointsTitle() {
+			return `${this.actionType === 'gift' ? '赠送' : '扣除'}积分`
+		},
+		// 动态生成优惠券标题
+		couponsTitle() {
+			return `${this.actionType === 'gift' ? '赠送' : '核销'}优惠券`
+		},
+		// 动态生成特权标题
+		privilegesTitle() {
+			return `${this.actionType === 'gift' ? '赠送' : '核销'}特权`
+		},
+		// 动态生成积分输入框提示文本
+		pointsPlaceholder() {
+			return `请输入要${this.actionType === 'gift' ? '赠送' : '扣除'}的积分数量`
+		},
+		// 动态生成确认按钮文本
+		confirmText() {
+			return `确定${this.actionType === 'gift' ? '赠送' : '核销'}`
+		},
+		// 动态生成选择提示文本
+		selectHintText() {
+			return `请选择要${this.actionType === 'gift' ? '赠送' : '核销'}的内容`
 		}
 	},
 
 	mounted() {
-		console.log('ConsumerPanel 组件已加载 - 优惠券:', this.coupons.length, '个, 特权:', this.privileges.length, '个')
+		console.log(`ConsumerPanel 组件已加载 - 操作类型: ${this.actionType}, 优惠券: ${this.coupons.length}个, 特权: ${this.privileges.length}个`)
 	},
 
 	watch: {
@@ -339,8 +375,8 @@ export default {
 	}
 }
 
-// 新增的赠送区域样式
-.gift-section {
+// 通用的操作区域样式
+.action-section {
 	margin-bottom: 40rpx;
 	width: 100%;
 	box-sizing: border-box;
