@@ -40,8 +40,8 @@
             >
               <view class="consumer-item">
                 <view class="consumer-avatar">
-                  <view class="avatar-circle">
-                    <text class="avatar-text">{{ consumer.phone.slice(-2) }}</text>
+                  <view class="avatar-circle" :class="{ 'avatar-female': consumer.gender === 2 }">
+                    <text class="avatar-text">{{ getAvatarText(consumer) }}</text>
                   </view>
                 </view>
                 <view class="consumer-content">
@@ -279,7 +279,20 @@ export default {
           showCancel: false,
         });
       }
-    }, // 加载模拟数据（用于测试界面）
+    },
+
+    // 获取头像文本
+    getAvatarText(consumer) {
+      if (consumer?.name?.trim()) {
+        // 如果有姓名，取第一个字符
+        return consumer.name.charAt(0).toUpperCase();
+      } else {
+        // 如果姓名为空，显示"匿"
+        return "匿";
+      }
+    },
+
+    // 加载模拟数据（用于测试界面）
     async loadMockData() {
       const mockData = {
         code: 200,
@@ -288,22 +301,36 @@ export default {
           users: [
             {
               id: 1,
+              name: "张三",
               phone: "130****9901",
               birthday: "1982-02-20",
+              gender: 1,
               points: 150,
               coupon_count: 3,
               privilege_count: 2,
             },
             {
               id: 2,
+              name: "李美",
               phone: "138****8888",
               birthday: "1990-05-15",
+              gender: 2,
               points: 80,
               coupon_count: 1,
               privilege_count: 1,
             },
+            {
+              id: 3,
+              name: "",
+              phone: "139****7777",
+              birthday: "1985-03-10",
+              gender: 1,
+              points: 200,
+              coupon_count: 2,
+              privilege_count: 3,
+            },
           ],
-          total: 2,
+          total: 3,
         },
       };
 
@@ -400,6 +427,11 @@ export default {
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: all 0.3s ease;
+
+        &.avatar-female {
+          background: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);
+        }
 
         .avatar-text {
           color: #fff;
