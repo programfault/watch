@@ -30,7 +30,7 @@
 					<text class="section-title">{{ couponsTitle }}</text>
 					<view class="coupons-list">
 						<view
-							v-for="coupon in coupons"
+							v-for="coupon in filteredCoupons"
 							:key="coupon.id"
 							class="benefit-card coupon-card"
 							:class="{ 'selected': selectedCoupons.includes(coupon.id) }"
@@ -39,12 +39,20 @@
 							<view class="card-content">
 								<text class="card-title">{{ coupon.name }}</text>
 								<text class="card-description">{{ coupon.description }}</text>
+								<view v-if="coupon.end_date" class="card-date">
+									<text class="date-label">截止日期：</text>
+									<text class="date-value">{{ formatDate(coupon.end_date) }}</text>
+								</view>
 							</view>
 							<view class="card-check" v-if="selectedCoupons.includes(coupon.id)">
 								<text class="check-icon">✓</text>
 							</view>
 						</view>
-						<view v-if="coupons.length === 0" class="empty-list">
+						<view v-if="filteredCoupons.length === 0 && coupons.length > 0 && actionType === 'gift'" class="empty-list warning">
+							<text class="empty-text">积分不足，暂无可赠送优惠券</text>
+							<text class="empty-sub-text">当前积分：{{ userPoints }}，需要更多积分解锁优惠券</text>
+						</view>
+						<view v-else-if="filteredCoupons.length === 0" class="empty-list">
 							<text class="empty-text">暂无可用优惠券</text>
 						</view>
 					</view>
@@ -64,6 +72,10 @@
 							<view class="card-content">
 								<text class="card-title">{{ privilege.name }}</text>
 								<text class="card-description">{{ privilege.description }}</text>
+								<view v-if="privilege.end_date" class="card-date">
+									<text class="date-label">截止日期：</text>
+									<text class="date-value">{{ formatDate(privilege.end_date) }}</text>
+								</view>
 							</view>
 							<view class="card-check" v-if="selectedPrivileges.includes(privilege.id)">
 								<text class="check-icon">✓</text>
@@ -139,6 +151,11 @@ export default {
 		showPrivileges: {
 			type: Boolean,
 			default: true
+		},
+		// 用户当前积分
+		userPoints: {
+			type: Number,
+			default: 0
 		}
 	},
 
@@ -181,11 +198,27 @@ export default {
 		// 动态生成选择提示文本
 		selectHintText() {
 			return `请选择要${this.actionType === 'gift' ? '赠送' : '核销'}的内容`
+		},
+		// 根据积分过滤优惠券（仅赠送模式）
+		filteredCoupons() {
+			if (this.actionType !== 'gift') {
+				// 核销模式显示所有优惠券
+				return this.coupons
+			}
+			// 赠送模式需要过滤积分门槛
+			return this.coupons.filter(coupon => {
+				// 如果没有积分门槛，则显示
+				if (!coupon.points_threshold && coupon.points_threshold !== 0) {
+					return true
+				}
+				// 用户积分大于等于门槛积分
+				return this.userPoints >= coupon.points_threshold
+			})
 		}
 	},
 
 	mounted() {
-		console.log(`ConsumerPanel 组件已加载 - 操作类型: ${this.actionType}, 优惠券: ${this.coupons.length}个, 特权: ${this.privileges.length}个`)
+		console.log(`ConsumerPanel 组件已加载 - 操作类型: ${this.actionType}, 优惠券: ${this.filteredCoupons.length}/${this.coupons.length}个, 特权: ${this.privileges.length}个, 用户积分: ${this.userPoints}`)
 	},
 
 	watch: {
@@ -206,6 +239,19 @@ export default {
 	},
 
 	methods: {
+		// 格式化日期
+		formatDate(dateStr) {
+			if (!dateStr) return ''
+			try {
+				const date = new Date(dateStr)
+				const year = date.getFullYear()
+				const month = String(date.getMonth() + 1).padStart(2, '0')
+				const day = String(date.getDate()).padStart(2, '0')
+				return `${year}-${month}-${day}`
+			} catch (_error) {
+				return dateStr
+			}
+		},
 		openPanel() {
 			if (this.$refs.consumerPopup) {
 				this.$refs.consumerPopup.open()
@@ -450,22 +496,38 @@ export default {
 			white-space: nowrap;
 		}
 
-		.card-description {
-			display: block;
-			font-size: 24rpx;
-			color: #666;
-			line-height: 1.4;
-			word-break: break-all;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			/* 显示两行 */
-			display: -webkit-box;
-			-webkit-line-clamp: 2;
-			-webkit-box-orient: vertical;
-		}
-	}
+			.card-description {
+				display: block;
+				font-size: 24rpx;
+				color: #666;
+				line-height: 1.4;
+				word-break: break-all;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				/* 显示两行 */
+				display: -webkit-box;
+				-webkit-line-clamp: 2;
+				-webkit-box-orient: vertical;
+			}
 
-	.card-check {
+			.card-date {
+				display: flex;
+				align-items: center;
+				margin-top: 8rpx;
+				gap: 4rpx;
+
+				.date-label {
+					font-size: 22rpx;
+					color: #999;
+				}
+
+				.date-value {
+					font-size: 22rpx;
+					color: #666;
+					font-weight: 500;
+				}
+			}
+		}	.card-check {
 		width: 36rpx;
 		height: 36rpx;
 		border-radius: 50%;
@@ -589,13 +651,29 @@ export default {
 	width: 100%;
 	box-sizing: border-box;
 
-	.empty-text {
-		font-size: 28rpx;
-		color: #999;
-	}
-}
+		.empty-text {
+			font-size: 28rpx;
+			color: #999;
+		}
 
-.consumer-footer {
+		&.warning {
+			background-color: #fff8e1;
+			border-color: #ffcc02;
+			flex-direction: column;
+			gap: 10rpx;
+
+			.empty-text {
+				color: #ff8f00;
+				font-weight: bold;
+			}
+
+			.empty-sub-text {
+				font-size: 24rpx;
+				color: #f57c00;
+				text-align: center;
+			}
+		}
+	}.consumer-footer {
 	padding: 30rpx;
 	border-top: 1rpx solid #eee;
 

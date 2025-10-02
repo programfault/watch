@@ -94,6 +94,7 @@
       :actionType="currentActionType"
       :coupons="panelCoupons"
       :privileges="panelPrivileges"
+      :userPoints="selectedConsumer?.points || 0"
       :showPoints="true"
       :showCoupons="true"
       :showPrivileges="true"
