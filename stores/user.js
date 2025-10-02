@@ -1,4 +1,4 @@
-import { addCustomer, getCustomers, getUserInfo, login, updateCustomer } from '@/api'
+import { addCustomer, getConsumers, getCustomers, getUserInfo, login, updateCustomer } from '@/api'
 import { defineStore } from 'pinia'
 
 export const useUserStore = defineStore('user', {
@@ -19,7 +19,10 @@ export const useUserStore = defineStore('user', {
     customersTotal: 0,
     customersHasMore: true,
 
-    // 权限相关
+		// 消费者管理
+		consumers: [],
+		consumersLoading: false,
+		consumersTotal: 0,    // 权限相关
     permissions: [],
 
     // 用户设置
@@ -54,6 +57,16 @@ export const useUserStore = defineStore('user', {
     // VIP 客户列表
     vipCustomers: (state) => {
       return state.customers.filter(customer => customer.level === 'vip')
+    },
+
+    // 消费者列表是否有数据
+    hasConsumers: (state) => {
+      return state.consumers.length > 0
+    },
+
+    // 消费者总数
+    consumersCount: (state) => {
+      return state.consumers.length
     }
   },
 
@@ -236,6 +249,55 @@ export const useUserStore = defineStore('user', {
     async initUser() {
       this.loadSettings()
       await this.checkLoginStatus()
+    },
+
+    // 获取消费者列表
+    async fetchConsumers(params = {}) {
+      if (this.consumersLoading) return
+
+      this.consumersLoading = true
+      try {
+        console.log('发送消费者请求，参数:', params)
+        const response = await getConsumers(params)
+        console.log('收到消费者响应:', response)
+
+        // 处理响应数据 - 直接使用响应数据
+        let consumersData = []
+        let total = 0
+
+			if (response?.users) {
+				// 直接使用响应数据
+				consumersData = response.users || []
+				total = response.total || 0
+				console.log('解析出的消费者数据:', consumersData, '总数:', total)
+			} else {
+				console.log('响应格式不符合预期:', response)
+			}        // 更新数据
+        this.consumers = consumersData
+        this.consumersTotal = total
+        this.consumersHasMore = false // 不支持分页，所以设为false
+
+        console.log('获取消费者列表成功:', {
+          consumers: this.consumers,
+          total: this.consumersTotal,
+          hasMore: this.consumersHasMore
+        })
+
+        return this.consumers
+      } catch (error) {
+        console.error('获取消费者列表失败:', error)
+        throw error
+      } finally {
+        this.consumersLoading = false
+      }
+    },
+
+    // 重置消费者列表
+    resetConsumers() {
+      this.consumers = []
+      this.consumersPage = 1
+      this.consumersTotal = 0
+      this.consumersHasMore = true
     }
   }
 })

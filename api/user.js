@@ -65,3 +65,22 @@ export function updateCustomer(id, customerData) {
     showError: true
   })
 }
+
+/**
+ * 获取消费者列表
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getConsumers(params = {}) {
+  console.log('发送消费者API请求，参数:', params)
+  return get('/consumers', params, {
+    showLoading: false,
+    showError: true
+  }).then(response => {
+    console.log('消费者API响应:', response)
+    return response
+  }).catch(error => {
+    console.error('消费者API请求失败:', error)
+    throw error
+  })
+}
