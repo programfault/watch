@@ -29,28 +29,39 @@
 				>
 					<view class="store-header">
 						<text class="store-name" @click="showStoreDetail(store)">{{ store.name }}</text>
-						<view class="phone-section" @click.stop="callStore(store)">
-							<uni-icons type="phone" size="14" color="#007aff" />
-							<text class="store-phone">{{ store.phone }}</text>
-						</view>
 					</view>
 					<view class="store-info">
 						<text class="store-address" @click="showStoreDetail(store)">{{ store.address }}</text>
-						<!-- 只有有位置权限且有距离信息时才显示 -->
-						<text class="store-distance" v-if="locationAuthorized && formatDistance(store)">距您 {{ formatDistance(store) }}</text>
 					</view>
 					<text class="store-description" @click="showStoreDetail(store)">{{ store.description }}</text>
 					<view class="store-footer">
 						<text class="store-hours">营业时间: {{ store.opening_hours }}</text>
-						<!-- 只有有位置权限时才显示导航按钮 -->
-						<view v-if="locationAuthorized" class="nav-button" @click.stop="navigateToStore(store)">
-							<uni-icons type="location" size="16" color="#fff" />
-							<text class="nav-text">导航</text>
-						</view>
-						<!-- 没有位置权限时显示提示 -->
-						<view v-else class="nav-disabled">
-							<uni-icons type="location" size="14" color="#ccc" />
-							<text class="nav-disabled-text">导航不可用</text>
+						<view class="action-buttons">
+							<!-- 距离显示在左侧 -->
+							<view class="distance-info">
+								<text class="distance-text" v-if="locationAuthorized && userLocation && formatDistance(store)">距您 {{ formatDistance(store) }}</text>
+								<text class="distance-placeholder" v-else-if="!locationAuthorized">位置未授权</text>
+								<text class="distance-placeholder" v-else-if="!userLocation">获取位置中...</text>
+								<text class="distance-placeholder" v-else-if="!store.latitude || !store.longitude">无位置信息</text>
+								<text class="distance-placeholder" v-else>计算异常</text>
+							</view>
+							<!-- 按钮组在右侧 -->
+							<view class="button-group">
+								<view class="phone-section" @click.stop="callStore(store)">
+									<uni-icons type="phone" size="14" color="#007aff" />
+									<text class="store-phone">电话</text>
+								</view>
+								<!-- 只有有位置权限时才显示导航按钮 -->
+								<view v-if="locationAuthorized" class="nav-button" @click.stop="navigateToStore(store)">
+									<uni-icons type="navigate" size="16" color="#fff" />
+									<text class="nav-text">导航</text>
+								</view>
+								<!-- 没有位置权限时显示提示 -->
+								<view v-else class="nav-disabled">
+									<uni-icons type="navigate" size="14" color="#ccc" />
+									<text class="nav-disabled-text">导航不可用</text>
+								</view>
+							</view>
 						</view>
 					</view>
 				</view>
@@ -78,7 +89,6 @@ export default {
 		return {
 			// 地理位置权限状态
 			locationAuthorized: false,
-			locationChecked: false,
 			// 用户当前位置
 			userLocation: null
 		}
@@ -173,7 +183,6 @@ export default {
 				// 如果已经有权限，直接获取位置
 				if (setting.authSetting['scope.userLocation'] === true) {
 					this.locationAuthorized = true
-					this.locationChecked = true
 					await this.getUserLocation()
 					return
 				}
@@ -181,7 +190,6 @@ export default {
 				// 如果之前拒绝过，不再主动弹窗
 				if (setting.authSetting['scope.userLocation'] === false) {
 					this.locationAuthorized = false
-					this.locationChecked = true
 					return
 				}
 
@@ -198,84 +206,27 @@ export default {
 					try {
 						await uni.authorize({ scope: 'scope.userLocation' })
 						this.locationAuthorized = true
-						this.locationChecked = true
 						await this.getUserLocation()
 						uni.showToast({ title: '位置权限开启成功', icon: 'success' })
 					} catch (authError) {
 						// 授权失败
 						this.locationAuthorized = false
-						this.locationChecked = true
 						console.log('用户拒绝了位置权限:', authError)
 					}
 				} else {
 					// 用户拒绝
 					this.locationAuthorized = false
-					this.locationChecked = true
 				}
 
 			} catch (error) {
 				console.error('检查位置权限失败:', error)
 				this.locationAuthorized = false
-				this.locationChecked = true
 			}
 		},
 
-		// 确保有地理位置权限（优化版）
-		async ensureLocationPermission() {
-			// 如果已经有权限，直接返回
-			if (this.locationAuthorized) {
-				return true
-			}
 
-			try {
-				// 直接尝试授权，UniApp会自动处理用户交互
-				await uni.authorize({
-					scope: 'scope.userLocation'
-				})
 
-				// 授权成功
-				this.locationAuthorized = true
-				this.getUserLocation()
-				uni.showToast({ title: '授权成功', icon: 'success' })
-				return true
 
-			} catch (authError) {
-				// 授权失败，引导用户到设置页面
-				console.log('授权失败:', authError)
-				const result = await uni.showModal({
-					title: '需要位置权限',
-					content: '请在设置中开启位置权限，以便为您提供最近门店的导航服务。',
-					confirmText: '去设置',
-					cancelText: '取消'
-				})
-
-				if (result.confirm) {
-					return this.openLocationSetting()
-				}
-				return false
-			}
-		},
-
-		// 打开位置设置页面
-		async openLocationSetting() {
-			try {
-				const settingRes = await uni.openSetting()
-
-				// 检查用户是否开启了位置权限
-				if (settingRes.authSetting['scope.userLocation']) {
-					this.locationAuthorized = true
-					this.getUserLocation()
-					uni.showToast({ title: '授权成功', icon: 'success' })
-					return true
-				} else {
-					uni.showToast({ title: '未开启位置权限', icon: 'none' })
-					return false
-				}
-			} catch (error) {
-				console.error('打开设置页面失败:', error)
-				return false
-			}
-		},
 
 		// 获取用户当前位置（优化版）
 		async getUserLocation() {
@@ -296,10 +247,28 @@ export default {
 
 			} catch (error) {
 				console.error('获取位置失败:', error)
-				uni.showToast({
-					title: '获取位置失败',
-					icon: 'none'
-				})
+
+				// 根据错误类型给出不同提示
+				if (error.errMsg?.includes('requiredPrivateInfos')) {
+					uni.showModal({
+						title: '配置错误',
+						content: '小程序需要重新发布才能使用位置功能，请联系开发者',
+						showCancel: false
+					})
+				} else if (error.errMsg?.includes('auth deny')) {
+					uni.showToast({
+						title: '位置权限被拒绝',
+						icon: 'none'
+					})
+				} else {
+					uni.showToast({
+						title: '获取位置失败',
+						icon: 'none'
+					})
+				}
+
+				// 重置权限状态
+				this.locationAuthorized = false
 				return null
 			}
 		},
@@ -327,8 +296,33 @@ export default {
 
 		// 格式化距离显示
 		formatDistance(store) {
+			// 调试信息
+			console.log('formatDistance - store:', {
+				name: store.name,
+				latitude: store.latitude,
+				longitude: store.longitude,
+				userLocation: this.userLocation,
+				locationAuthorized: this.locationAuthorized
+			})
+
+			// 检查必要的数据
+			if (!this.userLocation) {
+				console.log('用户位置为空')
+				return ''
+			}
+
+			if (!store.latitude || !store.longitude) {
+				console.log('店铺经纬度为空:', store.latitude, store.longitude)
+				return ''
+			}
+
 			const distance = this.calculateDistance(store)
-			if (distance === Infinity) return ''
+			console.log('计算出的距离:', distance)
+
+			if (distance === Infinity || Number.isNaN(distance)) {
+				console.log('距离计算异常')
+				return ''
+			}
 
 			if (distance < 1) {
 				return `${Math.round(distance * 1000)}m`
@@ -384,7 +378,6 @@ export default {
 			background: #f0f8ff;
 			padding: 6px 12px;
 			border-radius: 20px;
-			cursor: pointer;
 			transition: all 0.2s ease;
 
 			&:active {
@@ -417,63 +410,22 @@ export default {
 		position: relative;
 
 		.store-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: flex-start;
 			margin-bottom: 8px;
 
 			.store-name {
 				font-size: 16px;
 				font-weight: bold;
 				color: #333;
-				flex: 1;
-				margin-right: 10px;
-				cursor: pointer;
-			}
-
-			.phone-section {
-				display: flex;
-				align-items: center;
-				background: #f0f8ff;
-				padding: 4px 8px;
-				border-radius: 6px;
-				cursor: pointer;
-				transition: background-color 0.2s ease;
-
-				&:active {
-					background: #e6f3ff;
-				}
-
-				.store-phone {
-					font-size: 12px;
-					color: #007aff;
-					margin-left: 4px;
-				}
 			}
 		}
 
 		.store-info {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
 			margin-bottom: 6px;
 
 			.store-address {
 				font-size: 14px;
 				color: #666;
 				line-height: 1.4;
-				cursor: pointer;
-				flex: 1;
-			}
-
-			.store-distance {
-				font-size: 11px;
-				color: #007aff;
-				background: #f0f8ff;
-				padding: 2px 6px;
-				border-radius: 10px;
-				margin-left: 8px;
-				white-space: nowrap;
 			}
 		}
 
@@ -482,53 +434,106 @@ export default {
 			color: #999;
 			margin-bottom: 12px;
 			line-height: 1.3;
-			cursor: pointer;
 		}
 
 		.store-footer {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-
 			.store-hours {
 				font-size: 12px;
 				color: #666;
-				flex: 1;
+				margin-bottom: 10px;
 			}
 
-			.nav-button {
+			.action-buttons {
 				display: flex;
+				justify-content: space-between;
 				align-items: center;
-				background: linear-gradient(135deg, #007aff, #5ac8fa);
-				padding: 6px 12px;
-				border-radius: 20px;
-				cursor: pointer;
-				transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-				&:active {
-					transform: scale(0.95);
-					box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
+				.distance-info {
+					flex: 1;
+
+					.distance-text {
+						font-size: 11px;
+						color: #007aff;
+						background: #f0f8ff;
+						padding: 4px 8px;
+						border-radius: 10px;
+						display: inline-block;
+					}
+
+					.distance-placeholder {
+						font-size: 11px;
+						color: #999;
+						background: #f5f5f5;
+						padding: 4px 8px;
+						border-radius: 10px;
+						display: inline-block;
+					}
 				}
 
-				.nav-text {
-					font-size: 12px;
-					color: #fff;
-					margin-left: 4px;
-					font-weight: 500;
-				}
-			}
+				.button-group {
+					display: flex;
+					gap: 8px;
 
-			.nav-disabled {
-				display: flex;
-				align-items: center;
-				background: #f5f5f5;
-				padding: 6px 12px;
-				border-radius: 20px;
+					.phone-section {
+						display: flex;
+						align-items: center;
+						background: #f0f8ff;
+						padding: 6px 12px;
+						border-radius: 20px;
+						transition: background-color 0.2s ease;
+						justify-content: center;
+						min-width: 60px;
 
-				.nav-disabled-text {
-					font-size: 12px;
-					color: #999;
-					margin-left: 4px;
+						&:active {
+							background: #e6f3ff;
+						}
+
+						.store-phone {
+							font-size: 12px;
+							color: #007aff;
+							margin-left: 4px;
+							font-weight: 500;
+						}
+					}
+
+					.nav-button {
+						display: flex;
+						align-items: center;
+						background: linear-gradient(135deg, #007aff, #5ac8fa);
+						padding: 6px 12px;
+						border-radius: 20px;
+						transition: transform 0.2s ease, box-shadow 0.2s ease;
+						justify-content: center;
+						min-width: 60px;
+
+						&:active {
+							transform: scale(0.95);
+							box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
+						}
+
+						.nav-text {
+							font-size: 12px;
+							color: #fff;
+							margin-left: 4px;
+							font-weight: 500;
+						}
+					}
+
+					.nav-disabled {
+						display: flex;
+						align-items: center;
+						background: #f5f5f5;
+						padding: 6px 12px;
+						border-radius: 20px;
+						justify-content: center;
+						min-width: 60px;
+
+						.nav-disabled-text {
+							font-size: 12px;
+							color: #999;
+							margin-left: 4px;
+						}
+					}
 				}
 			}
 		}
