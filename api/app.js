@@ -98,3 +98,20 @@ export function getBenefits(params = {}) {
     showError: true
   })
 }
+
+/**
+ * 消费者操作接口（赠送或核销）
+ * @param {Object} payload - 操作数据
+ * @param {string} payload.actionType - 操作类型 ('gift' | 'verify')
+ * @param {string} payload.consumerId - 消费者ID
+ * @param {number} [payload.points=0] - 积分数量
+ * @param {Array<string>} [payload.coupons=[]] - 优惠券ID列表
+ * @param {Array<string>} [payload.privileges=[]] - 特权ID列表
+ * @returns {Promise}
+ */
+export function processConsumerAction(payload) {
+  return post('/consumers', payload, {
+    showLoading: true,
+    showError: true
+  })
+}

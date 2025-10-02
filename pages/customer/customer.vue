@@ -98,7 +98,8 @@
       :showPoints="true"
       :showCoupons="true"
       :showPrivileges="true"
-      @confirm="handlePanelConfirm"
+      @success="handlePanelSuccess"
+      @close="handlePanelClose"
     />
   </view>
 </template>
@@ -240,63 +241,32 @@ export default {
 
 
 
-    // 处理面板确认事件
-    handlePanelConfirm(data) {
-      console.log('面板确认:', data);
+    // 处理面板成功事件
+    async handlePanelSuccess(data) {
+      console.log('操作成功:', data);
 
-      if (this.currentActionType === 'gift') {
-        // 赠送操作
-        this.handleGiftConfirm(data);
-      } else {
-        // 核销操作
-        this.handleVerifyConfirm(data);
+      // 刷新数据以获取最新状态
+      try {
+        await this.loadData();
+      } catch (error) {
+        console.error('刷新数据失败:', error);
       }
+
+      // 重置选中的消费者（关闭面板）
+      this.selectedConsumer = null;
+      this.currentActionType = 'gift';
+      this.panelCoupons = [];
+      this.panelPrivileges = [];
     },
 
-    // 处理赠送确认
-    async handleGiftConfirm(data) {
-      try {
-        // TODO: 调用赠送 API
-        // await giftBenefitsToConsumer(data.consumer.id, data.giftData)
-
-        console.log('赠送数据:', data.giftData);
-        uni.showToast({
-          title: '赠送成功',
-          icon: 'success'
-        });
-
-        // 赠送成功后可以刷新数据
-        // this.loadData();
-      } catch (error) {
-        console.error('赠送失败:', error);
-        uni.showToast({
-          title: '赠送失败',
-          icon: 'error'
-        });
-      }
-    },
-
-    // 处理核销确认
-    async handleVerifyConfirm(data) {
-      try {
-        // TODO: 调用核销 API
-        // await verifyConsumerBenefits(data.consumer.id, data.giftData)
-
-        console.log('核销数据:', data.giftData);
-        uni.showToast({
-          title: '核销成功',
-          icon: 'success'
-        });
-
-        // 核销成功后可以刷新数据
-        // this.loadData();
-      } catch (error) {
-        console.error('核销失败:', error);
-        uni.showToast({
-          title: '核销失败',
-          icon: 'error'
-        });
-      }
+    // 处理面板关闭事件
+    handlePanelClose() {
+      console.log('面板关闭');
+      // 重置状态
+      this.selectedConsumer = null;
+      this.currentActionType = 'gift';
+      this.panelCoupons = [];
+      this.panelPrivileges = [];
     },
 
     // 搜索输入事件（暂时为空）

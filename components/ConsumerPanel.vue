@@ -107,7 +107,7 @@
 </template>
 
 <script>
-
+import { processConsumerAction } from '@/api/app'
 
 export default {
 	name: 'ConsumerPanel',
@@ -293,24 +293,72 @@ export default {
 			this.selectedPrivileges = []
 		},
 
-		confirmAction() {
-			// 构建操作数据
-			const actionData = {
+		async confirmAction() {
+			// 验证操作数据
+			if (!this.consumerData || !this.consumerData.id) {
+				uni.showToast({
+					title: '消费者信息缺失',
+					icon: 'none'
+				})
+				return
+			}
+
+			// 获取操作数据
+			const points = this.giftPoints ? parseInt(this.giftPoints) : 0
+			const coupons = this.selectedCoupons || []
+			const privileges = this.selectedPrivileges || []
+
+			// 验证是否有选择内容
+			if (points <= 0 && coupons.length === 0 && privileges.length === 0) {
+				uni.showToast({
+					title: `请选择要${this.actionType === 'gift' ? '赠送' : '核销'}的内容`,
+					icon: 'none'
+				})
+				return
+			}
+
+			// 构建简化的payload
+			const payload = {
 				actionType: this.actionType,
-				consumer: this.consumerData
+				consumerId: this.consumerData.id,
+				points: points,
+				coupons: coupons,
+				privileges: privileges
 			}
 
-			// 如果是赠送操作，添加赠送内容
-			if (this.actionType === 'gift') {
-				actionData.giftData = {
-					points: this.giftPoints ? parseInt(this.giftPoints) : 0,
-					coupons: this.selectedCoupons,
-					privileges: this.selectedPrivileges
-				}
-			}
+			try {
+				console.log('发送消费者操作请求:', payload)
 
-			this.$emit('confirm', actionData)
-			this.closePanel()
+				// 调用API
+				const response = await processConsumerAction(payload)
+
+				console.log('消费者操作响应:', response)
+
+				// 显示成功提示
+				uni.showToast({
+					title: `${this.actionType === 'gift' ? '赠送' : '核销'}操作成功`,
+					icon: 'success'
+				})
+
+				// 发送成功事件给父组件
+				this.$emit('success', {
+					actionType: this.actionType,
+					consumer: this.consumerData,
+					response: response
+				})
+
+				// 关闭面板
+				this.closePanel()
+
+			} catch (error) {
+				console.error('消费者操作失败:', error)
+
+				// 显示错误提示
+				uni.showToast({
+					title: error.message || `${this.actionType === 'gift' ? '赠送' : '核销'}操作失败`,
+					icon: 'none'
+				})
+			}
 		}
 	}
 }
