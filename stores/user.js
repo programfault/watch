@@ -1,4 +1,4 @@
-import { addCustomer, getBenefits, getConsumers, getCustomers, getUserInfo, login, updateCustomer } from '@/api'
+import { addCustomer, getBenefits, getConsumers, getCustomers, getUserInfo, login, refreshToken } from '@/api'
 import { defineStore } from 'pinia'
 
 export const useUserStore = defineStore('user', {
@@ -10,6 +10,9 @@ export const useUserStore = defineStore('user', {
 
     // 登录状态
     loginLoading: false,
+
+    // token 信息
+    tokens: null,
 
     // 客户管理
     customers: [],
@@ -174,26 +177,33 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
-    // 用户登录
+    // 微信小程序登录
     async loginUser(loginData) {
       if (this.loginLoading) return
 
       this.loginLoading = true
       try {
-        const data = await login(loginData)
-        const { userInfo, token, permissions = [] } = data
+        const response = await login(loginData)
 
-        // 保存用户信息
-        this.userInfo = userInfo
-        this.isLoggedIn = true
-        this.permissions = permissions
+        if (response.success) {
+          const { user, tokens, session_key } = response.data
 
-        // 保存 token 到本地存储
-        if (token) {
-          uni.setStorageSync('token', token)
+          // 保存用户信息
+          this.userInfo = user
+          this.isLoggedIn = true
+          this.tokens = tokens
+
+          // 保存到本地存储
+          uni.setStorageSync('userInfo', JSON.stringify(user))
+          uni.setStorageSync('tokens', JSON.stringify(tokens))
+          if (session_key) {
+            uni.setStorageSync('session_key', session_key)
+          }
+
+          return response.data
+        } else {
+          throw new Error(response.message || '登录失败')
         }
-
-        return data
       } catch (error) {
         console.error('登录失败:', error)
         this.logout()
@@ -222,18 +232,65 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    // 检查登录状态
+    checkLoginStatus() {
+      try {
+        const userInfo = uni.getStorageSync('userInfo')
+        const tokens = uni.getStorageSync('tokens')
+
+        if (userInfo && tokens) {
+          this.userInfo = JSON.parse(userInfo)
+          this.tokens = JSON.parse(tokens)
+          this.isLoggedIn = true
+          return true
+        } else {
+          this.logout()
+          return false
+        }
+      } catch (error) {
+        console.error('检查登录状态失败:', error)
+        this.logout()
+        return false
+      }
+    },
+
     // 用户登出
     logout() {
       this.userInfo = null
       this.isLoggedIn = false
+      this.tokens = null
       this.permissions = []
       this.customers = []
 
       // 清除本地存储
-      uni.removeStorageSync('token')
+      uni.removeStorageSync('userInfo')
+      uni.removeStorageSync('tokens')
+      uni.removeStorageSync('session_key')
+    },
 
-      // 可以跳转到登录页
-      // uni.reLaunch({ url: '/pages/login/login' })
+    // 刷新 token
+    async refreshUserToken() {
+      if (!this.tokens?.refresh_token) {
+        throw new Error('No refresh token available')
+      }
+
+      try {
+        const response = await refreshToken({
+          refresh_token: this.tokens.refresh_token
+        })
+
+        if (response.success) {
+          this.tokens = response.data.tokens
+          uni.setStorageSync('tokens', JSON.stringify(this.tokens))
+          return this.tokens
+        } else {
+          throw new Error(response.message || 'Token refresh failed')
+        }
+      } catch (error) {
+        console.error('刷新 token 失败:', error)
+        this.logout()
+        throw error
+      }
     },
 
     // 获取客户列表

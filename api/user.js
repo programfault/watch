@@ -17,15 +17,28 @@ export function getUserInfo() {
 }
 
 /**
- * 用户登录
+ * 微信小程序登录
  * @param {Object} loginData 登录数据
  * @param {string} loginData.code 微信登录code
  * @returns {Promise}
  */
 export function login(loginData) {
-  return post('/auth/login', loginData, {
+  return post('/login', loginData, {
     showLoading: true,
     showError: true
+  })
+}
+
+/**
+ * 刷新 token
+ * @param {Object} refreshData 刷新数据
+ * @param {string} refreshData.refresh_token 刷新token
+ * @returns {Promise}
+ */
+export function refreshToken(refreshData) {
+  return post('/refresh', refreshData, {
+    showLoading: false,
+    showError: false
   })
 }
 
