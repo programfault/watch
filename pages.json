@@ -34,6 +34,11 @@
 		"style": {
 			"navigationBarTitleText": "产品列表"
 		}
+	}, {
+		"path": "pages/maintenance/manual",
+		"style": {
+			"navigationBarTitleText": "保养手册"
+		}
 	}],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",

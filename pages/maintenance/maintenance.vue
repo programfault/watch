@@ -7,7 +7,13 @@
 
 		<!-- 店铺列表 -->
 		<view class="stores-section">
-			<view class="section-title">服务门店</view>
+			<view class="section-header">
+				<view class="section-title">服务门店</view>
+				<view class="manual-entry" @click="goToManual">
+					<uni-icons type="book" size="14" color="#007aff" />
+					<text class="manual-text">保养手册</text>
+				</view>
+			</view>
 
 			<!-- 加载状态 -->
 			<view class="loading" v-if="appStore.storesLoading">
@@ -115,6 +121,13 @@ export default {
 					icon: 'none'
 				})
 			}
+		},
+
+		// 跳转到保养手册
+		goToManual() {
+			uni.navigateTo({
+				url: '/pages/maintenance/manual'
+			})
 		}
 	}
 }
@@ -146,11 +159,39 @@ export default {
 }
 
 .stores-section {
-	.section-title {
-		font-size: 18px;
-		font-weight: bold;
-		color: #333;
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 		margin-bottom: 15px;
+
+		.section-title {
+			font-size: 18px;
+			font-weight: bold;
+			color: #333;
+		}
+
+		.manual-entry {
+			display: flex;
+			align-items: center;
+			background: #f0f8ff;
+			padding: 6px 12px;
+			border-radius: 20px;
+			cursor: pointer;
+			transition: all 0.2s ease;
+
+			&:active {
+				background: #e6f3ff;
+				transform: scale(0.95);
+			}
+
+			.manual-text {
+				font-size: 12px;
+				color: #007aff;
+				margin-left: 4px;
+				font-weight: 500;
+			}
+		}
 	}
 }
 
