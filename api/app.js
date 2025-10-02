@@ -39,6 +39,17 @@ export function getFilterOptions() {
 }
 
 /**
+ * 获取店铺列表
+ * @returns {Promise}
+ */
+export function getStores() {
+  return get('/stores', {}, {
+    showLoading: false,
+    showError: true
+  })
+}
+
+/**
  * 简单查询手表列表
  * @param {Object} params - 查询参数
  * @param {number} [params.brand_id] - 品牌ID

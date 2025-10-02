@@ -1,4 +1,4 @@
-import { getBrands, getFilterOptions, getPages } from '@/api'
+import { getBrands, getFilterOptions, getPages, getStores } from '@/api'
 import { defineStore } from 'pinia'
 
 export const useAppStore = defineStore('app', {
@@ -18,6 +18,10 @@ export const useAppStore = defineStore('app', {
     // 表的属性筛选选项
     filterOptions: [],
     filterOptionsLoading: false,
+
+    // 店铺数据
+    storesList: [],
+    storesLoading: false,
 
     // 全局加载状态
     globalLoading: false,
@@ -91,6 +95,31 @@ export const useAppStore = defineStore('app', {
           grouped[option.attribute_type] = []
         }
         grouped[option.attribute_type].push(option)
+      })
+      return grouped
+    },
+
+    // 所有店铺
+    allStores: (state) => {
+      return state.storesList
+    },
+
+    // 是否有店铺数据
+    hasStores: (state) => {
+      return state.storesList.length > 0
+    },
+
+    // 按城市分组的店铺
+    storesGroupedByCity: (state) => {
+      const grouped = {}
+      state.storesList.forEach(store => {
+        // 从地址中提取城市名称（简单实现）
+        const cityMatch = store.address.match(/^(.{2,4}市)/)
+        const city = cityMatch ? cityMatch[1] : '其他'
+        if (!grouped[city]) {
+          grouped[city] = []
+        }
+        grouped[city].push(store)
       })
       return grouped
     }
@@ -188,6 +217,76 @@ export const useAppStore = defineStore('app', {
       return this.carouselList.find(carousel => carousel.id === carouselId)
     },
 
+    // 获取店铺数据
+    async fetchStores() {
+      if (this.storesLoading) return
+
+      this.storesLoading = true
+      try {
+        const response = await getStores()
+        console.log('店铺API响应:', response)
+
+        // 处理多种可能的响应格式
+        if (response && response.code === 200 && response.data) {
+          // 标准格式: {code: 200, data: {stores: [...], total: 7}}
+          if (response.data.stores && Array.isArray(response.data.stores)) {
+            this.storesList = response.data.stores
+            console.log('店铺数据获取成功(标准格式):', this.storesList)
+          } else if (Array.isArray(response.data)) {
+            // 数据格式: {code: 200, data: [...]}
+            this.storesList = response.data
+            console.log('店铺数据获取成功(数组格式):', this.storesList)
+          } else {
+            console.warn('店铺数据结构异常 - data字段:', response.data)
+            this.storesList = []
+          }
+        } else if (response && response.stores && Array.isArray(response.stores)) {
+          // 直接格式: {stores: [...], total: 7}
+          this.storesList = response.stores
+          console.log('店铺数据获取成功(直接格式):', this.storesList)
+        } else if (response && Array.isArray(response)) {
+          // 直接数组格式: [...]
+          this.storesList = response
+          console.log('店铺数据获取成功(直接数组):', this.storesList)
+        } else {
+          console.warn('店铺API响应异常:', response)
+          this.storesList = []
+        }
+
+        return this.storesList
+      } catch (error) {
+        console.error('获取店铺失败:', error)
+        this.storesList = []
+        throw error
+      } finally {
+        this.storesLoading = false
+      }
+    },
+
+    // 根据 ID 获取店铺信息
+    getStoreById(storeId) {
+      return this.storesList.find(store => store.id === storeId)
+    },
+
+    // 根据名称或地址搜索店铺
+    searchStoresByKeyword(keyword) {
+      if (!keyword) return this.storesList
+
+      const searchTerm = keyword.toLowerCase()
+      return this.storesList.filter(store =>
+        store.name.toLowerCase().includes(searchTerm) ||
+        store.address.toLowerCase().includes(searchTerm) ||
+        store.description?.toLowerCase().includes(searchTerm)
+      )
+    },
+
+    // 根据城市筛选店铺
+    getStoresByCity(city) {
+      return this.storesList.filter(store =>
+        store.address.includes(city)
+      )
+    },
+
     // 设置全局加载状态
     setGlobalLoading(loading) {
       this.globalLoading = loading
@@ -262,7 +361,8 @@ export const useAppStore = defineStore('app', {
         await Promise.all([
           this.fetchPages(),
           this.fetchBrands(),
-          this.fetchFilterOptions()
+          this.fetchFilterOptions(),
+          this.fetchStores()
         ])
 
         this.initialized = true
@@ -280,7 +380,8 @@ export const useAppStore = defineStore('app', {
         await Promise.all([
           this.fetchPages(),
           this.fetchBrands(),
-          this.fetchFilterOptions()
+          this.fetchFilterOptions(),
+          this.fetchStores()
         ])
       } catch (error) {
         console.error('刷新应用数据失败:', error)
@@ -294,6 +395,7 @@ export const useAppStore = defineStore('app', {
       this.pagesList = []
       this.brandsList = []
       this.filterOptions = []
+      this.storesList = []
       this.initialized = false
       this.globalLoading = false
     }
