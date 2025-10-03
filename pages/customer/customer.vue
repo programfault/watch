@@ -119,6 +119,7 @@
 <script>
 import ConsumerPanel from "@/components/ConsumerPanel.vue";
 import { useUserStore } from "@/stores";
+import ScanUtils from "@/utils/scanUtils.js";
 
 export default {
   components: {
@@ -144,6 +145,9 @@ export default {
       panelPrivileges: [],
     };
   },
+  async onUnload(){
+    this.userStore.setConsumersCardNumber = ''
+  },
   async onLoad() {
     console.log('🚀 页面onLoad开始...');
     try {
@@ -153,6 +157,13 @@ export default {
     } catch (error) {
       console.error('❌ 页面onLoad失败:', error);
     }
+  },
+  onShow() {
+    console.log('🔍 customer页面 onShow');
+    console.log('🔍 当前搜索状态:', {
+      searchKeyword: this.userStore.consumersSearchKeyword,
+      cardNumber: this.userStore.consumersCardNumber
+    });
   },
   onPullDownRefresh() {
     // 下拉刷新
@@ -176,12 +187,13 @@ export default {
           this.userStore.fetchBenefits()
         ]);
 
-        console.log('数据加载完成，当前状态:');
+        console.log('🔍 数据加载完成，当前状态:');
         console.log('- consumers数量:', this.userStore.consumers.length);
         console.log('- filteredConsumers数量:', this.userStore.filteredConsumers.length);
         console.log('- hasFilteredConsumers:', this.userStore.hasFilteredConsumers);
         console.log('- consumersLoading:', this.userStore.consumersLoading);
         console.log('- searchKeyword:', this.userStore.consumersSearchKeyword);
+        console.log('- consumersCardNumber:', this.userStore.consumersCardNumber);
 
       } catch (error) {
         console.error("加载数据失败:", error);
@@ -326,114 +338,21 @@ export default {
       console.log('点击扫一扫');
 
       try {
-        // 检查摄像头权限
-        const authResult = await this.checkCameraAuth();
-        if (!authResult) {
-          return;
-        }
+        // 使用通用扫码工具
+        const scanResult = await ScanUtils.quickScan();
+        if (scanResult) {
+          console.log('🔍 customer页面扫码结果:', scanResult);
+          this.searchCard = scanResult;
 
-        // 打开扫码界面
-        const scanResult = await this.openScanCode();
-        if (scanResult?.result) {
-          console.log('扫码结果:', scanResult.result);
-          this.searchCard = scanResult.result;
-          this.userStore.setConsumersSearchKeyword(scanResult.result);
+          // 先清除之前的搜索条件
+          this.userStore.clearConsumersSearch();
 
-          uni.showToast({
-            title: '扫码成功',
-            icon: 'success'
-          });
+          // 设置卡号搜索
+          this.userStore.setConsumersCardNumber(scanResult);
         }
       } catch (error) {
         console.error('扫码失败:', error);
-        uni.showToast({
-          title: '扫码失败',
-          icon: 'none'
-        });
       }
-    },
-
-    // 检查摄像头权限
-    async checkCameraAuth() {
-      return new Promise((resolve) => {
-        uni.getSetting({
-          success: (res) => {
-            console.log('当前权限设置:', res.authSetting);
-
-            if (res.authSetting['scope.camera'] === false) {
-              // 用户曾经拒绝授权，引导到设置页面
-              uni.showModal({
-                title: '需要摄像头权限',
-                content: '请在设置中开启摄像头权限后重试',
-                confirmText: '去设置',
-                success: (modalRes) => {
-                  if (modalRes.confirm) {
-                    uni.openSetting({
-                      success: (settingRes) => {
-                        if (settingRes.authSetting['scope.camera']) {
-                          resolve(true);
-                        } else {
-                          resolve(false);
-                        }
-                      },
-                      fail: () => resolve(false)
-                    });
-                  } else {
-                    resolve(false);
-                  }
-                }
-              });
-            } else if (res.authSetting['scope.camera'] === undefined) {
-              // 未授权，请求授权
-              uni.authorize({
-                scope: 'scope.camera',
-                success: () => {
-                  console.log('摄像头授权成功');
-                  resolve(true);
-                },
-                fail: () => {
-                  console.log('摄像头授权失败');
-                  uni.showToast({
-                    title: '需要摄像头权限才能扫码',
-                    icon: 'none'
-                  });
-                  resolve(false);
-                }
-              });
-            } else {
-              // 已授权
-              resolve(true);
-            }
-          },
-          fail: () => {
-            console.error('获取权限设置失败');
-            resolve(false);
-          }
-        });
-      });
-    },
-
-    // 打开扫码界面
-    async openScanCode() {
-      return new Promise((resolve, reject) => {
-        uni.scanCode({
-          onlyFromCamera: true,
-          scanType: ['barCode', 'qrCode'],
-          success: (res) => {
-            console.log('扫码成功:', res);
-            resolve(res);
-          },
-          fail: (error) => {
-            console.error('扫码失败:', error);
-            if (error.errMsg?.includes('cancel')) {
-              // 用户取消扫码
-              resolve(null);
-            } else {
-              reject(error);
-            }
-          }
-        });
-      });
     },
 
     // 获取头像文本

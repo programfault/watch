@@ -13,6 +13,15 @@
         <!-- <view class="container">
             <button @click="openCustomerService">联系客服</button>
         </view> -->
+
+		<!-- 悬浮扫一扫按钮 - 仅管理员可见 -->
+		<view
+			v-if="userStore.isLoggedIn && userStore.isAdmin"
+			class="floating-scan-btn"
+			@click="handleFloatingScan"
+		>
+			<uni-icons type="scan" size="28" color="#fff"></uni-icons>
+		</view>
 	</view>
 </template>
 
@@ -20,8 +29,8 @@
 import BrandsComponent from '@/components/BrandsComponent.vue'
 import CarouselComponent from '@/components/CarouselComponent.vue'
 import HomeSearchComponent from '@/components/HomeSearchComponent.vue'
-import SearchComponent from '@/components/SearchComponent.vue'
-import { useAppStore, useSearchStore } from '@/stores'
+import { useAppStore, useSearchStore, useUserStore } from '@/stores'
+import ScanUtils from '@/utils/scanUtils.js'
 
 export default {
 	components: {
@@ -32,9 +41,11 @@ export default {
 	setup() {
 		const searchStore = useSearchStore()
 		const appStore = useAppStore()
+		const userStore = useUserStore()
 		return {
 			searchStore,
-			appStore
+			appStore,
+			userStore
 		}
 	},
 	data() {
@@ -54,6 +65,24 @@ export default {
 
 	onShow() {
 		console.log('Index页面 onShow')
+
+		// 每次页面显示都重新初始化 stores，确保状态正确
+		try {
+			console.log('🔍 强制重新初始化所有 stores');
+			this.userStore = useUserStore();
+			this.searchStore = useSearchStore();
+			this.appStore = useAppStore();
+
+			console.log('🔍 onShow - stores 重新初始化完成:', {
+				userStore: !!this.userStore && typeof this.userStore.setConsumersCardNumber === 'function',
+				searchStore: !!this.searchStore,
+				appStore: !!this.appStore,
+				userStoreMethods: this.userStore ? Object.getOwnPropertyNames(Object.getPrototypeOf(this.userStore)).slice(0, 5) : []
+			});
+		} catch (error) {
+			console.error('❌ onShow - stores 初始化失败:', error);
+		}
+
 		// 从其他页面返回首页时，完全重置搜索框
 		if (this.$refs.homeSearch) {
 			this.$refs.homeSearch.resetSearch()
@@ -92,7 +121,98 @@ export default {
 					})
 				}
 			})
-        }
+        },
+
+		// 悬浮扫一扫处理
+		async handleFloatingScan() {
+			console.log('悬浮扫一扫点击');
+
+			// 总是重新获取 userStore 实例以确保最新状态
+			let userStore = useUserStore();
+
+			// 更新组件的引用
+			this.userStore = userStore;
+
+			console.log('🔍 userStore 重新获取后检查:', {
+				userStoreExists: !!userStore,
+				clearMethodExists: !!userStore?.clearConsumersSearch,
+				setMethodExists: !!userStore?.setConsumersCardNumber,
+				storeType: typeof userStore,
+				isFunction: typeof userStore.setConsumersCardNumber,
+			});
+
+			try {
+				// 最后一次验证
+				if (!userStore) {
+					console.error('❌ userStore 获取失败');
+					uni.showToast({
+						title: '系统初始化失败',
+						icon: 'error'
+					});
+					return;
+				}
+
+				// 检查必要的方法是否存在
+				if (typeof userStore.setConsumersCardNumber !== 'function') {
+					console.error('❌ setConsumersCardNumber 方法不存在');
+					console.log('userStore 属性:', Object.keys(userStore));
+					console.log('userStore 原型方法:', Object.getOwnPropertyNames(Object.getPrototypeOf(userStore)));
+
+					// 尝试直接设置方法（临时解决方案）
+					if (!userStore.setConsumersCardNumber) {
+						userStore.setConsumersCardNumber = function(cardNumber) {
+							this.consumersCardNumber = cardNumber || "";
+							console.log('🔍 临时方法设置 consumersCardNumber:', this.consumersCardNumber);
+						};
+					}
+
+					if (!userStore.clearConsumersSearch) {
+						userStore.clearConsumersSearch = function() {
+							this.consumersSearchKeyword = "";
+							this.consumersCardNumber = "";
+							console.log('🔍 临时方法清除搜索条件');
+						};
+					}
+				}
+
+				// 使用扫码工具进行扫码
+				const scanResult = await ScanUtils.quickScan();
+
+				if (scanResult) {
+					console.log('🔍 扫码结果:', scanResult);
+
+					// 先清除之前的搜索条件
+					try {
+						userStore.clearConsumersSearch();
+						console.log('✅ clearConsumersSearch 调用成功');
+					} catch (e) {
+						console.error('❌ clearConsumersSearch 调用失败:', e);
+					}
+
+					// 设置用户store中的consumersCardNumber
+					try {
+						userStore.setConsumersCardNumber(scanResult);
+						console.log('✅ setConsumersCardNumber 调用成功');
+					} catch (e) {
+						console.error('❌ setConsumersCardNumber 调用失败:', e);
+					}
+
+					// 延迟一下确保状态更新
+					await this.$nextTick();
+
+					// 跳转到客户页面
+					uni.navigateTo({
+						url: '/pages/customer/customer'
+					});
+				}
+			} catch (error) {
+				console.error('扫码操作失败:', error);
+				uni.showToast({
+					title: '扫码失败，请重试',
+					icon: 'error'
+				});
+			}
+		}
 	}
 }
 </script>
@@ -131,6 +251,43 @@ export default {
 		color: #fff;
 		margin-top: 4rpx;
 		font-weight: 500;
+	}
+}
+
+// 悬浮扫一扫按钮样式
+.floating-scan-btn {
+	position: fixed;
+	right: 30rpx;
+	bottom: 200rpx; // 位置稍高一些，避免与其他按钮重叠
+	width: 100rpx;
+	height: 100rpx;
+	background: linear-gradient(135deg, #007aff 0%, #0056d3 100%);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 8rpx 20rpx rgba(0, 122, 255, 0.3);
+	z-index: 998; // 比客服按钮稍低
+	transition: all 0.3s ease;
+
+	&:active {
+		transform: scale(0.95);
+		box-shadow: 0 4rpx 12rpx rgba(0, 122, 255, 0.4);
+	}
+
+	// 添加一个轻微的脉动动画效果
+	animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+	0% {
+		box-shadow: 0 8rpx 20rpx rgba(0, 122, 255, 0.3);
+	}
+	50% {
+		box-shadow: 0 8rpx 25rpx rgba(0, 122, 255, 0.5);
+	}
+	100% {
+		box-shadow: 0 8rpx 20rpx rgba(0, 122, 255, 0.3);
 	}
 }
 </style>

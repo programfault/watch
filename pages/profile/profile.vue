@@ -39,10 +39,32 @@
 				<text class="nickname">{{ userInfo.nickName || '微信用户' }}</text>
 			</view>
 
-			<!-- 功能菜单占位 -->
+			<!-- 功能菜单 -->
 			<view class="menu-section">
-				<view class="menu-item">浏览历史</view>
-				<view class="menu-item">设置</view>
+				<!-- 管理员专用菜单 -->
+				<view v-if="userStore.hasCustomerPermission" class="menu-item" @click="navigateToCustomer">
+					<view class="menu-item-content">
+						<uni-icons type="person-filled" size="20" color="#007aff"></uni-icons>
+						<text class="menu-text">客户管理</text>
+					</view>
+					<uni-icons type="right" size="16" color="#ccc"></uni-icons>
+				</view>
+
+				<view class="menu-item">
+					<view class="menu-item-content">
+						<uni-icons type="list" size="20" color="#666"></uni-icons>
+						<text class="menu-text">浏览历史</text>
+					</view>
+					<uni-icons type="right" size="16" color="#ccc"></uni-icons>
+				</view>
+
+				<view class="menu-item">
+					<view class="menu-item-content">
+						<uni-icons type="gear-filled" size="20" color="#666"></uni-icons>
+						<text class="menu-text">设置</text>
+					</view>
+					<uni-icons type="right" size="16" color="#ccc"></uni-icons>
+				</view>
 			</view>			<button class="logout-btn" @click="handleLogout">退出登录</button>
 		</view>
 	</view>
@@ -79,6 +101,13 @@ export default {
 		this.userStore.checkLoginStatus();
 	},
 	methods: {
+
+		// 导航到客户管理页面
+		navigateToCustomer() {
+			uni.navigateTo({
+				url: '/pages/customer/customer'
+			});
+		},
 
 		// 切换协议同意状态
 		toggleAgreement() {
@@ -305,6 +334,9 @@ export default {
 			border-bottom: 1px solid #f0f0f0;
 			font-size: 16px;
 			color: #333;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
 
 			&:last-child {
 				border-bottom: none;
@@ -312,6 +344,18 @@ export default {
 
 			&:active {
 				background-color: #f5f5f5;
+			}
+
+			.menu-item-content {
+				display: flex;
+				align-items: center;
+				flex: 1;
+
+				.menu-text {
+					margin-left: 12px;
+					font-size: 16px;
+					color: #333;
+				}
 			}
 		}
 	}

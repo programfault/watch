@@ -24,7 +24,7 @@
             :alt="brand.name_cn"
           />
           <text class="brand-name-cn">{{ brand.name_cn }}</text>
-          <text class="brand-name-en">{{ brand.name_en }}</text>
+          <!-- <text class="brand-name-en">{{ brand.name_en }}</text> -->
         </view>
       </uni-grid-item>
     </uni-grid>

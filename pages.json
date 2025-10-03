@@ -65,9 +65,6 @@
 		}, {
 			"pagePath": "pages/profile/profile",
 			"text": "我的"
-		}, {
-			"pagePath": "pages/customer/customer",
-			"text": ""
 		}]
 	}
 }

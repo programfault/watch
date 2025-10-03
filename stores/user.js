@@ -75,7 +75,8 @@ export const useUserStore = defineStore("user", {
 
 		// 是否是管理员
 		isAdmin: (state) => {
-			return state.userInfo?.role === "admin";
+            console.log("==============",state.userInfo?.status)
+			return state.userInfo?.status === 0;
 		},
 
 		// 是否有特定权限
@@ -112,11 +113,16 @@ export const useUserStore = defineStore("user", {
 
 		// 过滤后的消费者列表（根据搜索关键词）
 		filteredConsumers: (state) => {
-			console.log("filteredConsumers计算开始:", {
+			console.log("🔍 filteredConsumers计算开始:", {
 				consumersLength: state.consumers?.length || 0,
 				searchKeyword: state.consumersSearchKeyword,
-				consumersArray: state.consumers,
+				cardNumber: state.consumersCardNumber,
 			});
+
+			// 打印前3个消费者的完整信息，用于调试
+			if (state.consumers && state.consumers.length > 0) {
+				console.log("🔍 前3个消费者数据样本:", state.consumers.slice(0, 3));
+			}
 
 			if (!state.consumersSearchKeyword && !state.consumersCardNumber) {
 				console.log(
@@ -127,11 +133,25 @@ export const useUserStore = defineStore("user", {
 			}
 
 			const keyword = state.consumersSearchKeyword.toLowerCase().trim();
+			const cardNumber = state.consumersCardNumber.toLowerCase().trim();
 			const filtered = (state.consumers || []).filter((consumer) => {
-				// 只搜索手机号和卡号
+				// 搜索手机号和卡号
 				const phone = (consumer.phone || "").toLowerCase();
-				const cardNumber = (consumer.card_number || "").toLowerCase();
-				return phone.includes(keyword) || cardNumber.includes(keyword);
+				const consumerCardNumber = (consumer.card_number || "").toLowerCase();
+                console.log("🔍 检查消费者:", {
+					name: consumer.name || "未知",
+					phone: consumer.phone || "无",
+					card_number: consumer.card_number || "无",
+					consumerCardNumber: consumerCardNumber,
+					searchCardNumber: cardNumber
+				});
+				// 如果有卡号搜索条件，优先精确匹配卡号
+				if (cardNumber) {
+					return consumerCardNumber.includes(cardNumber);
+				}
+
+				// 否则使用关键词搜索手机号和卡号
+				return phone.includes(keyword) || consumerCardNumber.includes(keyword);
 			});
 
 			console.log("搜索过滤结果:", {
@@ -148,7 +168,7 @@ export const useUserStore = defineStore("user", {
 		// 是否有过滤后的消费者数据
 		hasFilteredConsumers: (state) => {
 			// 直接基于 state 计算，避免 getter 依赖问题
-			if (!state.consumersSearchKeyword) {
+			if (!state.consumersSearchKeyword && !state.consumersCardNumber) {
 				const hasData = state.consumers && state.consumers.length > 0;
 				console.log("hasFilteredConsumers计算(无搜索):", {
 					consumersLength: state.consumers?.length || 0,
@@ -157,15 +177,24 @@ export const useUserStore = defineStore("user", {
 				return hasData;
 			} else {
 				const keyword = state.consumersSearchKeyword.toLowerCase().trim();
+				const cardNumber = state.consumersCardNumber.toLowerCase().trim();
 				const filtered = (state.consumers || []).filter((consumer) => {
-					// 只搜索手机号和卡号
+					// 搜索手机号和卡号
 					const phone = (consumer.phone || "").toLowerCase();
-					const cardNumber = (consumer.card_number || "").toLowerCase();
-					return phone.includes(keyword) || cardNumber.includes(keyword);
+					const consumerCardNumber = (consumer.card_number || "").toLowerCase();
+
+					// 如果有卡号搜索条件，优先精确匹配卡号
+					if (cardNumber) {
+						return consumerCardNumber.includes(cardNumber);
+					}
+
+					// 否则使用关键词搜索手机号和卡号
+					return phone.includes(keyword) || consumerCardNumber.includes(keyword);
 				});
 				const hasData = filtered.length > 0;
 				console.log("hasFilteredConsumers计算(有搜索):", {
 					keyword: keyword,
+					cardNumber: cardNumber,
 					filteredLength: filtered.length,
 					hasData: hasData,
 				});
@@ -232,9 +261,6 @@ export const useUserStore = defineStore("user", {
 						uni.setStorageSync("session_key", session_key);
 					}
 
-					// 登录成功后动态设置 tabBar
-					this.setTabBar();
-
 					return response.data;
 				} else {
 					throw new Error(response.message || "登录失败");
@@ -279,9 +305,6 @@ export const useUserStore = defineStore("user", {
 			uni.removeStorageSync("userInfo");
 			uni.removeStorageSync("tokens");
 			uni.removeStorageSync("session_key");
-
-			// 隐藏客户管理 tab
-			this.hideCustomerTab();
 		},
 
 		// 刷新 token
@@ -309,57 +332,7 @@ export const useUserStore = defineStore("user", {
 			}
 		},
 
-		// 动态设置 tabBar
-		setTabBar() {
-			console.log("设置 tabBar，权限检查:", {
-				isLoggedIn: this.isLoggedIn,
-				hasCustomerPermission: this.hasCustomerPermission,
-			});
 
-			try {
-				if (this.isLoggedIn && this.hasCustomerPermission) {
-					// 显示客户管理 tab
-					uni.setTabBarItem({
-						index: 4, // 客户 tab 的索引
-						text: '客户',
-						// iconPath: '/static/customer.png', // 可选：添加图标
-						// selectedIconPath: '/static/customer-active.png' // 可选：选中时的图标
-					});
-
-					// 显示第5个 tab
-					uni.showTabBarRedDot({
-						index: 4
-					});
-					uni.hideTabBarRedDot({
-						index: 4
-					});
-
-					console.log("客户管理 tab 已启用");
-				} else {
-					// 隐藏客户管理 tab (设置空文本)
-					uni.setTabBarItem({
-						index: 4,
-						text: ''
-					});
-
-					console.log("客户管理 tab 已隐藏");
-				}
-			} catch (error) {
-				console.error("设置 tabBar 失败:", error);
-			}
-		},
-
-		// 隐藏客户管理 tab
-		hideCustomerTab() {
-			try {
-				uni.setTabBarItem({
-					index: 4,
-					text: ''
-				});
-			} catch (error) {
-				console.error("隐藏客户 tab 失败:", error);
-			}
-		},
 
 		// 获取客户列表
 		async fetchCustomers(params = {}, isLoadMore = false) {
@@ -572,7 +545,9 @@ export const useUserStore = defineStore("user", {
 			this.consumersSearchKeyword = keyword || "";
 		},
 		setConsumersCardNumber(cardNumber) {
+			console.log("🔍 setConsumersCardNumber 调用:", cardNumber);
 			this.consumersCardNumber = cardNumber || "";
+			console.log("🔍 设置后 consumersCardNumber:", this.consumersCardNumber);
 		},
 		// 清除消费者搜索
 		clearConsumersSearch() {
