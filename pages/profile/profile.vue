@@ -43,9 +43,7 @@
 			<view class="menu-section">
 				<view class="menu-item">浏览历史</view>
 				<view class="menu-item">设置</view>
-			</view>
-
-			<button class="logout-btn" @click="handleLogout">退出登录</button>
+			</view>			<button class="logout-btn" @click="handleLogout">退出登录</button>
 		</view>
 	</view>
 </template>
