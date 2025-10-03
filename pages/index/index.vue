@@ -201,9 +201,19 @@ export default {
 					await this.$nextTick();
 
 					// 跳转到客户页面
-					uni.navigateTo({
-						url: '/pages/customer/customer'
-					});
+					// 检查是否刚刚完成登录，如果是则不跳转
+					const justLoggedIn = uni.getStorageSync("justLoggedIn");
+					if (justLoggedIn) {
+						console.log('刚完成登录，跳过自动跳转到customer页面');
+						uni.showToast({
+							title: '扫码成功，卡号已记录',
+							icon: 'success'
+						});
+					} else {
+						uni.navigateTo({
+							url: '/pages/customer/customer'
+						});
+					}
 				}
 			} catch (error) {
 				console.error('扫码操作失败:', error);

@@ -86,14 +86,22 @@ export const useUserStore = defineStore("user", {
 
 		// 是否有客户管理权限
 		hasCustomerPermission: (state) => {
-            console.log("---------------------0000-")
-            console.log(state.userInfo)
-			return (
+            console.log("🔍 hasCustomerPermission 被计算:", {
+				isLoggedIn: state.isLoggedIn,
+				userInfo: state.userInfo,
+				permissions: state.permissions,
+				userStatus: state.userInfo?.status,
+				isAdmin: state.userInfo?.status === 0,
+				stack: new Error().stack
+			});
+			const result = (
 				state.isLoggedIn &&
 				(state.permissions.includes("customer_management") ||
 					state.userInfo?.status === 0 || // 假设 role_id = 1 是管理员
 					state.isAdmin)
 			);
+			console.log("🔍 hasCustomerPermission 计算结果:", result);
+			return result;
 		},
 
 		// VIP 客户列表
@@ -241,17 +249,20 @@ export const useUserStore = defineStore("user", {
 			if (this.loginLoading) return;
 
 			this.loginLoading = true;
+
+			// 在登录开始时就设置防跳转标志
+			uni.setStorageSync("justLoggedIn", "true");
+
 			try {
 				const response = await login(loginData);
 
 				if (response.success) {
 					const { user, tokens, session_key } = response.data;
-                    console.log("================")
-                    console.log(user)
-                    console.log(tokens)
-					// 保存用户信息
+					console.log('🔍 准备设置用户信息:', user);
 					this.userInfo = user;
+					console.log('🔍 准备设置 isLoggedIn = true');
 					this.isLoggedIn = true;
+					console.log('🔍 isLoggedIn 已设置为 true');
 					this.tokens = tokens;
 
 					// 保存到本地存储
@@ -261,13 +272,19 @@ export const useUserStore = defineStore("user", {
 						uni.setStorageSync("session_key", session_key);
 					}
 
+					// 延长防跳转标志的有效期
+					setTimeout(() => {
+						uni.removeStorageSync("justLoggedIn");
+						console.log('防跳转标志已清除');
+					}, 3000); // 延长到3秒后清除标志
+
 					return response.data;
 				} else {
 					throw new Error(response.message || "登录失败");
 				}
 			} catch (error) {
 				console.error("登录失败:", error);
-				this.logout();
+				this.logout(false); // 登录失败时只清理状态，不跳转页面
 				throw error;
 			} finally {
 				this.loginLoading = false;
@@ -294,7 +311,7 @@ export const useUserStore = defineStore("user", {
 		},
 
 		// 用户登出
-		logout() {
+		logout(shouldRedirect = true) {
 			this.userInfo = null;
 			this.isLoggedIn = false;
 			this.tokens = null;
@@ -305,6 +322,13 @@ export const useUserStore = defineStore("user", {
 			uni.removeStorageSync("userInfo");
 			uni.removeStorageSync("tokens");
 			uni.removeStorageSync("session_key");
+
+			// 只有明确退出登录时才跳转到首页
+			if (shouldRedirect) {
+				uni.switchTab({
+					url: '/pages/index/index'
+				});
+			}
 		},
 
 		// 刷新 token

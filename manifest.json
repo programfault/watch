@@ -53,7 +53,7 @@
         "appid" : "wxd0fc2f837ba63c20",
         "setting" : {
             "urlCheck" : false,
-            "minified" : false,
+            "minified" : true,
             "postcss" : false
         },
         "usingComponents" : true,
@@ -62,7 +62,8 @@
                 "desc" : "提供店铺位置以及导航服务"
             }
         },
-        "requiredPrivateInfos" : [ "getLocation" ]
+        "requiredPrivateInfos" : [ "getLocation" ],
+        "lazyCodeLoading" : "requiredComponents"
     },
     "vueVersion" : "3"
 }

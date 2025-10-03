@@ -1,38 +1,24 @@
 <template>
 	<view class="container">
-		<!-- 未登录状态 -->
-		<view v-if="!isLoggedIn" class="login-section">
-			<view class="login-tip">
-				<text>请登录后查看个人信息</text>
-			</view>
-
-			<!-- 用户协议和隐私政策 -->
-			<view class="agreement-section">
-				<view class="agreement-checkbox" @click="toggleAgreement">
-					<view class="checkbox" :class="{ checked: isAgreed }">
-						<text v-if="isAgreed" class="checkmark">✓</text>
-					</view>
-					<view class="agreement-text">
-						<text>我已阅读并同意</text>
-						<text class="link-text" @click.stop="showUserAgreement">《用户协议》</text>
-						<text>和</text>
-						<text class="link-text" @click.stop="showPrivacyPolicy">《隐私政策》</text>
-					</view>
-				</view>
-			</view>
-
-			<button
-				class="login-btn"
-				:class="{ disabled: !isAgreed }"
-				@click="handleWechatLogin"
-				:loading="loginLoading"
-				:disabled="!isAgreed"
-			>
-				微信授权登录
-			</button>
+		<!-- 加载状态 -->
+		<view v-if="userInfoLoading" class="loading">
+			<uni-icons type="spinner-cycle" size="30" color="#999"></uni-icons>
+			<text class="loading-text">加载中...</text>
 		</view>
 
-		<!-- 已登录状态 - 占位内容 -->
+		<!-- 未登录状态 - 显示登录组件 -->
+		<view v-else-if="!userStore.isLoggedIn" class="login-section">
+			<view class="login-header">
+				<image class="logo" src="/static/logo.png" mode="aspectFit"></image>
+				<text class="app-name">手表助手</text>
+				<text class="welcome-text">欢迎使用，请先登录</text>
+			</view>
+			<LoginComponent
+				tip-text="请使用微信授权登录"
+			/>
+		</view>
+
+		<!-- 已登录状态 - 个人信息内容 -->
 		<view v-else class="profile-content">
 			<view class="user-info">
 				<image class="avatar" :src="userInfo.avatarUrl || '/static/logo.png'" mode="aspectFill"></image>
@@ -42,7 +28,11 @@
 			<!-- 功能菜单 -->
 			<view class="menu-section">
 				<!-- 管理员专用菜单 -->
-				<view v-if="userStore.hasCustomerPermission" class="menu-item" @click="navigateToCustomer">
+				<view
+					v-if="hasCustomerPermission"
+					class="menu-item"
+					@click="navigateToCustomer"
+				>
 					<view class="menu-item-content">
 						<uni-icons type="person-filled" size="20" color="#007aff"></uni-icons>
 						<text class="menu-text">客户管理</text>
@@ -72,105 +62,44 @@
 
 <script>
 import { useUserStore } from '@/stores/user'
+import LoginComponent from '@/components/LoginComponent.vue'
 
 export default {
+	components: {
+		LoginComponent
+	},
 	data() {
 		return {
-			isAgreed: false
+			userInfoLoading: false
 		}
 	},
 	computed: {
 		userStore() {
 			return useUserStore()
 		},
-		isLoggedIn() {
-			return this.userStore.isLoggedIn
-		},
-		loginLoading() {
-			return this.userStore.loginLoading
+		hasCustomerPermission() {
+			return this.userStore.hasCustomerPermission;
 		},
 		userInfo() {
 			return this.userStore.userInfo || {}
 		}
 	},
 	onLoad() {
-		this.userStore.checkLoginStatus();
+		console.log('Profile 页面加载');
+		// 页面加载完成，等待状态检查
+		this.userInfoLoading = false;
 	},
+
 	onShow() {
-		// 每次显示页面时检查登录状态
-		this.userStore.checkLoginStatus();
+		console.log('Profile 页面显示');
+		// 页面显示，状态由Pinia自动管理
 	},
 	methods: {
-
 		// 导航到客户管理页面
 		navigateToCustomer() {
 			uni.navigateTo({
 				url: '/pages/customer/customer'
 			});
-		},
-
-		// 切换协议同意状态
-		toggleAgreement() {
-			this.isAgreed = !this.isAgreed;
-		},
-
-		// 微信登录
-		handleWechatLogin() {
-			if (!this.isAgreed) {
-				uni.showToast({
-					title: '请先同意用户协议和隐私政策',
-					icon: 'none'
-				});
-				return;
-			}
-
-			// 1. 先检查用户信息授权状态
-			uni.authorize({
-				scope: 'scope.userInfo',
-				success: () => {
-					console.log('用户信息授权成功');
-					// 授权成功，进行微信登录
-					this.doWechatLogin();
-				},
-				fail: () => {
-					console.log('用户信息授权被拒绝，直接获取用户信息');
-					// 用户拒绝授权或首次授权，直接调用getUserProfile
-					this.doWechatLogin();
-				}
-			});
-		},
-
-		// 执行微信登录
-		async doWechatLogin() {
-			try {
-				// 调用微信登录获取 code
-				const loginRes = await new Promise((resolve, reject) => {
-					uni.login({
-						provider: 'weixin',
-						success: resolve,
-						fail: reject
-					});
-				});
-
-				console.log('微信登录成功:', loginRes);
-
-				// 直接调用 /login API
-				await this.userStore.loginUser({
-					code: loginRes.code
-				});
-
-				uni.showToast({
-					title: '登录成功',
-					icon: 'success'
-				});
-
-			} catch (error) {
-				console.error('登录失败:', error);
-				uni.showToast({
-					title: error.message || '登录失败，请重试',
-					icon: 'none'
-				});
-			}
 		},
 
 		// 退出登录
@@ -192,25 +121,7 @@ export default {
 			});
 		},
 
-		// 显示用户协议
-		showUserAgreement() {
-			uni.showModal({
-				title: '用户协议',
-				content: '这里是用户协议内容，实际使用时应该跳转到完整的协议页面或显示详细内容。',
-				confirmText: '我知道了',
-				showCancel: false
-			});
-		},
 
-		// 显示隐私政策
-		showPrivacyPolicy() {
-			uni.showModal({
-				title: '隐私政策',
-				content: '这里是隐私政策内容，实际使用时应该跳转到完整的隐私政策页面或显示详细内容。',
-				confirmText: '我知道了',
-				showCancel: false
-			});
-		}
 	}
 }
 </script>
@@ -222,83 +133,21 @@ export default {
 	background-color: #f5f5f5;
 }
 
-.login-section {
+.loading {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	height: 60vh;
+	min-height: 50vh;
 
-	.login-tip {
-		margin-bottom: 20px;
-		text {
-			color: #666;
-			font-size: 16px;
-		}
-	}
-
-	.agreement-section {
-		margin-bottom: 30px;
-
-		.agreement-checkbox {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-
-			.checkbox {
-				width: 16px;
-				height: 16px;
-				border: 1px solid #ddd;
-				border-radius: 3px;
-				margin-right: 8px;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				background-color: #fff;
-
-				&.checked {
-					background-color: #007AFF;
-					border-color: #007AFF;
-				}
-
-				.checkmark {
-					color: #fff;
-					font-size: 12px;
-					font-weight: bold;
-				}
-			}
-
-			.agreement-text {
-				font-size: 12px;
-				color: #999;
-				line-height: 1.5;
-
-				.link-text {
-					color: #007AFF;
-					text-decoration: underline;
-				}
-			}
-		}
-	}
-
-	.login-btn {
-		background-color: #07c160;
-		color: white;
-		border-radius: 8px;
-		padding: 12px 60px;
-		border: none;
-		font-size: 16px;
-
-		&::after {
-			border: none;
-		}
-
-		&.disabled {
-			background-color: #ccc;
-			color: #999;
-		}
+	.loading-text {
+		margin-top: 10px;
+		font-size: 14px;
+		color: #999;
 	}
 }
+
+
 
 .profile-content {
 	.user-info {
