@@ -98,8 +98,7 @@ export default {
 		padding: 0;
 
 		.benefit-card {
-			width: calc(100vw - 40px); /* 减去左右padding各20px */
-			margin: 0 auto;
+			width: 100%;
 			background: white;
 			border-radius: 16px;
 			padding: 20px;
@@ -107,6 +106,7 @@ export default {
 			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 			position: relative;
 			overflow: hidden;
+			box-sizing: border-box;
 
 			&.expired {
 				opacity: 0.6;
@@ -174,8 +174,7 @@ export default {
 		}
 
 		.empty-state {
-			width: calc(100vw - 40px); /* 减去左右padding各20px */
-			margin: 0 auto;
+			width: 100%;
 			background: white;
 			border-radius: 16px;
 			padding: 40px 20px;
@@ -185,6 +184,7 @@ export default {
 			flex-direction: column;
 			align-items: center;
 			gap: 8px;
+			box-sizing: border-box;
 
 			.empty-text {
 				font-size: 12px;

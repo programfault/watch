@@ -425,6 +425,9 @@ export const useUserStore = defineStore("user", {
 
 		// 用户登出
 		logout(shouldRedirect = true) {
+			console.log('logout 方法被调用，shouldRedirect:', shouldRedirect);
+
+			// 清理本地状态
 			this.userInfo = null;
 			this.isLoggedIn = false;
 			this.tokens = null;
@@ -435,16 +438,17 @@ export const useUserStore = defineStore("user", {
 			uni.removeStorageSync("userInfo");
 			uni.removeStorageSync("tokens");
 			uni.removeStorageSync("session_key");
+			uni.removeStorageSync("lastLoginTime");
+			console.log('已清除本地存储');
 
 			// 只有明确退出登录时才跳转到首页
 			if (shouldRedirect) {
+				console.log('准备跳转到首页');
 				uni.switchTab({
 					url: '/pages/index/index'
 				});
 			}
-		},
-
-		// 刷新 token
+		},		// 刷新 token
 		async refreshUserToken() {
 			if (!this.tokens?.refresh_token) {
 				throw new Error("No refresh token available");

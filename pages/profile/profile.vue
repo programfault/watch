@@ -23,7 +23,7 @@
 			<view class="user-info">
 				<view class="user-content">
 					<view class="user-name">
-						<text class="name-text shimmer">{{ userName }}</text>
+						<text class="name-text shimmer">天辰表友</text>
 						<view class="vip-badge">VIP</view>
 					</view>
 
@@ -77,7 +77,9 @@
 					</view>
 					<uni-icons type="right" size="16" color="#ccc"></uni-icons>
 				</view>
-			</view>			<button class="logout-btn" @click="handleLogout">退出登录</button>
+			</view>
+
+			<button class="logout-btn" @click="handleLogout">退出登录</button>
 			</view>
 		</scroll-view>
 	</view>
@@ -180,11 +182,14 @@ export default {
 
 		// 退出登录
 		handleLogout() {
+			console.log('handleLogout 方法被调用');
 			uni.showModal({
 				title: '确认退出',
 				content: '确定要退出登录吗？',
 				success: (res) => {
+					console.log('Modal 回调，用户选择:', res.confirm);
 					if (res.confirm) {
+						console.log('开始执行退出登录');
 						// 调用 store 中的退出登录方法
 						this.userStore.logout();
 
@@ -196,8 +201,6 @@ export default {
 				}
 			});
 		},
-
-
 	}
 }
 </script>
@@ -279,26 +282,33 @@ export default {
 				.name-text {
 					font-size: 20px;
 					font-weight: 600;
-					color: #1a1a1a;
+					color: #3a3a3a; // 银黑色基础色
 
 					&.shimmer {
-						// 银黑色字体基础色，加上银色流光效果
-						background: linear-gradient(
-							135deg, // 左上到右下的角度
-							#3a3a3a 0%,
-							#3a3a3a 40%,
-							#c0c0c0 50%, // 银色流光
-							#e5e5e5 52%, // 亮银色流光峰值
-							#c0c0c0 54%, // 银色流光
-							#3a3a3a 60%,
-							#3a3a3a 100%
-						);
-						background-size: 300% 300%;
-						background-clip: text;
-						-webkit-background-clip: text;
-						-webkit-text-fill-color: transparent;
-						animation: shimmer 4s ease-in-out infinite;
+						// 使用::after伪元素创建流光效果，固定显示“天辰表友”
 						position: relative;
+
+						&::after {
+							content: '天辰表友';
+							position: absolute;
+							top: 0;
+							left: 0;
+							background: linear-gradient(
+								135deg, // 左上到右下的角度
+								transparent 0%,
+								transparent 40%,
+								#c0c0c0 50%, // 银色流光
+								#e5e5e5 52%, // 亮银色流光峰值
+								#c0c0c0 54%, // 银色流光
+								transparent 60%,
+								transparent 100%
+							);
+							background-size: 300% 300%;
+							background-clip: text;
+							-webkit-background-clip: text;
+							-webkit-text-fill-color: transparent;
+							animation: shimmer 4s ease-in-out infinite;
+						}
 					}
 				}
 
