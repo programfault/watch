@@ -10,9 +10,16 @@ import { get, post, put } from '@/utils/request'
  * @returns {Promise}
  */
 export function getUserInfo() {
-  return get('/user/info', {}, {
+  console.log('🔍 调用getUserInfo API: /user')
+  return get('/user', {}, {
     showLoading: false,
     showError: true
+  }).then(response => {
+    console.log('🔍 getUserInfo API 成功响应:', response)
+    return response
+  }).catch(error => {
+    console.log('🔍 getUserInfo API 失败:', error)
+    throw error
   })
 }
 

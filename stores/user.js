@@ -3,9 +3,8 @@ import {
     getBenefits,
     getConsumers,
     getCustomers,
-    getUserInfo,
     login,
-    refreshToken,
+    refreshToken
 } from "@/api";
 import { defineStore } from "pinia";
 
@@ -13,8 +12,8 @@ export const useUserStore = defineStore("user", {
 	state: () => ({
 		// 用户信息
 		userInfo: null,
-		isLoggedIn: true,
-		userInfoLoading: true,
+		isLoggedIn: false,  // 默认未登录状态，需要通过检查token来确定
+		userInfoLoading: false,
 
 		// 登录状态
 		loginLoading: false,
@@ -244,6 +243,53 @@ export const useUserStore = defineStore("user", {
 	},
 
 	actions: {
+		// 初始化用户状态，检查本地存储的token
+		async initUserState() {
+			try {
+				const storedTokens = uni.getStorageSync('tokens');
+				if (storedTokens) {
+					this.tokens = storedTokens;
+
+					// 检查是否刚登录完成（5分钟内），避免重复验证
+					const lastLoginTime = uni.getStorageSync("lastLoginTime");
+					const now = Date.now();
+					const isRecentLogin = lastLoginTime && (now - lastLoginTime) < 5 * 60 * 1000; // 5分钟内
+
+					if (isRecentLogin) {
+						this.isLoggedIn = true;
+						// 尝试从本地存储恢复用户信息
+						const savedUserInfo = uni.getStorageSync("userInfo");
+						if (savedUserInfo) {
+							try {
+								this.userInfo = JSON.parse(savedUserInfo);
+							} catch (e) {
+								// 静默失败
+							}
+						}
+					} else {
+						// 尝试获取用户信息验证token有效性
+						try {
+							await this.fetchUserInfo();
+							this.isLoggedIn = true;
+						} catch (error) {
+							// 如果失败（可能是token过期），清除token并设置为未登录
+							this.tokens = null;
+							this.userInfo = null;
+							this.isLoggedIn = false;
+							uni.removeStorageSync('tokens');
+						}
+					}
+				} else {
+					this.isLoggedIn = false;
+				}
+			} catch (error) {
+				console.error('🔍 初始化用户状态失败:', error);
+				this.isLoggedIn = false;
+				this.tokens = null;
+				uni.removeStorageSync('tokens');
+			}
+		},
+
 		// 微信小程序登录
 		async loginUser(loginData) {
 			if (this.loginLoading) return;
@@ -257,26 +303,34 @@ export const useUserStore = defineStore("user", {
 				const response = await login(loginData);
 
 				if (response.success) {
-					const { user, tokens, session_key } = response.data;
-					console.log('🔍 准备设置用户信息:', user);
-					this.userInfo = user;
-					console.log('🔍 准备设置 isLoggedIn = true');
+					const { user, tokens, session_key, coupons, privileges } = response.data;					this.userInfo = {
+						...user,
+						coupons: coupons || [],
+						privileges: privileges || []
+					};
+
 					this.isLoggedIn = true;
-					console.log('🔍 isLoggedIn 已设置为 true');
-					this.tokens = tokens;
+
+					// 确保tokens是纯净的对象
+					const cleanTokens = {
+						access_token: tokens.access_token,
+						refresh_token: tokens.refresh_token,
+						token_type: tokens.token_type || 'bearer',
+						expires_in: tokens.expires_in,
+						refresh_expires_in: tokens.refresh_expires_in
+					};
+
+					this.tokens = cleanTokens;
 
 					// 保存到本地存储
-					uni.setStorageSync("userInfo", JSON.stringify(user));
-					uni.setStorageSync("tokens", JSON.stringify(tokens));
-					if (session_key) {
+					uni.setStorageSync("userInfo", JSON.stringify(this.userInfo));
+					uni.setStorageSync("tokens", JSON.stringify(cleanTokens));					if (session_key) {
 						uni.setStorageSync("session_key", session_key);
 					}
 
-					// 延长防跳转标志的有效期
-					setTimeout(() => {
-						uni.removeStorageSync("justLoggedIn");
-						console.log('防跳转标志已清除');
-					}, 3000); // 延长到3秒后清除标志
+					// 登录成功，设置最后登录时间戳，避免initUserState重复验证token
+					const loginTime = Date.now();
+					uni.setStorageSync("lastLoginTime", loginTime);
 
 					return response.data;
 				} else {
@@ -293,14 +347,73 @@ export const useUserStore = defineStore("user", {
 
 		// 获取用户信息
 		async fetchUserInfo() {
-			if (this.userInfoLoading) return;
-
 			this.userInfoLoading = true;
-			try {
-				const data = await getUserInfo();
-				this.userInfo = data;
+
+			// 检查是否有token
+			if (!this.tokens?.access_token) {
+				this.userInfoLoading = false;
+				return;
+			}
+
+		// 使用uni.request替代axios（避免header问题）
+		try {
+			const uniResponse = await new Promise((resolve, reject) => {
+				uni.request({
+					url: 'http://116.198.203.44:8000/api/mini/user',
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${this.tokens.access_token}`,
+						'content-type': 'application/json'
+					},
+					success: (res) => {
+						console.log('🔍 uni.request获取用户信息成功:', res);
+						if (res.statusCode === 200) {
+							resolve(res.data);
+						} else {
+							reject(new Error(`HTTP ${res.statusCode}: ${res.data?.message || 'Unknown error'}`));
+						}
+					},
+					fail: (err) => {
+						reject(err);
+					}
+				});
+			});
+
+			const response = uniResponse; // 使用uni.request的响应				// 处理API响应数据结构
+				let userData = null;
+				let coupons = [];
+				let privileges = [];
+
+				if (response?.data) {
+					// 嵌套在data字段中的情况
+					userData = response.data.user || response.data;
+					coupons = response.data.coupons || [];
+					privileges = response.data.privileges || [];
+				} else if (response?.user) {
+					// 直接包含user字段的情况
+					userData = response.user;
+					coupons = response.coupons || [];
+					privileges = response.privileges || [];
+				} else {
+					// 直接是用户数据的情况
+					userData = response;
+					coupons = response.coupons || [];
+					privileges = response.privileges || [];
+				}
+
+				// 合并用户信息和福利数据
+				this.userInfo = {
+					...userData,
+					coupons: coupons,
+					privileges: privileges
+				};
+
 				this.isLoggedIn = true;
-				return data;
+
+				// 同时更新本地存储
+				uni.setStorageSync("userInfo", JSON.stringify(this.userInfo));
+
+				return this.userInfo;
 			} catch (error) {
 				console.error("获取用户信息失败:", error);
 				this.logout();

@@ -57,7 +57,7 @@ export default {
 		console.log('Index页面 onLoad')
 		// 初始化应用数据
 		try {
-			await this.appStore.initApp()
+			// await this.appStore.initApp()
 		} catch (error) {
 			console.error('初始化失败:', error)
 		}

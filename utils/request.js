@@ -51,10 +51,8 @@ function clearAuth() {
  */
 const api = axios.create({
   baseURL: API_CONFIG.baseURL,
-  timeout: API_CONFIG.timeout,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  timeout: API_CONFIG.timeout
+  // 不在这里设置全局content-type，让axios根据请求方法自动处理
 })
 
 /**
@@ -70,8 +68,39 @@ api.interceptors.request.use(
     // 自动添加 Authorization 头（如果需要认证）
     if (config.needAuth !== false) { // 默认需要认证
       const tokens = getTokens()
+      console.log('🔍 请求拦截器 - tokens:', tokens)
       if (tokens?.access_token) {
-        config.headers.Authorization = `Bearer ${tokens.access_token}`
+        // 确保headers对象存在且格式正确
+        if (!config.headers) {
+          config.headers = {}
+        }
+        // 小程序环境中需要确保headers是普通对象
+        // 创建纯净的headers对象，避免axios内部属性影响
+        const plainHeaders = {}
+
+        // 复制现有的headers，过滤掉非字符串属性
+        if (config.headers) {
+          Object.keys(config.headers).forEach(key => {
+            const value = config.headers[key]
+            if (typeof value === 'string' || typeof value === 'number') {
+              plainHeaders[key] = value
+            }
+          })
+        }
+
+        // 添加Authorization头
+        plainHeaders['Authorization'] = `Bearer ${tokens.access_token}`
+
+        // 设置回纯净的headers对象
+        config.headers = plainHeaders
+        console.log('🔍 请求拦截器 - 已添加Authorization头:', config.headers.Authorization)
+        console.log('🔍 请求拦截器 - 完整headers:', config.headers)
+        console.log('🔍 请求拦截器 - 最终config:', {
+          url: config.url,
+          method: config.method,
+          headers: config.headers,
+          params: config.params
+        })
       }
     }
 
@@ -91,6 +120,8 @@ api.interceptors.response.use(
     if (response.config.showLoading) {
       uni.hideLoading()
     }
+
+
 
     // 支持新老两种 API 格式
     if (response.data.success !== undefined) {
@@ -126,6 +157,9 @@ api.interceptors.response.use(
       uni.hideLoading()
     }
 
+    // 记录请求错误
+    console.error('请求失败:', error.message)
+
     // 处理 401 错误（token 过期）
     if (error.response?.status === 401 && originalRequest.needAuth !== false) {
       if (!isRefreshing) {
@@ -134,12 +168,15 @@ api.interceptors.response.use(
         try {
           // 刷新 token
           const tokens = getTokens()
+
           if (!tokens?.refresh_token) {
             throw new Error('没有 refresh_token')
-          }
-
-          const response = await axios.post(`${API_CONFIG.baseURL}/refresh`, {
+          }          const response = await axios.post(`${API_CONFIG.baseURL}/refresh`, {
             refresh_token: tokens.refresh_token
+          }, {
+            headers: {
+              'content-type': 'application/json'
+            }
           })
 
           if (response.data.success) {
@@ -147,11 +184,17 @@ api.interceptors.response.use(
             saveTokens(newTokens)
 
             // 更新原请求的 Authorization 头
-            originalRequest.headers.Authorization = `Bearer ${newTokens.access_token}`
+            originalRequest.headers = {
+              ...originalRequest.headers,
+              'Authorization': `Bearer ${newTokens.access_token}`
+            }
 
             // 处理队列中的请求
             requestQueue.forEach(({ resolve, reject, config }) => {
-              config.headers.Authorization = `Bearer ${newTokens.access_token}`
+              config.headers = {
+                ...config.headers,
+                'Authorization': `Bearer ${newTokens.access_token}`
+              }
               api.request(config).then(resolve).catch(reject)
             })
             requestQueue.length = 0
@@ -204,16 +247,53 @@ export function get(url, params = {}, options = {}) {
 }
 
 export function post(url, data = {}, options = {}) {
-  return api.post(url, data, options)
+  // 确保POST请求有正确的content-type
+  const config = {
+    headers: {
+      'content-type': 'application/json'
+    },
+    ...options
+  }
+  return api.post(url, data, config)
 }
 
 export function put(url, data = {}, options = {}) {
-  return api.put(url, data, options)
+  // 确保PUT请求有正确的content-type
+  const config = {
+    headers: {
+      'content-type': 'application/json'
+    },
+    ...options
+  }
+  return api.put(url, data, config)
 }
 
 export function del(url, options = {}) {
   return api.delete(url, options)
 }
 
-// 导出 axios 实例，便于直接使用
+// 测试用原生uni.request发送带token的请求
+export function testNativeRequest() {
+  const tokens = getTokens()
+  if (!tokens?.access_token) {
+    return
+  }
+
+  const headers = {
+    'Authorization': `Bearer ${tokens.access_token}`,
+    'content-type': 'application/json'
+  }
+
+  uni.request({
+    url: `${API_CONFIG.baseURL}/user`,
+    method: 'GET',
+    header: headers,
+    success: (res) => {
+      // 静默成功
+    },
+    fail: (err) => {
+      console.error('Native request failed:', err)
+    }
+  })
+}// 导出 axios 实例，便于直接使用
 export { API_CONFIG, api as request }
