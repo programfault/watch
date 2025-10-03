@@ -11,6 +11,11 @@
 			@login-success="onLoginSuccess"
 			@login-error="onLoginError"
 		/>
+
+		<!-- 调试入口 -->
+		<view class="debug-entry" @click="goToDebug">
+			<text class="debug-text">登录问题调试</text>
+		</view>
 	</view>
 </template>
 
@@ -60,6 +65,13 @@ export default {
 				icon: "error",
 			});
 		},
+
+		// 进入调试页面
+		goToDebug() {
+			uni.navigateTo({
+				url: '/pages/debug/debug'
+			});
+		},
 	},
 };
 </script>
@@ -100,6 +112,20 @@ export default {
 	.welcome-text {
 		font-size: 16px;
 		color: rgba(255, 255, 255, 0.8);
+	}
+}
+
+.debug-entry {
+	position: fixed;
+	bottom: 30px;
+	right: 20px;
+	background: rgba(0, 0, 0, 0.6);
+	padding: 8px 16px;
+	border-radius: 20px;
+
+	.debug-text {
+		font-size: 12px;
+		color: white;
 	}
 }
 </style>

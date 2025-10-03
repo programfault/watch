@@ -50,6 +50,21 @@ export function refreshToken(refreshData) {
 }
 
 /**
+ * 发送手机号加密数据给后端解密
+ * @param {Object} phoneData 手机号加密数据
+ * @param {string} phoneData.encryptedData 微信加密的手机号数据
+ * @param {string} phoneData.iv 解密用的初始向量
+ * @param {string} phoneData.code 登录code（后端用于获取session_key）
+ * @returns {Promise} 返回解密后的手机号
+ */
+export function decryptPhoneNumber(phoneData) {
+  return post('/decrypt-phone', phoneData, {
+    showLoading: false,
+    showError: true
+  })
+}
+
+/**
  * 获取客户列表
  * @param {Object} params 查询参数
  * @returns {Promise}

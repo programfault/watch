@@ -45,6 +45,12 @@
 			"navigationBarTitleText": "登录",
 			"navigationStyle": "custom"
 		}
+	}, {
+		"path": "pages/debug/debug",
+		"style": {
+			"navigationBarTitleText": "登录调试",
+			"navigationBarBackgroundColor": "#f8f8f8"
+		}
 	}],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",

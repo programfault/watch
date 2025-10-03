@@ -54,16 +54,21 @@
         "setting" : {
             "urlCheck" : false,
             "minified" : true,
-            "postcss" : false
+            "postcss" : false,
+            "checkSiteMap" : false
         },
         "usingComponents" : true,
         "permission" : {
             "scope.userLocation" : {
                 "desc" : "提供店铺位置以及导航服务"
+            },
+            "scope.userInfo" : {
+                "desc" : "用于完善用户资料和个性化服务"
             }
         },
-        "requiredPrivateInfos" : [ "getLocation" ],
-        "lazyCodeLoading" : "requiredComponents"
+        "requiredPrivateInfos" : [ "getLocation", "getUserInfo" ],
+        "lazyCodeLoading" : "requiredComponents",
+        "debug" : true
     },
     "vueVersion" : "3"
 }

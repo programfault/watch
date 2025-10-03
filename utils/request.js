@@ -254,7 +254,96 @@ export function post(url, data = {}, options = {}) {
     },
     ...options
   }
-  return api.post(url, data, config)
+
+  // 添加真机环境的fallback
+  return api.post(url, data, config).catch(error => {
+    console.warn('🔄 axios请求失败，尝试使用uni.request fallback:', error.message)
+    return postWithUniRequest(url, data, options)
+  })
+}
+
+// 使用uni.request的fallback方法
+function postWithUniRequest(url, data = {}, options = {}) {
+  return new Promise((resolve, reject) => {
+    const fullUrl = url.startsWith('http') ? url : `${API_CONFIG.baseURL}${url}`
+
+    // 准备headers
+    const headers = {
+      'content-type': 'application/json',
+      ...options.headers
+    }
+
+    // 添加token（如果需要）
+    if (options.needAuth !== false) {
+      const tokens = getTokens()
+      if (tokens?.access_token) {
+        headers['Authorization'] = `Bearer ${tokens.access_token}`
+      }
+    }
+
+    console.log('📱 使用uni.request发送请求:', { url: fullUrl, headers, data })
+
+    // 显示loading
+    if (options.showLoading) {
+      uni.showLoading({ title: '加载中...', mask: true })
+    }
+
+    uni.request({
+      url: fullUrl,
+      method: 'POST',
+      header: headers,
+      data: data,
+      success: (res) => {
+        console.log('✅ uni.request成功响应:', res)
+
+        // 隐藏loading
+        if (options.showLoading) {
+          uni.hideLoading()
+        }
+
+        // 处理响应数据格式
+        const response = res.data
+        if (response.success !== undefined) {
+          // 新格式
+          if (response.success) {
+            resolve(response)
+          } else {
+            const error = new Error(response.message || '请求失败')
+            if (options.showError !== false) {
+              uni.showToast({ title: response.message || '请求失败', icon: 'none' })
+            }
+            reject(error)
+          }
+        } else {
+          // 老格式
+          const { code, data: responseData, message } = response
+          if (code === 200 || code === 0) {
+            resolve(responseData)
+          } else {
+            const error = new Error(message || '请求失败')
+            if (options.showError !== false) {
+              uni.showToast({ title: message || '请求失败', icon: 'none' })
+            }
+            reject(error)
+          }
+        }
+      },
+      fail: (err) => {
+        console.error('❌ uni.request也失败了:', err)
+
+        // 隐藏loading
+        if (options.showLoading) {
+          uni.hideLoading()
+        }
+
+        if (options.showError !== false) {
+          uni.showToast({ title: '网络请求失败，请检查网络连接', icon: 'none' })
+        }
+
+        reject(new Error(err.errMsg || '网络请求失败'))
+      }
+    })
+  })
 }
 
 export function put(url, data = {}, options = {}) {
