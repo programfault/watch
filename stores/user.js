@@ -13,8 +13,8 @@ export const useUserStore = defineStore("user", {
 	state: () => ({
 		// 用户信息
 		userInfo: null,
-		isLoggedIn: false,
-		userInfoLoading: false,
+		isLoggedIn: true,
+		userInfoLoading: true,
 
 		// 登录状态
 		loginLoading: false,

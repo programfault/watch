@@ -15,55 +15,53 @@
 </template>
 
 <script>
-import LoginComponent from '@/components/LoginComponent.vue'
-import { useUserStore } from '@/stores/user'
+import LoginComponent from "@/components/LoginComponent.vue";
+import { useUserStore } from "@/stores/user";
 
 export default {
 	components: {
-		LoginComponent
+		LoginComponent,
 	},
 	data() {
 		return {
-			redirectUrl: '/pages/profile/profile' // 默认返回地址
-		}
+			redirectUrl: "/pages/profile/profile", // 默认返回地址
+		};
 	},
 	computed: {
 		userStore() {
-			return useUserStore()
-		}
+			return useUserStore();
+		},
 	},
 	onLoad(options) {
-		console.log('登录页面加载，参数:', options);
+		console.log("登录页面加载，参数:", options);
 		// 如果已经登录，显示提示
 		if (this.userStore.isLoggedIn) {
-			console.log('用户已登录');
+			console.log("用户已登录");
 			uni.showToast({
-				title: '您已登录',
-				icon: 'success'
+				title: "您已登录",
+				icon: "success",
 			});
 		}
 	},
 	methods: {
 		onLoginSuccess() {
-			console.log('登录成功');
+			console.log("登录成功");
 			// 登录成功后不需要跳转，让页面自然消失即可
 			uni.showToast({
-				title: '登录成功',
-				icon: 'success'
+				title: "登录成功",
+				icon: "success",
 			});
 		},
 
 		onLoginError(error) {
-			console.error('登录失败:', error);
+			console.error("登录失败:", error);
 			uni.showToast({
-				title: '登录失败，请重试',
-				icon: 'error'
+				title: "登录失败，请重试",
+				icon: "error",
 			});
 		},
-
-
-	}
-}
+	},
+};
 </script>
 
 <style lang="scss">
