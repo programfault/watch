@@ -1,6 +1,6 @@
 <template>
 <view class="container">
-    <SearchComponent @search="onSearch" />
+    <SearchComponent @search="onSearch" from="product" />
 
     <!-- 工具栏 -->
     <ToolbarComponent @priceSort="onPriceSort" @filter="onFilter" @displayModeChange="onDisplayModeChange" />

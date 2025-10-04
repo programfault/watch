@@ -9,7 +9,7 @@
 	>
 		<view class="container">
 			<!-- 搜索组件 -->
-			<HomeSearchComponent from="home" />
+			<SearchComponent from="index" />
 
 			<!-- 轮播图组件 -->
 			<CarouselComponent v-if="!searchStore.showSearchPanel" />
@@ -43,7 +43,7 @@ import { onLoad, onShow, onHide, onPullDownRefresh } from '@dcloudio/uni-app'
 import BrandsComponent from '@/components/BrandsComponent.vue'
 import CarouselComponent from '@/components/CarouselComponent.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
-import HomeSearchComponent from '@/components/HomeSearchComponent.vue'
+import SearchComponent from '@/components/SearchComponent.vue'
 import { useAppStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
 import ScanUtils from '@/utils/scanUtils.js'
 
@@ -129,6 +129,7 @@ onPullDownRefresh(async () => {
 })
 
 onShow(() => {
+    searchStore.setKeyword('');
 })
 
 onHide(() => {
