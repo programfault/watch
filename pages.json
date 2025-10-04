@@ -59,12 +59,19 @@
 		"backgroundColor": "#F8F8F8",
 		"app-plus": {
 			"background": "#efeff4"
-		}
+		},
+        "usingComponents": {
+            "van-button": "/wxcomponents/dist/button/index",
+            "van-tabbar": "/wxcomponents/dist/tabbar/index",
+            "van-tabbar-item": "/wxcomponents/dist/tabbar-item/index"
+
+        }
 	},
 	"tabBar": {
 		"color": "#999999",
 		"selectedColor": "#007aff",
 		"backgroundColor": "#ffffff",
+        "custom":true,
 		"list": [{
 			"pagePath": "pages/index/index",
 			"text": "首页"
