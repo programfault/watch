@@ -60,7 +60,7 @@
 					<uni-icons type="right" size="16" color="#ccc"></uni-icons>
 				</view>
 
-				<view class="menu-item">
+				<view class="menu-item" @click="goToSettings">
 					<view class="menu-item-content">
 						<uni-icons type="gear-filled" size="20" color="#666"></uni-icons>
 						<text class="menu-text">设置</text>
@@ -69,7 +69,6 @@
 				</view>
 			</view>
 
-			<button class="logout-btn" @click="handleLogout">退出登录</button>
 			</view>
 		</scroll-view>
 
@@ -204,26 +203,11 @@ const onRefresh = async () => {
 	}
 }
 
-// 退出登录
-const handleLogout = () => {
-	console.log('handleLogout 方法被调用')
-	uni.showModal({
-		title: '确认退出',
-		content: '确定要退出登录吗？',
-		success: (res) => {
-			console.log('Modal 回调，用户选择:', res.confirm)
-			if (res.confirm) {
-				console.log('开始执行退出登录')
-				// 调用 store 中的退出登录方法
-				userStore.logout()
-                tabBarStore.setUserType('normal')
-                tabBarStore.setActiveTab('home')
-				uni.showToast({
-					title: '已退出登录',
-					icon: 'success'
-				})
-			}
-		}
+// 跳转到设置页面
+const goToSettings = () => {
+	console.log('跳转到设置页面')
+	uni.navigateTo({
+		url: '/pages/settings/settings'
 	})
 }
 </script>
@@ -437,19 +421,7 @@ const handleLogout = () => {
 		}
 	}
 
-	.logout-btn {
-		background-color: #ff4757;
-		color: white;
-		border-radius: 8px;
-		padding: 12px;
-		border: none;
-		font-size: 16px;
-		width: 100%;
 
-		&::after {
-			border: none;
-		}
-	}
 }
 
 // 纯斜向流光动画 - 从左上到右下的单向流动

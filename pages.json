@@ -46,6 +46,11 @@
 			"navigationStyle": "custom"
 		}
 	}, {
+		"path": "pages/settings/settings",
+		"style": {
+			"navigationBarTitleText": "设置"
+		}
+	}, {
 		"path": "pages/debug/debug",
 		"style": {
 			"navigationBarTitleText": "登录调试",
