@@ -18,7 +18,7 @@
       </view>
       <view class="filter-btn" @click="toggleDisplayMode">
         <text
-          :class="displayMode === 'single' ? 'icon-grid' : 'icon-list'"
+          :class="displayMode === 'single' ? 'icon-list' : 'icon-grid'"
         ></text>
       </view>
     </view>
