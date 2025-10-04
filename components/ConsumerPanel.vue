@@ -106,260 +106,256 @@
 	</uni-popup>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue'
 import { processConsumerAction } from '@/api/app'
 
-export default {
-	name: 'ConsumerPanel',
+// 定义组件名称
+defineOptions({
+	name: 'ConsumerPanel'
+})
 
-
-
-	props: {
-		visible: {
-			type: Boolean,
-			default: false
-		},
-		actionType: {
-			type: String,
-			default: 'gift', // 'gift' | 'verify'
-		},
-		consumerData: {
-			type: Object,
-			default: null
-		},
-		// 优惠券列表数据
-		coupons: {
-			type: Array,
-			default: () => []
-		},
-		// 特权列表数据
-		privileges: {
-			type: Array,
-			default: () => []
-		},
-		// 是否显示积分区域
-		showPoints: {
-			type: Boolean,
-			default: true
-		},
-		// 是否显示优惠券区域
-		showCoupons: {
-			type: Boolean,
-			default: true
-		},
-		// 是否显示特权区域
-		showPrivileges: {
-			type: Boolean,
-			default: true
-		},
-		// 用户当前积分
-		userPoints: {
-			type: Number,
-			default: 0
-		}
+// 定义props
+const props = defineProps({
+	visible: {
+		type: Boolean,
+		default: false
 	},
-
-	data() {
-		return {
-			// 赠送积分
-			giftPoints: '',
-			// 选中的优惠券
-			selectedCoupons: [],
-			// 选中的特权
-			selectedPrivileges: []
-		}
+	actionType: {
+		type: String,
+		default: 'gift' // 'gift' | 'verify'
 	},
-
-	computed: {
-		// 动态生成标题
-		panelTitle() {
-			return this.actionType === 'gift' ? '赠送' : '核销'
-		},
-		// 动态生成积分标题
-		pointsTitle() {
-			return `${this.actionType === 'gift' ? '赠送' : '扣除'}积分`
-		},
-		// 动态生成优惠券标题
-		couponsTitle() {
-			return `${this.actionType === 'gift' ? '赠送' : '核销'}优惠券`
-		},
-		// 动态生成特权标题
-		privilegesTitle() {
-			return `${this.actionType === 'gift' ? '赠送' : '核销'}特权`
-		},
-		// 动态生成积分输入框提示文本
-		pointsPlaceholder() {
-			return `请输入要${this.actionType === 'gift' ? '赠送' : '扣除'}的积分数量`
-		},
-		// 动态生成确认按钮文本
-		confirmText() {
-			return `确定${this.actionType === 'gift' ? '赠送' : '核销'}`
-		},
-		// 动态生成选择提示文本
-		selectHintText() {
-			return `请选择要${this.actionType === 'gift' ? '赠送' : '核销'}的内容`
-		},
-		// 根据积分过滤优惠券（仅赠送模式）
-		filteredCoupons() {
-			if (this.actionType !== 'gift') {
-				// 核销模式显示所有优惠券
-				return this.coupons
-			}
-			// 赠送模式需要过滤积分门槛
-			return this.coupons.filter(coupon => {
-				// 如果没有积分门槛，则显示
-				if (!coupon.points_threshold && coupon.points_threshold !== 0) {
-					return true
-				}
-				// 用户积分大于等于门槛积分
-				return this.userPoints >= coupon.points_threshold
-			})
-		}
+	consumerData: {
+		type: Object,
+		default: null
 	},
-
-	mounted() {
-		console.log(`ConsumerPanel 组件已加载 - 操作类型: ${this.actionType}, 优惠券: ${this.filteredCoupons.length}/${this.coupons.length}个, 特权: ${this.privileges.length}个, 用户积分: ${this.userPoints}`)
+	// 优惠券列表数据
+	coupons: {
+		type: Array,
+		default: () => []
 	},
-
-	watch: {
-		visible: {
-			handler(newVal) {
-				if (newVal) {
-					this.openPanel()
-				} else {
-					this.closePanel()
-				}
-			},
-			immediate: true
-		},
-		actionType() {
-			// 当操作类型改变时，重置选择状态
-			this.resetSelections()
-		}
+	// 特权列表数据
+	privileges: {
+		type: Array,
+		default: () => []
 	},
+	// 是否显示积分区域
+	showPoints: {
+		type: Boolean,
+		default: true
+	},
+	// 是否显示优惠券区域
+	showCoupons: {
+		type: Boolean,
+		default: true
+	},
+	// 是否显示特权区域
+	showPrivileges: {
+		type: Boolean,
+		default: true
+	},
+	// 用户当前积分
+	userPoints: {
+		type: Number,
+		default: 0
+	}
+})
 
-	methods: {
-		// 格式化日期
-		formatDate(dateStr) {
-			if (!dateStr) return ''
-			try {
-				const date = new Date(dateStr)
-				const year = date.getFullYear()
-				const month = String(date.getMonth() + 1).padStart(2, '0')
-				const day = String(date.getDate()).padStart(2, '0')
-				return `${year}-${month}-${day}`
-			} catch (_error) {
-				return dateStr
-			}
-		},
-		openPanel() {
-			if (this.$refs.consumerPopup) {
-				this.$refs.consumerPopup.open()
-			}
-		},
+// 定义事件
+const emit = defineEmits(['close', 'success'])
 
-		closePanel() {
-			if (this.$refs.consumerPopup) {
-				this.$refs.consumerPopup.close()
-			}
-			this.resetSelections()
-			this.$emit('close')
-		},
+// 创建refs
+const consumerPopup = ref(null)
 
-		// 切换优惠券选择状态
-		toggleCouponSelection(couponId) {
-			const index = this.selectedCoupons.indexOf(couponId)
-			if (index > -1) {
-				this.selectedCoupons.splice(index, 1)
-			} else {
-				this.selectedCoupons.push(couponId)
-			}
-		},
+// 响应式数据
+const giftPoints = ref('')
+const selectedCoupons = ref([])
+const selectedPrivileges = ref([])
 
-		// 切换特权选择状态
-		togglePrivilegeSelection(privilegeId) {
-			const index = this.selectedPrivileges.indexOf(privilegeId)
-			if (index > -1) {
-				this.selectedPrivileges.splice(index, 1)
-			} else {
-				this.selectedPrivileges.push(privilegeId)
-			}
-		},
+// 计算属性
+const panelTitle = computed(() => {
+	return props.actionType === 'gift' ? '赠送' : '核销'
+})
 
-		// 重置选择状态
-		resetSelections() {
-			this.giftPoints = ''
-			this.selectedCoupons = []
-			this.selectedPrivileges = []
-		},
+const pointsTitle = computed(() => {
+	return `${props.actionType === 'gift' ? '赠送' : '扣除'}积分`
+})
 
-		async confirmAction() {
-			// 验证操作数据
-			if (!this.consumerData || !this.consumerData.id) {
-				uni.showToast({
-					title: '消费者信息缺失',
-					icon: 'none'
-				})
-				return
-			}
+const couponsTitle = computed(() => {
+	return `${props.actionType === 'gift' ? '赠送' : '核销'}优惠券`
+})
 
-			// 获取操作数据
-			const points = this.giftPoints ? parseInt(this.giftPoints) : 0
-			const coupons = this.selectedCoupons || []
-			const privileges = this.selectedPrivileges || []
+const privilegesTitle = computed(() => {
+	return `${props.actionType === 'gift' ? '赠送' : '核销'}特权`
+})
 
-			// 验证是否有选择内容
-			if (points <= 0 && coupons.length === 0 && privileges.length === 0) {
-				uni.showToast({
-					title: `请选择要${this.actionType === 'gift' ? '赠送' : '核销'}的内容`,
-					icon: 'none'
-				})
-				return
-			}
+const pointsPlaceholder = computed(() => {
+	return `请输入要${props.actionType === 'gift' ? '赠送' : '扣除'}的积分数量`
+})
 
-			// 构建简化的payload
-			const payload = {
-				actionType: this.actionType,
-				consumerId: this.consumerData.id,
-				points: points,
-				coupons: coupons,
-				privileges: privileges
-			}
+const confirmText = computed(() => {
+	return `确定${props.actionType === 'gift' ? '赠送' : '核销'}`
+})
 
-			try {
-				console.log('发送消费者操作请求:', payload)
+const selectHintText = computed(() => {
+	return `请选择要${props.actionType === 'gift' ? '赠送' : '核销'}的内容`
+})
 
-				// 调用API
-				const response = await processConsumerAction(payload)
-
-				console.log('消费者操作响应:', response)
-
-				// 显示成功提示
-				uni.showToast({
-					title: `${this.actionType === 'gift' ? '赠送' : '核销'}操作成功`,
-					icon: 'success'
-				})
-
-				// 发送成功事件给父组件
-				this.$emit('success', {
-					actionType: this.actionType,
-					consumer: this.consumerData,
-					response: response
-				})
-
-				// 关闭面板
-				this.closePanel()
-
-			} catch (error) {
-				console.error('消费者操作失败:', error)
-
-				// 显示错误提示
-				uni.showToast({
-					title: error.message || `${this.actionType === 'gift' ? '赠送' : '核销'}操作失败`,
-					icon: 'none'
-				})
-			}
+const filteredCoupons = computed(() => {
+	if (props.actionType !== 'gift') {
+		// 核销模式显示所有优惠券
+		return props.coupons
+	}
+	// 赠送模式需要过滤积分门槛
+	return props.coupons.filter(coupon => {
+		// 如果没有积分门槛，则显示
+		if (!coupon.points_threshold && coupon.points_threshold !== 0) {
+			return true
 		}
+		// 用户积分大于等于门槛积分
+		return props.userPoints >= coupon.points_threshold
+	})
+})
+
+// 生命周期
+onMounted(() => {
+	console.log(`ConsumerPanel 组件已加载 - 操作类型: ${props.actionType}, 优惠券: ${filteredCoupons.value.length}/${props.coupons.length}个, 特权: ${props.privileges.length}个, 用户积分: ${props.userPoints}`)
+})
+
+// 监听器
+watch(() => props.visible, (newVal) => {
+	if (newVal) {
+		openPanel()
+	} else {
+		closePanel()
+	}
+}, { immediate: true })
+
+watch(() => props.actionType, () => {
+	// 当操作类型改变时，重置选择状态
+	resetSelections()
+})
+
+// 格式化日期
+const formatDate = (dateStr) => {
+	if (!dateStr) return ''
+	try {
+		const date = new Date(dateStr)
+		const year = date.getFullYear()
+		const month = String(date.getMonth() + 1).padStart(2, '0')
+		const day = String(date.getDate()).padStart(2, '0')
+		return `${year}-${month}-${day}`
+	} catch (_error) {
+		return dateStr
+	}
+}
+
+const openPanel = () => {
+	if (consumerPopup.value) {
+		consumerPopup.value.open()
+	}
+}
+
+const closePanel = () => {
+	if (consumerPopup.value) {
+		consumerPopup.value.close()
+	}
+	resetSelections()
+	emit('close')
+}
+
+// 切换优惠券选择状态
+const toggleCouponSelection = (couponId) => {
+	const index = selectedCoupons.value.indexOf(couponId)
+	if (index > -1) {
+		selectedCoupons.value.splice(index, 1)
+	} else {
+		selectedCoupons.value.push(couponId)
+	}
+}
+
+// 切换特权选择状态
+const togglePrivilegeSelection = (privilegeId) => {
+	const index = selectedPrivileges.value.indexOf(privilegeId)
+	if (index > -1) {
+		selectedPrivileges.value.splice(index, 1)
+	} else {
+		selectedPrivileges.value.push(privilegeId)
+	}
+}
+
+// 重置选择状态
+const resetSelections = () => {
+	giftPoints.value = ''
+	selectedCoupons.value = []
+	selectedPrivileges.value = []
+}
+
+const confirmAction = async () => {
+	// 验证操作数据
+	if (!props.consumerData || !props.consumerData.id) {
+		uni.showToast({
+			title: '消费者信息缺失',
+			icon: 'none'
+		})
+		return
+	}
+
+	// 获取操作数据
+	const points = giftPoints.value ? parseInt(giftPoints.value) : 0
+	const coupons = selectedCoupons.value || []
+	const privileges = selectedPrivileges.value || []
+
+	// 验证是否有选择内容
+	if (points <= 0 && coupons.length === 0 && privileges.length === 0) {
+		uni.showToast({
+			title: `请选择要${props.actionType === 'gift' ? '赠送' : '核销'}的内容`,
+			icon: 'none'
+		})
+		return
+	}
+
+	// 构建简化的payload
+	const payload = {
+		actionType: props.actionType,
+		consumerId: props.consumerData.id,
+		points: points,
+		coupons: coupons,
+		privileges: privileges
+	}
+
+	try {
+		console.log('发送消费者操作请求:', payload)
+
+		// 调用API
+		const response = await processConsumerAction(payload)
+
+		console.log('消费者操作响应:', response)
+
+		// 显示成功提示
+		uni.showToast({
+			title: `${props.actionType === 'gift' ? '赠送' : '核销'}操作成功`,
+			icon: 'success'
+		})
+
+		// 发送成功事件给父组件
+		emit('success', {
+			actionType: props.actionType,
+			consumer: props.consumerData,
+			response: response
+		})
+
+		// 关闭面板
+		closePanel()
+
+	} catch (error) {
+		console.error('消费者操作失败:', error)
+
+		// 显示错误提示
+		uni.showToast({
+			title: error.message || `${props.actionType === 'gift' ? '赠送' : '核销'}操作失败`,
+			icon: 'none'
+		})
 	}
 }
 </script>

@@ -52,19 +52,6 @@
 
 			<!-- 功能菜单 -->
 			<view class="menu-section">
-				<!-- 管理员专用菜单 -->
-				<view
-					v-if="hasCustomerPermission"
-					class="menu-item"
-					@click="navigateToCustomer"
-				>
-					<view class="menu-item-content">
-						<uni-icons type="person-filled" size="20" color="#007aff"></uni-icons>
-						<text class="menu-text">客户管理</text>
-					</view>
-					<uni-icons type="right" size="16" color="#ccc"></uni-icons>
-				</view>
-
 				<view class="menu-item">
 					<view class="menu-item-content">
 						<uni-icons type="list" size="20" color="#666"></uni-icons>
@@ -111,11 +98,6 @@ const tabBarStore = useTabBarStore()
 // 响应式数据
 const userInfoLoading = ref(false)
 const isRefreshing = ref(false)
-
-// 计算属性
-const hasCustomerPermission = computed(() => {
-	return userStore.hasCustomerPermission
-})
 
 const userInfo = computed(() => {
 	return userStore.userInfo || {}
@@ -189,7 +171,6 @@ onShow(() => {
 	if (!checkLoginAndRedirect()) {
 		return
 	}
-
 	// 设置当前页面的tabBar状态
 	tabBarStore.setActiveTab('profile')
 	// 页面显示，状态由Pinia自动管理
@@ -203,7 +184,11 @@ const onRefresh = async () => {
 	try {
 		// 刷新用户信息，包括coupons和privileges
 		await userStore.fetchUserInfo()
-
+        if(userStore.userInfo.status === 1){
+            tabBarStore.setUserType('admin')
+        } else {
+            tabBarStore.setUserType('normal')
+        }
 		uni.showToast({
 			title: '刷新成功',
 			icon: 'success'
@@ -217,14 +202,6 @@ const onRefresh = async () => {
 	} finally {
 		isRefreshing.value = false
 	}
-}
-
-// 导航到客户管理页面
-const navigateToCustomer = () => {
-	console.log('导航到客户管理页面')
-	uni.navigateTo({
-		url: '/pages/customer/customer'
-	})
 }
 
 // 退出登录

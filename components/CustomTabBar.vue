@@ -1,6 +1,6 @@
 <template>
 	<uv-tabbar
-		:value="activeTabIndex"
+		:value="tabBarStore.activeTab"
 		:fixed="true"
 		activeColor="#ee0a24"
 		inactiveColor="#7d7e80"
@@ -9,6 +9,7 @@
 		<uv-tabbar-item
 			v-for="tab in tabBarStore.tabList"
 			:key="tab.name"
+            :name="tab.name"
 			:text="tab.text"
 			:icon="mapIcon(tab.icon)"
 		></uv-tabbar-item>
@@ -28,11 +29,11 @@ defineOptions({
 const tabBarStore = useTabBarStore()
 
 // 计算当前激活标签的索引
-const activeTabIndex = computed(() => {
-	const index = tabBarStore.tabList.findIndex(tab => tab.name === tabBarStore.activeTab)
-	console.log('🏷️ 当前激活标签索引:', index, '对应标签:', tabBarStore.activeTab)
-	return index >= 0 ? index : 0
-})
+// const activeTabIndex = computed(() => {
+// 	const index = tabBarStore.tabList.findIndex(tab => tab.name === tabBarStore.activeTab)
+// 	console.log('🏷️ 当前激活标签索引:', index, '对应标签:', tabBarStore.activeTab)
+// 	return index >= 0 ? index : 0
+// })
 
 // 图标映射函数 - 适配uv-ui的图标名称
 const mapIcon = (storeIcon) => {
@@ -47,9 +48,9 @@ const mapIcon = (storeIcon) => {
 }
 
 // 处理标签切换事件
-const handleTabChange = (index) => {
-	console.log('🏷️ 标签切换到索引:', index)
-	const selectedTab = tabBarStore.tabList[index]
+const handleTabChange = (name) => {
+	console.log('🏷️ 标签切换到:', name)
+	const selectedTab = tabBarStore.tabList.find(tab => tab.name === name)
 	if (selectedTab && selectedTab.path) {
 		tabBarStore.switchTab(selectedTab.name)
 	} else {
