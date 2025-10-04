@@ -1,7 +1,7 @@
 <template>
 	<uv-tabbar
 		:value="activeTabIndex"
-		@change="onChange"
+		@change="handleChange"
 		:activeColor="activeColor"
 		:inactiveColor="inactiveColor"
 		:fixed="true"
@@ -18,99 +18,98 @@
 	</uv-tabbar>
 </template>
 
-<script>
-import { computed } from 'vue'
+<script setup>
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useTabBarStore } from '@/stores'
 
-export default {
-	name: 'CustomTabBar',
-	setup() {
-		const tabBarStore = useTabBarStore()
+// 定义组件名称（可选）
+defineOptions({
+	name: 'CustomTabBar'
+})
 
-		// 计算当前激活标签的索引（uv-tabbar使用索引而不是名称）
-		const activeTabIndex = computed(() => {
-			const index = tabBarStore.tabList.findIndex(tab => tab.name === tabBarStore.activeTab)
-			console.log('🏷️ 当前激活标签索引:', index, '对应标签:', tabBarStore.activeTab)
-			return index >= 0 ? index : 0
-		})
+// 获取 tabBar store
+const tabBarStore = useTabBarStore()
 
-		return {
-			tabBarStore,
-			activeTabIndex
-		}
-	},
+// 响应式数据
+const activeColor = ref('#ee0a24')
+const inactiveColor = ref('#7d7e80')
 
-	data() {
-		return {
-			// 自定义颜色配置
-			activeColor: '#ee0a24',
-			inactiveColor: '#7d7e80'
-		}
-	},
+// 计算当前激活标签的索引（uv-tabbar使用索引而不是名称）
+const activeTabIndex = computed(() => {
+	const index = tabBarStore.tabList.findIndex(tab => tab.name === tabBarStore.activeTab)
+	console.log('🏷️ 当前激活标签索引:', index, '对应标签:', tabBarStore.activeTab)
+	return index >= 0 ? index : 0
+})
 
-	methods: {
-		// uv-tabbar的change事件传递索引
-		onChange(index) {
-			console.log('🏷️ CustomTabBar onChange 索引:', index, typeof index)
+// 图标映射函数
+const mapIcon = (storeIcon) => {
+	const iconMap = {
+		'home-o': 'home',
+		'service-o': 'setting',
+		'diamond-o': 'star',
+		'user-o': 'account'
+	}
+	return iconMap[storeIcon] || storeIcon
+}
 
-			// 根据索引获取对应的标签信息
-			if (index >= 0 && index < this.tabBarStore.tabList.length) {
-				const tab = this.tabBarStore.tabList[index]
-				console.log('🏷️ 切换到标签:', tab.name, tab.text)
+// uv-tabbar的change事件处理
+const handleChange = (index) => {
+	console.log('🏷️ CustomTabBar onChange 索引:', index, typeof index)
 
-				// 使用store的switchTab方法进行跳转
-				this.tabBarStore.switchTab(tab.name)
-			} else {
-				console.warn('🏷️ 无效的标签索引:', index)
-			}
-		},
+	// 根据索引获取对应的标签信息
+	if (index >= 0 && index < tabBarStore.tabList.length) {
+		const tab = tabBarStore.tabList[index]
+		console.log('🏷️ 切换到标签:', tab.name, tab.text)
 
-		// 将store中的图标映射为uv-icon支持的图标
-		mapIcon(storeIcon) {
-			const iconMap = {
-				'home-o': 'home',
-				'service-o': 'setting',
-				'diamond-o': 'star',
-				'user-o': 'account'
-			}
-			return iconMap[storeIcon] || storeIcon
-		}
-	},
+		// 使用store的switchTab方法进行跳转
+		tabBarStore.switchTab(tab.name)
+	} else {
+		console.warn('🏷️ 无效的标签索引:', index)
+	}
+}
 
-	// 添加观察者监听store变化
-	watch: {
-		'tabBarStore.activeTab': {
-			handler(newVal, oldVal) {
-				console.log('🏷️ activeTab 变化:', oldVal, '->', newVal)
-				// 强制更新组件状态
-				this.$forceUpdate()
-			},
-			immediate: true
-		}
-	},
+// 初始化函数
+const initTabBar = async () => {
+	console.log('🏷️ CustomTabBar 初始化')
+	console.log('🏷️ 当前tabBarStore.activeTab:', tabBarStore.activeTab)
+	console.log('🏷️ tabList:', tabBarStore.tabList.map(t => `${t.name}(${t.text})`))
+	console.log('🏷️ 当前激活索引:', activeTabIndex.value)
 
-	// 组件挂载时设置默认激活状态
-	mounted() {
-		console.log('🏷️ CustomTabBar mounted')
-		console.log('🏷️ 当前tabBarStore.activeTab:', this.tabBarStore.activeTab)
-		console.log('🏷️ tabList:', this.tabBarStore.tabList.map(t => `${t.name}(${t.text})`))
-		console.log('🏷️ 当前激活索引:', this.activeTabIndex)
+	// 如果没有设置activeTab，默认设置为首页
+	if (!tabBarStore.activeTab) {
+		tabBarStore.setActiveTab('home')
+	}
 
-		// 如果没有设置activeTab，默认设置为首页
-		if (!this.tabBarStore.activeTab) {
-			this.tabBarStore.setActiveTab('home')
-		}
+	// 等待下一个tick后再处理页面路径
+	await nextTick()
 
-		// 根据当前页面路径自动设置激活标签
+	// 根据当前页面路径自动设置激活标签
+	try {
 		const pages = getCurrentPages()
 		if (pages && pages.length > 0) {
 			const currentPage = pages[pages.length - 1]
 			const currentRoute = '/' + currentPage.route
 			console.log('🏷️ 当前页面路径:', currentRoute)
-			this.tabBarStore.setActiveTabByPath(currentRoute)
+			tabBarStore.setActiveTabByPath(currentRoute)
 		}
+	} catch (error) {
+		console.warn('🏷️ 获取当前页面路径失败:', error)
 	}
 }
+
+// 监听 store 中 activeTab 的变化
+watch(
+	() => tabBarStore.activeTab,
+	(newVal, oldVal) => {
+		console.log('🏷️ activeTab 变化:', oldVal, '->', newVal)
+	},
+	{ immediate: true }
+)
+
+// 组件挂载时的初始化
+onMounted(() => {
+	initTabBar()
+})
 </script>
 
 <style lang="scss" scoped>
