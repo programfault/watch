@@ -113,10 +113,13 @@
       @success="handlePanelSuccess"
       @close="handlePanelClose"
     />
+    <!-- 底部标签栏组件 -->
+		<CustomTabBar />
   </view>
 </template>
 
 <script>
+import CustomTabBar from '@/components/CustomTabBar.vue'
 import ConsumerPanel from "@/components/ConsumerPanel.vue";
 import { useUserStore } from "@/stores";
 import ScanUtils from "@/utils/scanUtils.js";
@@ -124,6 +127,7 @@ import ScanUtils from "@/utils/scanUtils.js";
 export default {
   components: {
     ConsumerPanel,
+    CustomTabBar
   },
   setup() {
     const userStore = useUserStore();

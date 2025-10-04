@@ -6,8 +6,11 @@
 			<text class="loading-text">加载中...</text>
 		</view>
 
-		<!-- 未登录状态 - 显示登录组件 -->
-		<LoginComponent v-else-if="!userStore.isLoggedIn" />
+		<!-- 未登录状态 - 显示提示信息 -->
+		<view v-else-if="!userStore.isLoggedIn" class="not-login">
+			<uni-icons type="info" size="40" color="#999"></uni-icons>
+			<text class="not-login-text">正在跳转到登录页面...</text>
+		</view>
 
 		<!-- 已登录状态 - 个人信息内容（支持下拉刷新） -->
 		<scroll-view
@@ -88,130 +91,163 @@
 	</view>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import CouponList from '@/components/CouponList.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
-import LoginComponent from '@/components/LoginComponent.vue'
 import PrivilegeList from '@/components/PrivilegeList.vue'
 import { useTabBarStore, useUserStore } from '@/stores'
 
-export default {
-	components: {
-		LoginComponent,
-		CouponList,
-		PrivilegeList,
-		CustomTabBar
-	},
-	data() {
-		return {
-			userInfoLoading: false,
-			isRefreshing: false
-		}
-	},
-	computed: {
-		userStore() {
-			return useUserStore()
-		},
-		tabBarStore() {
-			return useTabBarStore()
-		},
-		hasCustomerPermission() {
-			return this.userStore.hasCustomerPermission;
-		},
-		userInfo() {
-			return this.userStore.userInfo || {}
-		},
-		// 从API获取卡号
-		cardNumber() {
-			return this.userInfo.card_number || 'VIP888168';
-		},
-		// 从API获取积分
-		userPoints() {
-			const points = this.userInfo.points || 12580;
-			return points.toLocaleString();
-		},
-		// 动态用户名
-		userName() {
-			return this.userInfo.name || this.userInfo.nickname || '天辰表友';
-		},
-		// 优惠券列表
-		coupons() {
-			return this.userInfo.coupons || [];
-		},
-		// 特权列表
-		privileges() {
-			return this.userInfo.privileges || [];
-		},
+// 定义组件名称
+defineOptions({
+	name: 'ProfilePage'
+})
 
-	},
-	async onLoad() {
-		this.userInfoLoading = true;
+// 获取 stores
+const userStore = useUserStore()
+const tabBarStore = useTabBarStore()
 
-		// 初始化用户状态
-		await this.userStore.initUserState();
+// 响应式数据
+const userInfoLoading = ref(false)
+const isRefreshing = ref(false)
 
-		this.userInfoLoading = false;
-	},
+// 计算属性
+const hasCustomerPermission = computed(() => {
+	return userStore.hasCustomerPermission
+})
 
-	onShow() {
-		// 设置当前页面的tabBar状态
-		this.tabBarStore.setActiveTab('profile')
-		// 页面显示，状态由Pinia自动管理
-	},
-	methods: {
-		// 下拉刷新
-		async onRefresh() {
-			this.isRefreshing = true;
+const userInfo = computed(() => {
+	return userStore.userInfo || {}
+})
 
-			try {
-				// 刷新用户信息，包括coupons和privileges
-				await this.userStore.fetchUserInfo();
+// 从API获取卡号
+const cardNumber = computed(() => {
+	return userInfo.value.card_number || 'VIP888168'
+})
 
-				uni.showToast({
-					title: '刷新成功',
-					icon: 'success'
-				});
+// 从API获取积分
+const userPoints = computed(() => {
+	const points = userInfo.value.points || 12580
+	return points.toLocaleString()
+})
 
-			} catch (error) {
-				console.error('Profile页面 - 刷新失败:', error);
-				uni.showToast({
-					title: '刷新失败',
-					icon: 'error'
-				});
-			} finally {
-				this.isRefreshing = false;
-			}
-		},
+// 优惠券列表
+const coupons = computed(() => {
+	return userInfo.value.coupons || []
+})
 
-		// 导航到客户管理页面
-		navigateToCustomer() {
+// 特权列表
+const privileges = computed(() => {
+	return userInfo.value.privileges || []
+})
+
+// 检查登录状态并跳转
+const checkLoginAndRedirect = () => {
+	if (!userStore.isLoggedIn) {
+		console.log('用户未登录，跳转到登录页面')
+		uni.showToast({
+			title: '请先登录',
+			icon: 'none'
+		})
+		setTimeout(() => {
 			uni.navigateTo({
-				url: '/pages/customer/customer'
-			});
-		},
-
-		// 退出登录
-		handleLogout() {
-			console.log('handleLogout 方法被调用');
-			uni.showModal({
-				title: '确认退出',
-				content: '确定要退出登录吗？',
-				success: (res) => {
-					console.log('Modal 回调，用户选择:', res.confirm);
-					if (res.confirm) {
-						console.log('开始执行退出登录');
-						// 调用 store 中的退出登录方法
-						this.userStore.logout();
-
-						uni.showToast({
-							title: '已退出登录',
-							icon: 'success'
-						});
-					}
-				}
-			});
-		},
+				url: '/pages/login/login'
+			})
+		}, 1000)
+		return false
 	}
+	return true
+}
+
+// 页面生命周期 - onLoad
+onLoad(async () => {
+	console.log('Profile页面 onLoad')
+	userInfoLoading.value = true
+
+	try {
+		// 初始化用户状态
+		await userStore.initUserState()
+
+		// 检查登录状态
+		if (!checkLoginAndRedirect()) {
+			userInfoLoading.value = false
+			return
+		}
+	} catch (error) {
+		console.error('Profile页面 - 初始化失败:', error)
+	} finally {
+		userInfoLoading.value = false
+	}
+})
+
+// 页面生命周期 - onShow
+onShow(() => {
+	console.log('Profile页面 onShow')
+
+	// 检查登录状态
+	if (!checkLoginAndRedirect()) {
+		return
+	}
+
+	// 设置当前页面的tabBar状态
+	tabBarStore.setActiveTab('profile')
+	// 页面显示，状态由Pinia自动管理
+})
+
+// 下拉刷新
+const onRefresh = async () => {
+	console.log('Profile页面 - 开始下拉刷新')
+	isRefreshing.value = true
+
+	try {
+		// 刷新用户信息，包括coupons和privileges
+		await userStore.fetchUserInfo()
+
+		uni.showToast({
+			title: '刷新成功',
+			icon: 'success'
+		})
+	} catch (error) {
+		console.error('Profile页面 - 刷新失败:', error)
+		uni.showToast({
+			title: '刷新失败',
+			icon: 'error'
+		})
+	} finally {
+		isRefreshing.value = false
+	}
+}
+
+// 导航到客户管理页面
+const navigateToCustomer = () => {
+	console.log('导航到客户管理页面')
+	uni.navigateTo({
+		url: '/pages/customer/customer'
+	})
+}
+
+// 退出登录
+const handleLogout = () => {
+	console.log('handleLogout 方法被调用')
+	uni.showModal({
+		title: '确认退出',
+		content: '确定要退出登录吗？',
+		success: (res) => {
+			console.log('Modal 回调，用户选择:', res.confirm)
+			if (res.confirm) {
+				console.log('开始执行退出登录')
+				// 调用 store 中的退出登录方法
+				userStore.logout()
+                tabBarStore.setUserType('normal')
+                tabBarStore.setActiveTab('home')
+				uni.showToast({
+					title: '已退出登录',
+					icon: 'success'
+				})
+			}
+		}
+	})
 }
 </script>
 
@@ -236,6 +272,20 @@ export default {
 		margin-top: 10px;
 		font-size: 14px;
 		color: #999;
+	}
+}
+
+.not-login {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 50vh;
+
+	.not-login-text {
+		margin-top: 16px;
+		font-size: 16px;
+		color: #666;
 	}
 }
 

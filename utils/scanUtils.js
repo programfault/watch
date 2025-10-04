@@ -144,12 +144,15 @@ const ScanUtils = {
    * @returns {Promise<string|null>} 扫码结果字符串，失败或取消返回null
    */
   async quickScan() {
-    try {
+      try {
+        console.log("check camera auth");
+
       const authResult = await this.checkCameraAuth();
       if (!authResult) {
         return null;
       }
-
+      console.log(authResult);
+      return
       const scanResult = await this.openScanCode();
       if (scanResult?.result) {
         uni.showToast({

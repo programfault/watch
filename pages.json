@@ -73,6 +73,9 @@
 			"pagePath": "pages/maintenance/maintenance",
 			"text": "保养"
 		}, {
+			"pagePath": "pages/customer/customer",
+			"text": "客户"
+		}, {
 			"pagePath": "pages/rolex/rolex",
 			"text": "劳力士"
 		}, {

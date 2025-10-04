@@ -30,7 +30,6 @@
         </swiper-item>
       </swiper>
     </view>
-
     <!-- 加载状态 -->
     <view class="loading-section" v-if="appStore.carouselLoading">
       <uni-load-more status="loading" />
@@ -83,6 +82,11 @@ export default {
     return {
       appStore,
     };
+  },
+  data(){
+    return{
+        loading: true,
+    }
   },
   methods: {
     // 轮播图点击事件
