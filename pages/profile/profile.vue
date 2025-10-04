@@ -82,20 +82,25 @@
 			<button class="logout-btn" @click="handleLogout">退出登录</button>
 			</view>
 		</scroll-view>
+
+		<!-- 底部标签栏组件 -->
+		<CustomTabBar />
 	</view>
 </template>
 
 <script>
-import { useUserStore } from '@/stores/user'
-import LoginComponent from '@/components/LoginComponent.vue'
 import CouponList from '@/components/CouponList.vue'
+import CustomTabBar from '@/components/CustomTabBar.vue'
+import LoginComponent from '@/components/LoginComponent.vue'
 import PrivilegeList from '@/components/PrivilegeList.vue'
+import { useTabBarStore, useUserStore } from '@/stores'
 
 export default {
 	components: {
 		LoginComponent,
 		CouponList,
-		PrivilegeList
+		PrivilegeList,
+		CustomTabBar
 	},
 	data() {
 		return {
@@ -106,6 +111,9 @@ export default {
 	computed: {
 		userStore() {
 			return useUserStore()
+		},
+		tabBarStore() {
+			return useTabBarStore()
 		},
 		hasCustomerPermission() {
 			return this.userStore.hasCustomerPermission;
@@ -146,6 +154,8 @@ export default {
 	},
 
 	onShow() {
+		// 设置当前页面的tabBar状态
+		this.tabBarStore.setActiveTab('profile')
 		// 页面显示，状态由Pinia自动管理
 	},
 	methods: {

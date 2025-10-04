@@ -8,10 +8,9 @@
 
 		<!-- 品牌组件 -->
 		<BrandsComponent v-if="!searchStore.showSearchPanel" />
-        <van-tabbar v-model="active" @change="onChange">
-        <van-tabbar-item icon="home-o" name="home">首页</van-tabbar-item>
-        <van-tabbar-item icon="user-o" name="profile">我的</van-tabbar-item>
-        </van-tabbar>
+
+		<!-- 底部标签栏组件 -->
+		<CustomTabBar />
 		<!-- 客服按钮 -->
         <!-- <view class="container">
             <button @click="openCustomerService">联系客服</button>
@@ -29,28 +28,29 @@
 </template>
 
 <script>
-import { ref } from 'vue';
 import BrandsComponent from '@/components/BrandsComponent.vue'
 import CarouselComponent from '@/components/CarouselComponent.vue'
+import CustomTabBar from '@/components/CustomTabBar.vue'
 import HomeSearchComponent from '@/components/HomeSearchComponent.vue'
-import { useAppStore, useSearchStore, useUserStore } from '@/stores'
+import { useAppStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
 import ScanUtils from '@/utils/scanUtils.js'
 export default {
 	components: {
 		HomeSearchComponent,
 		BrandsComponent,
-		CarouselComponent
+		CarouselComponent,
+		CustomTabBar
 	},
 	setup() {
 		const searchStore = useSearchStore()
 		const appStore = useAppStore()
 		const userStore = useUserStore()
-        const active = ref(0);
+		const tabBarStore = useTabBarStore()
 		return {
 			searchStore,
 			appStore,
 			userStore,
-            active
+			tabBarStore
 		}
 	},
 	data() {
@@ -70,6 +70,9 @@ export default {
 
 	onShow() {
 		console.log('Index页面 onShow')
+
+		// 设置当前页面的tabBar状态
+		this.tabBarStore.setActiveTab('home')
 
 		// 每次页面显示都重新初始化 stores，确保状态正确
 		try {
@@ -99,15 +102,6 @@ export default {
 	},
 	methods: {
 		// 搜索事件 - 可选的业务处理
-        onChange(name) {
-            console.log('当前选中标签:', name);
-            if (name.detail === 'profile') {
-                console.log('切换到我的标签，跳转profile页面');
-                uni.switchTab({
-                    url: '/pages/profile/profile'
-                });
-            }
-        },
 		onSearch(keyword) {
 			console.log('首页搜索:', keyword)
 		},
@@ -142,7 +136,7 @@ export default {
 			console.log('悬浮扫一扫点击');
 
 			// 总是重新获取 userStore 实例以确保最新状态
-			let userStore = useUserStore();
+			const userStore = useUserStore();
 
 			// 更新组件的引用
 			this.userStore = userStore;

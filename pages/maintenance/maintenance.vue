@@ -72,17 +72,26 @@
 				<text class="empty-text">暂无服务门店信息</text>
 			</view>
 		</view>
+
+		<!-- 底部标签栏组件 -->
+		<CustomTabBar />
 	</view>
 </template>
 
 <script>
-import { useAppStore } from '@/stores'
+import CustomTabBar from '@/components/CustomTabBar.vue'
+import { useAppStore, useTabBarStore } from '@/stores'
 
 export default {
+	components: {
+		CustomTabBar
+	},
 	setup() {
 		const appStore = useAppStore()
+		const tabBarStore = useTabBarStore()
 		return {
-			appStore
+			appStore,
+			tabBarStore
 		}
 	},
 	data() {
@@ -116,6 +125,11 @@ export default {
 
 		// 进入页面时主动请求位置权限
 		await this.requestLocationOnEnter()
+	},
+
+	onShow() {
+		// 设置当前页面的tabBar状态
+		this.tabBarStore.setActiveTab('maintenance')
 	},
 	methods: {
 		// 显示店铺详情
