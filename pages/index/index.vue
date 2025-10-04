@@ -72,7 +72,9 @@ export default {
 		console.log('Index页面 onShow')
 
 		// 设置当前页面的tabBar状态
+		console.log('🏷️ Index页面设置activeTab为home，当前值:', this.tabBarStore.activeTab)
 		this.tabBarStore.setActiveTab('home')
+		console.log('🏷️ Index页面设置后activeTab值:', this.tabBarStore.activeTab)
 
 		// 每次页面显示都重新初始化 stores，确保状态正确
 		try {
