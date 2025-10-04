@@ -358,6 +358,12 @@ const confirmAction = async () => {
 		})
 	}
 }
+
+// 暴露方法给父组件使用
+defineExpose({
+	openPanel,
+	closePanel
+})
 </script>
 
 <style lang="scss" scoped>

@@ -118,259 +118,257 @@
   </view>
 </template>
 
-<script>
+<script setup>
+import { ref } from 'vue'
+import { onLoad, onShow, onUnload, onPullDownRefresh } from '@dcloudio/uni-app'
 import CustomTabBar from '@/components/CustomTabBar.vue'
-import ConsumerPanel from "@/components/ConsumerPanel.vue";
-import { useUserStore } from "@/stores";
-import ScanUtils from "@/utils/scanUtils.js";
+import ConsumerPanel from "@/components/ConsumerPanel.vue"
+import { useUserStore } from "@/stores"
+import ScanUtils from "@/utils/scanUtils.js"
 
-export default {
-  components: {
-    ConsumerPanel,
-    CustomTabBar
-  },
-  setup() {
-    const userStore = useUserStore();
-    return {
-      userStore,
-    };
-  },
-  data() {
-    return {
-      searchKeyword: "",
-      searchCard: "",
-      isRefreshing: false,
-      selectedConsumer: null,
-      currentActionType: 'gift', // 'gift' 或 'verify'
-      // 面板显示的动态数据，根据操作类型设置不同来源的数据
-      // 赠送时：使用 userStore.benefitsCoupons (系统可用的福利)
-      // 核销时：使用 consumer.coupons/privileges (消费者已有的福利)
-      panelCoupons: [],
-      panelPrivileges: [],
-    };
-  },
-  async onUnload(){
-    this.userStore.setConsumersCardNumber = ''
-  },
-  async onLoad() {
-    console.log('🚀 页面onLoad开始...');
-    try {
-      // 获取消费者数据
-      await this.loadData();
-      console.log('✅ 页面onLoad完成');
-    } catch (error) {
-      console.error('❌ 页面onLoad失败:', error);
+// 定义组件名称
+defineOptions({
+	name: 'CustomerPage'
+})
+
+// 获取 stores
+const userStore = useUserStore()
+
+// 响应式数据
+const searchKeyword = ref("")
+const searchCard = ref("")
+const isRefreshing = ref(false)
+const selectedConsumer = ref(null)
+const currentActionType = ref('gift') // 'gift' 或 'verify'
+// 面板显示的动态数据，根据操作类型设置不同来源的数据
+// 赠送时：使用 userStore.benefitsCoupons (系统可用的福利)
+// 核销时：使用 consumer.coupons/privileges (消费者已有的福利)
+const panelCoupons = ref([])
+const panelPrivileges = ref([])
+
+// 组件引用
+const consumerPanel = ref(null)
+
+// 页面生命周期 - onUnload
+onUnload(async () => {
+  userStore.setConsumersCardNumber('')
+})
+
+// 页面生命周期 - onLoad
+onLoad(async () => {
+  console.log('🚀 页面onLoad开始...')
+  try {
+    // 获取消费者数据
+    await loadData()
+    console.log('✅ 页面onLoad完成')
+  } catch (error) {
+    console.error('❌ 页面onLoad失败:', error)
+  }
+})
+
+// 页面生命周期 - onShow
+onShow(() => {
+  console.log('🔍 customer页面 onShow')
+  console.log('🔍 当前搜索状态:', {
+    searchKeyword: userStore.consumersSearchKeyword,
+    cardNumber: userStore.consumersCardNumber
+  })
+})
+
+// 页面生命周期 - onPullDownRefresh
+onPullDownRefresh(() => {
+  // 下拉刷新
+  refreshData()
+})
+
+// 方法定义
+// 加载数据
+const loadData = async () => {
+  try {
+    console.log('开始加载消费者数据...')
+
+    // 并行加载消费者数据和福利数据
+    await Promise.all([
+      userStore.fetchConsumers(),
+      userStore.fetchBenefits()
+    ])
+
+    console.log('🔍 数据加载完成，当前状态:')
+    console.log('- consumers数量:', userStore.consumers.length)
+    console.log('- filteredConsumers数量:', userStore.filteredConsumers.length)
+    console.log('- hasFilteredConsumers:', userStore.hasFilteredConsumers)
+    console.log('- consumersLoading:', userStore.consumersLoading)
+    console.log('- searchKeyword:', userStore.consumersSearchKeyword)
+    console.log('- consumersCardNumber:', userStore.consumersCardNumber)
+
+  } catch (error) {
+    console.error("加载数据失败:", error)
+    uni.showModal({
+      title: "加载失败",
+      content: `错误信息: ${error.message || error}`,
+      showCancel: false,
+    })
+  }
+}
+
+// 处理下拉刷新
+const onRefresh = async () => {
+  isRefreshing.value = true
+  try {
+    // 重置并刷新所有数据
+    userStore.resetConsumers()
+    userStore.resetBenefits()
+    await Promise.all([
+      userStore.fetchConsumers(),
+      userStore.fetchBenefits()
+    ])
+    uni.showToast({
+      title: "刷新成功",
+      icon: "success",
+    })
+  } catch (error) {
+    console.error("刷新数据失败:", error)
+    uni.showToast({
+      title: "刷新失败",
+      icon: "none",
+    })
+  } finally {
+    isRefreshing.value = false
+  }
+}
+
+// 刷新数据
+const refreshData = async () => {
+  try {
+    // 重置并刷新所有数据
+    userStore.resetConsumers()
+    userStore.resetBenefits()
+    await Promise.all([
+      userStore.fetchConsumers(),
+      userStore.fetchBenefits()
+    ])
+    uni.showToast({
+      title: "刷新成功",
+      icon: "success",
+    })
+  } catch (error) {
+    console.error("刷新数据失败:", error)
+    uni.showToast({
+      title: "刷新失败",
+      icon: "none",
+    })
+  } finally {
+    // 停止下拉刷新动画
+    uni.stopPullDownRefresh()
+  }
+}
+
+// 赠送操作
+const handleGift = (consumer) => {
+  console.log("赠送操作:", consumer)
+  selectedConsumer.value = consumer
+  currentActionType.value = 'gift'
+  // 赠送时使用系统可用的福利数据
+  panelCoupons.value = userStore.benefitsCoupons || []
+  panelPrivileges.value = userStore.benefitsPrivileges || []
+  consumerPanel.value.openPanel()
+}
+
+// 核销操作
+const handleVerification = (consumer) => {
+  console.log("核销操作:", consumer)
+  selectedConsumer.value = consumer
+  currentActionType.value = 'verify'
+  // 核销时直接从消费者对象中获取已有的福利数据
+  panelCoupons.value = consumer.coupons || []
+  panelPrivileges.value = consumer.privileges || []
+  consumerPanel.value.openPanel()
+}
+
+
+// 处理面板成功事件
+const handlePanelSuccess = async (data) => {
+  console.log('操作成功:', data)
+
+  // 刷新数据以获取最新状态
+  try {
+    await loadData()
+  } catch (error) {
+    console.error('刷新数据失败:', error)
+  }
+
+  // 重置选中的消费者（关闭面板）
+  selectedConsumer.value = null
+  currentActionType.value = 'gift'
+  panelCoupons.value = []
+  panelPrivileges.value = []
+}
+
+// 处理面板关闭事件
+const handlePanelClose = () => {
+  console.log('面板关闭')
+  // 重置状态
+  selectedConsumer.value = null
+  currentActionType.value = 'gift'
+  panelCoupons.value = []
+  panelPrivileges.value = []
+}
+
+// 搜索输入事件（本地实时搜索）
+const onSearchInput = (e) => {
+  const keyword = e.detail?.value || e
+  console.log("搜索输入:", keyword)
+  searchKeyword.value = keyword
+  userStore.setConsumersSearchKeyword(keyword)
+}
+
+// 搜索清除事件
+const onSearchClear = () => {
+  console.log("搜索清除")
+  searchKeyword.value = ""
+  userStore.clearConsumersSearch()
+}
+
+// 搜索确认事件
+const onSearchConfirm = (e) => {
+  const keyword = e.detail?.value || e
+  console.log("搜索确认:", keyword)
+  searchKeyword.value = keyword
+  userStore.setConsumersSearchKeyword(keyword)
+}
+
+// 扫一扫功能
+const handleScan = async () => {
+  console.log('点击扫一扫')
+
+  try {
+    // 使用通用扫码工具
+    const scanResult = await ScanUtils.quickScan()
+    if (scanResult) {
+      console.log('🔍 customer页面扫码结果:', scanResult)
+      searchCard.value = scanResult
+
+      // 先清除之前的搜索条件
+      userStore.clearConsumersSearch()
+
+      // 设置卡号搜索
+      userStore.setConsumersCardNumber(scanResult)
     }
-  },
-  onShow() {
-    console.log('🔍 customer页面 onShow');
-    console.log('🔍 当前搜索状态:', {
-      searchKeyword: this.userStore.consumersSearchKeyword,
-      cardNumber: this.userStore.consumersCardNumber
-    });
-  },
-  onPullDownRefresh() {
-    // 下拉刷新
-    this.refreshData();
-  },
-  // 移除触底加载更多，因为不支持分页
-  // onReachBottom() {
-  // 	if (this.userStore.consumersHasMore && !this.userStore.consumersLoading) {
-  // 		this.loadMore()
-  // 	}
-  // },
-  methods: {
-    // 加载数据
-    async loadData() {
-      try {
-        console.log('开始加载消费者数据...');
+  } catch (error) {
+    console.error('扫码失败:', error)
+  }
+}
 
-        // 并行加载消费者数据和福利数据
-        await Promise.all([
-          this.userStore.fetchConsumers(),
-          this.userStore.fetchBenefits()
-        ]);
-
-        console.log('🔍 数据加载完成，当前状态:');
-        console.log('- consumers数量:', this.userStore.consumers.length);
-        console.log('- filteredConsumers数量:', this.userStore.filteredConsumers.length);
-        console.log('- hasFilteredConsumers:', this.userStore.hasFilteredConsumers);
-        console.log('- consumersLoading:', this.userStore.consumersLoading);
-        console.log('- searchKeyword:', this.userStore.consumersSearchKeyword);
-        console.log('- consumersCardNumber:', this.userStore.consumersCardNumber);
-
-      } catch (error) {
-        console.error("加载数据失败:", error);
-        uni.showModal({
-          title: "加载失败",
-          content: `错误信息: ${error.message || error}`,
-          showCancel: false,
-        });
-      }
-    },
-
-    // 处理下拉刷新
-    async onRefresh() {
-      this.isRefreshing = true;
-      try {
-        // 重置并刷新所有数据
-        this.userStore.resetConsumers();
-        this.userStore.resetBenefits();
-        await Promise.all([
-          this.userStore.fetchConsumers(),
-          this.userStore.fetchBenefits()
-        ]);
-        uni.showToast({
-          title: "刷新成功",
-          icon: "success",
-        });
-      } catch (error) {
-        console.error("刷新数据失败:", error);
-        uni.showToast({
-          title: "刷新失败",
-          icon: "none",
-        });
-      } finally {
-        this.isRefreshing = false;
-      }
-    },
-
-    // 刷新数据
-    async refreshData() {
-      try {
-        // 重置并刷新所有数据
-        this.userStore.resetConsumers();
-        this.userStore.resetBenefits();
-        await Promise.all([
-          this.userStore.fetchConsumers(),
-          this.userStore.fetchBenefits()
-        ]);
-        uni.showToast({
-          title: "刷新成功",
-          icon: "success",
-        });
-      } catch (error) {
-        console.error("刷新数据失败:", error);
-        uni.showToast({
-          title: "刷新失败",
-          icon: "none",
-        });
-      } finally {
-        // 停止下拉刷新动画
-        uni.stopPullDownRefresh();
-      }
-    },
-
-
-    // 赠送操作
-    handleGift(consumer) {
-      console.log("赠送操作:", consumer);
-      this.selectedConsumer = consumer;
-      this.currentActionType = 'gift';
-      // 赠送时使用系统可用的福利数据
-      this.panelCoupons = this.userStore.benefitsCoupons || [];
-      this.panelPrivileges = this.userStore.benefitsPrivileges || [];
-      this.$refs.consumerPanel.openPanel();
-    },
-
-    // 核销操作
-    handleVerification(consumer) {
-      console.log("核销操作:", consumer);
-      this.selectedConsumer = consumer;
-      this.currentActionType = 'verify';
-      // 核销时直接从消费者对象中获取已有的福利数据
-      this.panelCoupons = consumer.coupons || [];
-      this.panelPrivileges = consumer.privileges || [];
-      this.$refs.consumerPanel.openPanel();
-    },
-
-
-
-    // 处理面板成功事件
-    async handlePanelSuccess(data) {
-      console.log('操作成功:', data);
-
-      // 刷新数据以获取最新状态
-      try {
-        await this.loadData();
-      } catch (error) {
-        console.error('刷新数据失败:', error);
-      }
-
-      // 重置选中的消费者（关闭面板）
-      this.selectedConsumer = null;
-      this.currentActionType = 'gift';
-      this.panelCoupons = [];
-      this.panelPrivileges = [];
-    },
-
-    // 处理面板关闭事件
-    handlePanelClose() {
-      console.log('面板关闭');
-      // 重置状态
-      this.selectedConsumer = null;
-      this.currentActionType = 'gift';
-      this.panelCoupons = [];
-      this.panelPrivileges = [];
-    },
-
-    // 搜索输入事件（本地实时搜索）
-    onSearchInput(e) {
-      const keyword = e.detail?.value || e;
-      console.log("搜索输入:", keyword);
-      this.searchKeyword = keyword;
-      this.userStore.setConsumersSearchKeyword(keyword);
-    },
-
-    // 搜索清除事件
-    onSearchClear() {
-      console.log("搜索清除");
-      this.searchKeyword = "";
-      this.userStore.clearConsumersSearch();
-    },
-
-    // 搜索确认事件
-    onSearchConfirm(e) {
-      const keyword = e.detail?.value || e;
-      console.log("搜索确认:", keyword);
-      this.searchKeyword = keyword;
-      this.userStore.setConsumersSearchKeyword(keyword);
-    },
-
-    // 扫一扫功能
-    async handleScan() {
-      console.log('点击扫一扫');
-
-      try {
-        // 使用通用扫码工具
-        const scanResult = await ScanUtils.quickScan();
-        if (scanResult) {
-          console.log('🔍 customer页面扫码结果:', scanResult);
-          this.searchCard = scanResult;
-
-          // 先清除之前的搜索条件
-          this.userStore.clearConsumersSearch();
-
-          // 设置卡号搜索
-          this.userStore.setConsumersCardNumber(scanResult);
-        }
-      } catch (error) {
-        console.error('扫码失败:', error);
-      }
-    },
-
-    // 获取头像文本
-    getAvatarText(consumer) {
-      if (consumer?.name?.trim()) {
-        // 如果有姓名，取第一个字符
-        return consumer.name.charAt(0).toUpperCase();
-      } else {
-        // 如果姓名为空，显示"匿"
-        return "匿";
-      }
-    },
-  },
-};
+// 获取头像文本
+const getAvatarText = (consumer) => {
+  if (consumer?.name?.trim()) {
+    // 如果有姓名，取第一个字符
+    return consumer.name.charAt(0).toUpperCase()
+  } else {
+    // 如果姓名为空，显示"匿"
+    return "匿"
+  }
+}
 </script>
 
 <style lang="scss">
