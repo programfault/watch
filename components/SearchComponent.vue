@@ -58,13 +58,16 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
 import { useSearchStore } from "@/stores";
+import { computed, onMounted, ref, watch } from "vue";
 
 // 定义组件名称
 defineOptions({
 	name: "SearchComponent",
 });
+
+// 定义事件
+const emit = defineEmits(['search']);
 
 // 定义props
 const props = defineProps({
@@ -144,15 +147,20 @@ const onInput = (value) => {
 
 const checkFrom = async (from, keyword) => {
     if(props.from === 'home' || props.from === 'index'){
-    searchStore.hidePanel()
-    uni.navigateTo({
-        url:`/pages/product/list?keyword=${encodeURIComponent(keyword)}`
-    })
-  } else {
-    // 其他页面直接执行搜索
-    await searchStore.performSearch(keyword)
-    searchStore.hidePanel()
-  }
+        searchStore.hidePanel()
+        uni.navigateTo({
+            url:`/pages/product/list?keyword=${encodeURIComponent(keyword)}`
+        })
+    } else if (props.from === 'product') {
+        // 产品页面发出搜索事件，让父组件处理
+        console.log('SearchComponent 发出搜索事件:', { keyword })
+        emit('search', { keyword })
+        searchStore.hidePanel()
+    } else {
+        // 其他页面直接执行搜索
+        await searchStore.performSearch(keyword)
+        searchStore.hidePanel()
+    }
 }
 
 // 搜索事件 (确认搜索)

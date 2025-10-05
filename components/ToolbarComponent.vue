@@ -13,8 +13,11 @@
         class="filter-btn"
         @click="handleFilter"
       >
-        <text class="filter-text">筛选</text>
-        <text class="icon-filter"></text>
+        <view class="filter-content">
+          <view v-if="filterCount > 0" class="filter-badge">{{ filterCount }}</view>
+          <text class="filter-text">筛选</text>
+          <text class="icon-filter"></text>
+        </view>
       </view>
       <view class="filter-btn" @click="toggleDisplayMode">
         <text
@@ -46,6 +49,9 @@ export default {
     },
     displayMode() {
       return this.toolbarStore.displayMode;
+    },
+    filterCount() {
+      return this.toolbarStore.filterCount;
     },
   },
   methods: {
@@ -160,6 +166,27 @@ export default {
       padding: 12rpx;
       cursor: pointer;
       transition: all 0.3s ease;
+      position: relative;
+
+      .filter-content {
+        display: flex;
+        align-items: center;
+      }
+
+      .filter-badge {
+        background-color: #ff0000;
+        color: #fff;
+        font-size: 20rpx;
+        padding: 4rpx 8rpx;
+        border-radius: 20rpx;
+        margin-right: 8rpx;
+        min-width: 32rpx;
+        height: 32rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+      }
 
       .filter-text {
         font-size: 26rpx;

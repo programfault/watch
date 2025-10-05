@@ -8,6 +8,8 @@ export const useToolbarStore = defineStore('toolbar', {
 		isFilterActive: false,
 		// 显示模式：'single' | 'grid'
 		displayMode: 'single',
+		// 活跃的筛选条件数量
+		filterCount: 0,
 	}),
 
 	getters: {
@@ -57,6 +59,11 @@ export const useToolbarStore = defineStore('toolbar', {
 			this.isFilterActive = active;
 		},
 
+		// 设置筛选条件数量
+		setFilterCount(count) {
+			this.filterCount = count;
+		},
+
 		// 设置显示模式
 		setDisplayMode(mode) {
 			if (['single', 'grid'].includes(mode)) {
@@ -69,6 +76,7 @@ export const useToolbarStore = defineStore('toolbar', {
 			this.sortOrder = 'none';
 			this.isFilterActive = false;
 			this.displayMode = 'single';
+			this.filterCount = 0;
 		},
 	},
 });

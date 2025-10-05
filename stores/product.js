@@ -19,7 +19,7 @@ export const useProductStore = defineStore('product', {
     watchesFilters: {
       brand_id: null,
       keyword: '',
-      attributes: [],
+      attribute_filters: [],  // 新格式：[{attribute_id: 1, values: [...]}]
       price_range: null,
       sort_by: 'sort',
       sort_order: 'asc'
@@ -211,6 +211,12 @@ export const useProductStore = defineStore('product', {
           ...filters
         }
 
+        console.log('=== POST 请求数据格式检查 ===')
+        console.log('发送到API的参数:', JSON.stringify(requestFilters, null, 2))
+        if (requestFilters.attribute_filters) {
+          console.log('属性筛选数组格式:', requestFilters.attribute_filters)
+        }
+
         const response = await searchWatches(requestFilters)
         console.log('searchWatches API响应:', response)
 
@@ -336,7 +342,7 @@ export const useProductStore = defineStore('product', {
       this.watchesFilters = {
         brand_id: null,
         keyword: '',
-        attributes: [],
+        attribute_filters: [],  // 新格式：[{attribute_id: 1, values: [...]}]
         price_range: null,
         sort_by: 'sort',
         sort_order: 'asc'
@@ -365,7 +371,7 @@ export const useProductStore = defineStore('product', {
       // 检查是否有来自FilterPanel的筛选条件，决定使用哪个API
       const hasFilterPanelConditions =
         this.watchesFilters.min_price || this.watchesFilters.max_price ||
-        Object.keys(this.watchesFilters).some(key => key.startsWith('attribute_')) ||
+        this.watchesFilters.attribute_filters ||
         Object.keys(this.watchesFilters).some(key =>
           !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)
         )
@@ -373,7 +379,8 @@ export const useProductStore = defineStore('product', {
       console.log('searchByKeyword - 筛选条件检查:', {
         hasMinPrice: !!this.watchesFilters.min_price,
         hasMaxPrice: !!this.watchesFilters.max_price,
-        hasAttributes: Object.keys(this.watchesFilters).some(key => key.startsWith('attribute_')),
+        hasAttributeFilters: !!this.watchesFilters.attribute_filters,
+        attributeFiltersCount: this.watchesFilters.attribute_filters ? this.watchesFilters.attribute_filters.length : 0,
         shouldUsePostAPI: hasFilterPanelConditions,
         searchParams
       })
@@ -400,7 +407,7 @@ export const useProductStore = defineStore('product', {
         // 检查是否有来自FilterPanel的筛选条件，决定使用哪个API
         const hasFilterPanelConditions =
           this.watchesFilters.min_price || this.watchesFilters.max_price ||
-          Object.keys(this.watchesFilters).some(key => key.startsWith('attribute_')) ||
+          this.watchesFilters.attribute_filters ||
           Object.keys(this.watchesFilters).some(key =>
             !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)
           )
@@ -408,7 +415,8 @@ export const useProductStore = defineStore('product', {
         console.log('performSearch - 筛选条件检查:', {
           hasMinPrice: !!this.watchesFilters.min_price,
           hasMaxPrice: !!this.watchesFilters.max_price,
-          hasAttributes: Object.keys(this.watchesFilters).some(key => key.startsWith('attribute_')),
+          hasAttributeFilters: !!this.watchesFilters.attribute_filters,
+          attributeFiltersCount: this.watchesFilters.attribute_filters ? this.watchesFilters.attribute_filters.length : 0,
           shouldUsePostAPI: hasFilterPanelConditions,
           searchParams
         })

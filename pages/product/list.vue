@@ -12,6 +12,7 @@
     <FilterPanelComponent
         ref="filterPanel"
         @filterChange="onFilterChange"
+        @filterCountChange="onFilterCountChange"
         @close="onFilterClose"
     />
 
@@ -187,14 +188,18 @@ const onFilter = (isActive) => {
     }
 }
 
-const onFilterChange = (filterParams) => {
+const onFilterChange = (filterParams, filterCount = 0) => {
     console.log('=== 筛选事件触发 ===')
     console.log('筛选参数:', filterParams)
+    console.log('筛选条件数量:', filterCount)
     console.log('当前是否正在加载:', isReloading.value)
 
     // 更新store中的筛选条件
     Object.assign(watchesFilters.value, filterParams)
     console.log('更新后的全局筛选条件:', watchesFilters.value)
+
+    // 更新工具栏中的筛选条件数量
+    toolbarStore.setFilterCount(filterCount)
 
     // 使用筛选参数重新加载数据
     reloadWithFilters(filterParams)
@@ -205,6 +210,12 @@ const onFilterClose = () => {
     if (toolbarStore.isFilterActive) {
         toolbarStore.toggleFilter()
     }
+}
+
+const onFilterCountChange = (count) => {
+    console.log('筛选条件数量变化:', count)
+    // 更新工具栏中的筛选条件数量
+    toolbarStore.setFilterCount(count)
 }
 
 const onDisplayModeChange = (mode) => {
@@ -240,26 +251,29 @@ const reloadWithFilters = async (filterParams = {}) => {
         baseParams.brand_id = currentBrand.value.id
     }
 
-        // 检查是否有来自FilterPanel的筛选条件
-        // 只要有价格筛选、属性筛选或其他非基础参数，就使用POST API
-        const hasFilterPanelConditions = filterParams && Object.keys(filterParams).length > 0 &&
+        // 检查是否需要使用POST API
+        // 有筛选条件、搜索关键词或其他复杂参数时使用POST API
+        const hasComplexConditions = filterParams && Object.keys(filterParams).length > 0 &&
             (filterParams.min_price || filterParams.max_price ||  // 价格筛选
-             Object.keys(filterParams).some(key => key.startsWith('attribute_')) ||  // 属性筛选
+             filterParams.attribute_filters ||  // 属性筛选 (新格式)
+             filterParams.keyword ||  // 搜索关键词
              Object.keys(filterParams).some(key =>
-                !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)  // 其他非基础参数
+                !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order'].includes(key)  // 其他非基础参数
              ))
 
-        console.log('筛选条件检查:', {
+        console.log('API选择检查:', {
             hasMinPrice: !!filterParams.min_price,
             hasMaxPrice: !!filterParams.max_price,
-            hasAttributes: Object.keys(filterParams).some(key => key.startsWith('attribute_')),
+            hasAttributeFilters: !!filterParams.attribute_filters,
+            hasKeyword: !!filterParams.keyword,
+            attributeFiltersCount: filterParams.attribute_filters ? filterParams.attribute_filters.length : 0,
             hasOtherParams: Object.keys(filterParams).some(key =>
-                !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)
+                !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'min_price', 'max_price', 'attribute_filters', 'keyword'].includes(key)
             ),
-            shouldUsePostAPI: hasFilterPanelConditions
+            shouldUsePostAPI: hasComplexConditions
         })
 
-        if (hasFilterPanelConditions) {
+        if (hasComplexConditions) {
         // 使用POST API进行复杂查询
         const searchParams = {
             ...baseParams,

@@ -89,6 +89,26 @@ export default {
 		isFilterActive() {
 			// 从工具栏store获取筛选状态
 			return this.$store?.state?.toolbar?.isFilterActive || false
+		},
+
+		// 计算活跃的筛选条件数量
+		activeFilterCount() {
+			let count = 0
+
+			// 价格筛选
+			if (this.selectedFilters.minPrice || this.selectedFilters.maxPrice) {
+				count++
+			}
+
+			// 属性筛选
+			Object.keys(this.selectedFilters.attributes).forEach(attributeId => {
+				const values = this.selectedFilters.attributes[attributeId]
+				if (values && values.length > 0) {
+					count++
+				}
+			})
+
+			return count
 		}
 	},
 
@@ -100,7 +120,21 @@ export default {
 				}
 			},
 			immediate: true
+		},
+
+		// 监听筛选条件变化，实时更新筛选条件数量
+		activeFilterCount: {
+			handler(newCount) {
+				// 通知父组件筛选条件数量发生变化
+				this.$emit('filterCountChange', newCount)
+			},
+			immediate: true
 		}
+	},
+
+	mounted() {
+		// 组件挂载时，发送当前的筛选条件数量
+		this.$emit('filterCountChange', this.activeFilterCount)
 	},
 
 	methods: {
@@ -139,17 +173,38 @@ export default {
 		},
 
 		resetFilters() {
+			// 清空所有筛选条件
 			this.selectedFilters = {
 				minPrice: '',
 				maxPrice: '',
 				attributes: {}
 			}
+
+			// 构建空的筛选参数并触发更新，传递筛选条件数量为0
+			const emptyFilterParams = {}
+			this.$emit('filterChange', emptyFilterParams, 0)
+
+			// 关闭筛选面板
+			this.closePanel()
+
+			// 显示重置成功提示
+			uni?.showToast({
+				title: '筛选条件已重置',
+				icon: 'success'
+			})
 		},
 
 		confirmFilters() {
 			const filterParams = this.buildFilterParams()
 
-			this.$emit('filterChange', filterParams)
+			console.log('=== 筛选条件构建完成 ===')
+			console.log('构建的筛选参数:', filterParams)
+			if (filterParams.attribute_filters) {
+				console.log('属性筛选详情:', JSON.stringify(filterParams.attribute_filters, null, 2))
+			}
+
+			// 传递筛选参数和筛选条件数量
+			this.$emit('filterChange', filterParams, this.activeFilterCount)
 
 			this.closePanel()
 
@@ -170,13 +225,21 @@ export default {
 				params.max_price = this.selectedFilters.maxPrice
 			}
 
-			// 属性筛选
+			// 属性筛选 - 构建为 attribute_filters 数组格式
+			const attributeFilters = []
 			Object.keys(this.selectedFilters.attributes).forEach(attributeId => {
 				const values = this.selectedFilters.attributes[attributeId]
 				if (values && values.length > 0) {
-					params[`attribute_${attributeId}`] = values.join(',')
+					attributeFilters.push({
+						attribute_id: parseInt(attributeId),
+						values: values
+					})
 				}
 			})
+
+			if (attributeFilters.length > 0) {
+				params.attribute_filters = attributeFilters
+			}
 
 			return params
 		}
