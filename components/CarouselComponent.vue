@@ -40,18 +40,7 @@
       class="empty-section"
       v-if="!appStore.hasCarousel && !appStore.carouselLoading"
     >
-      <view class="empty-placeholder" :class="{ 'no-image': imageLoadError }">
-        <!-- 背景图片 -->
-        <image
-          v-if="!imageLoadError"
-          :src="placeholderImage"
-          class="background-image"
-          mode="aspectFill"
-          alt="活动占位背景"
-          @error="onImageError"
-          @load="onImageLoad"
-        />
-
+      <view class="empty-placeholder">
         <!-- 装饰性背景图案 -->
         <view class="bg-pattern">
           <view class="pattern-circle circle-1"></view>
@@ -112,49 +101,10 @@ export default {
       appStore,
     };
   },
-  data(){
-    return{
-        loading: true,
-        imageLoadError: false,
-    }
-  },
-  computed: {
-    // 占位图片路径 - 提供多种备选路径
-    placeholderImage() {
-      // 尝试多种路径格式
-      const paths = [
-        '/static/carousel/placeholder.png',
-        'static/carousel/placeholder.png',
-        './static/carousel/placeholder.png',
-        '../static/carousel/placeholder.png'
-      ];
 
-      const selectedPath = paths[1]; // 先试第二种
-      console.log('尝试加载图片路径:', selectedPath);
-      return selectedPath;
-    }
-  },
-  mounted() {
-    console.log('CarouselComponent mounted');
-    console.log('图片路径:', this.placeholderImage);
-    console.log('imageLoadError:', this.imageLoadError);
-  },
+
+
   methods: {
-    // 图片加载错误处理
-    onImageError(e) {
-      console.error('占位图片加载失败:', e);
-      console.log('失败的图片路径:', this.placeholderImage);
-      console.log('错误详情:', e.detail);
-      this.imageLoadError = true;
-
-      // 尝试其他路径
-      console.log('尝试切换到备用方案');
-    },
-
-    // 图片加载成功
-    onImageLoad(e) {
-      console.log('图片加载成功:', this.placeholderImage);
-    },
     // 轮播图点击事件
     onCarouselClick(carouselItem) {
       console.log("点击轮播图:", carouselItem);
@@ -229,44 +179,10 @@ export default {
     overflow: hidden;
     box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
 
-    // 使用image标签作为背景图片
-    .background-image {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
 
-      // 如果图片加载失败，显示渐变背景
-      &::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, #8B9DC3 0%, #667eea 100%);
-        z-index: -1;
-      }
-    }
 
-    // 备用渐变背景
-    &.no-image {
-      background: linear-gradient(135deg, #8B9DC3 0%, #667eea 100%);
-    }
-
-    // 添加半透明遮罩确保文字可读性
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.4);
-      z-index: 0;
-    }
+    // 美丽的渐变背景
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 
     // 装饰性背景图案
     .bg-pattern {
