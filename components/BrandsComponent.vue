@@ -42,7 +42,7 @@
 </template>
 
 <script>
-import { useAppStore } from '@/stores'
+import { useAppStore } from '@/stores';
 
 export default {
   name: 'BrandsComponent',
@@ -129,13 +129,15 @@ export default {
 <style lang="scss">
 .brands-section {
   margin-bottom: 20px;
+  background: #fff;
 
   .section-header {
-    margin-bottom: 15px;
+    padding: 15px 20px 10px;
+    border-bottom: 1px solid #f5f5f5;
 
     .section-title {
-      font-size: 18px;
-      font-weight: bold;
+      font-size: 16px;
+      font-weight: 500;
       color: #333;
     }
   }
@@ -144,27 +146,27 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 15px 10px;
+    padding: 20px 10px;
     background: #fff;
-    border-radius: 8px;
-    margin: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease;
+    border-radius: 0;
+    margin: 0;
+    border-bottom: 1px solid #f5f5f5;
+    transition: background-color 0.2s ease;
 
     &:active {
-      transform: scale(0.95);
+      background-color: #f8f8f8;
     }
 
     .brand-logo {
-      width: 50px;
-      height: 50px;
+      width: 60px;
+      height: 60px;
       margin-bottom: 8px;
       border-radius: 4px;
     }
 
     .brand-name-cn {
-      font-size: 14px;
-      font-weight: bold;
+      font-size: 13px;
+      font-weight: 400;
       color: #333;
       text-align: center;
       margin-bottom: 2px;

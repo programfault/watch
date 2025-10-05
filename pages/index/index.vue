@@ -38,14 +38,14 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
-import { onLoad, onShow, onHide, onPullDownRefresh } from '@dcloudio/uni-app'
 import BrandsComponent from '@/components/BrandsComponent.vue'
 import CarouselComponent from '@/components/CarouselComponent.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import SearchComponent from '@/components/SearchComponent.vue'
 import { useAppStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
 import ScanUtils from '@/utils/scanUtils.js'
+import { onHide, onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+import { ref } from 'vue'
 
 // 定义组件名称
 defineOptions({
@@ -134,6 +134,19 @@ onShow(() => {
 
 onHide(() => {
 })
+
+// 悬浮扫一扫按钮处理
+const handleFloatingScan = () => {
+	ScanUtils.scanCode()
+		.then(result => {
+			console.log('扫码成功:', result)
+			// 处理扫码结果
+		})
+		.catch(error => {
+			console.error('扫码失败:', error)
+		})
+}
+
 // 打开客服
 const openCustomerService = () => {
 	const customerServiceId = "ww17da4a406b6bf90b"
@@ -168,5 +181,28 @@ const openCustomerService = () => {
 	padding: 20px;
 	min-height: 100vh;
 	background-color: #f8f8f8;
+	position: relative;
+}
+
+// 悬浮扫一扫按钮样式
+.floating-scan-btn {
+	position: fixed;
+	bottom: 120rpx;
+	right: 30rpx;
+	width: 100rpx;
+	height: 100rpx;
+	background: linear-gradient(135deg, #007aff, #5ac8fa);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 6rpx 20rpx rgba(0, 122, 255, 0.3);
+	z-index: 999;
+	transition: all 0.3s ease;
+
+	&:active {
+		transform: scale(0.95);
+		box-shadow: 0 4rpx 15rpx rgba(0, 122, 255, 0.4);
+	}
 }
 </style>

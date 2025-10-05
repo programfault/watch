@@ -353,7 +353,6 @@ export const useAppStore = defineStore('app', {
 
     // 初始化应用数据
     async initApp() {
-      if (this.initialized) return
 
       this.setGlobalLoading(true)
       try {
