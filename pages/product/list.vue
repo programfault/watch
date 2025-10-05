@@ -91,6 +91,7 @@ const {
     watchesLoading: loading,
     watchesPagination: pagination,
     currentBrand,
+    watchesFilters,
 } = storeToRefs(productStore)
 
 // 组件引用
@@ -98,6 +99,7 @@ const filterPanel = ref(null)
 
 // 响应式数据
 const displayMode = ref('single') // 'single' 单列 | 'grid' 网格
+const isReloading = ref(false) // 防止重复加载
 
 // 计算属性
 const hasWatches = computed(() => {
@@ -142,7 +144,14 @@ const loadMore = async () => {
 }
 
 const onSearch = (searchData) => {
-    productStore.searchWatches(searchData)
+    console.log('搜索事件触发:', searchData)
+    // 合并搜索条件和当前筛选条件
+    const searchParams = {
+        ...searchData,
+        ...watchesFilters.value  // 保持store中的筛选条件
+    }
+    console.log('搜索参数（包含筛选条件）:', searchParams)
+    reloadWithFilters(searchParams)
 }
 
 const getWatchImage = (watch) => {
@@ -160,10 +169,14 @@ const goToDetail = (watchId) => {
 
 // 工具栏事件处理
 const onPriceSort = (sortOrder) => {
-    // TODO: 重新获取数据，带上排序参数
     console.log('价格排序:', sortOrder)
-    // 重新加载数据
-    reloadWithFilters()
+    // 重新加载数据，合并当前筛选条件和排序参数
+    const sortParams = {
+        sort_by: 'price',
+        sort_order: sortOrder,
+        ...watchesFilters.value  // 保持store中的筛选条件
+    }
+    reloadWithFilters(sortParams)
 }
 
 const onFilter = (isActive) => {
@@ -175,7 +188,14 @@ const onFilter = (isActive) => {
 }
 
 const onFilterChange = (filterParams) => {
+    console.log('=== 筛选事件触发 ===')
     console.log('筛选参数:', filterParams)
+    console.log('当前是否正在加载:', isReloading.value)
+
+    // 更新store中的筛选条件
+    Object.assign(watchesFilters.value, filterParams)
+    console.log('更新后的全局筛选条件:', watchesFilters.value)
+
     // 使用筛选参数重新加载数据
     reloadWithFilters(filterParams)
 }
@@ -194,22 +214,74 @@ const onDisplayModeChange = (mode) => {
 
 // 重新加载数据带筛选条件
 const reloadWithFilters = async (filterParams = {}) => {
-    const sortParams = toolbarStore.getSortParams
-    const params = {
-        page: 1,
-        per_page: 20,
-        ...sortParams,
-        ...filterParams
+    console.log('=== reloadWithFilters 被调用 ===')
+    console.log('传入参数:', filterParams)
+    console.log('当前加载状态:', isReloading.value)
+
+    // 防止重复调用
+    if (isReloading.value) {
+        console.log('❌ 正在加载中，跳过重复请求')
+        return
     }
+
+    isReloading.value = true
+    console.log('✅ 开始执行数据加载')
+
+    try {
+        const sortParams = toolbarStore.getSortParams
+        const baseParams = {
+            page: 1,
+            per_page: 20,
+            ...sortParams
+        }
 
     // 如果有品牌筛选，添加品牌ID
     if (currentBrand.value) {
-        params.brand_id = currentBrand.value.id
+        baseParams.brand_id = currentBrand.value.id
     }
-    console.log("==================")
-    console.log(params)
-    console.log("==================")
-    await productStore.fetchWatches(params)
+
+        // 检查是否有来自FilterPanel的筛选条件
+        // 只要有价格筛选、属性筛选或其他非基础参数，就使用POST API
+        const hasFilterPanelConditions = filterParams && Object.keys(filterParams).length > 0 &&
+            (filterParams.min_price || filterParams.max_price ||  // 价格筛选
+             Object.keys(filterParams).some(key => key.startsWith('attribute_')) ||  // 属性筛选
+             Object.keys(filterParams).some(key =>
+                !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)  // 其他非基础参数
+             ))
+
+        console.log('筛选条件检查:', {
+            hasMinPrice: !!filterParams.min_price,
+            hasMaxPrice: !!filterParams.max_price,
+            hasAttributes: Object.keys(filterParams).some(key => key.startsWith('attribute_')),
+            hasOtherParams: Object.keys(filterParams).some(key =>
+                !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)
+            ),
+            shouldUsePostAPI: hasFilterPanelConditions
+        })
+
+        if (hasFilterPanelConditions) {
+        // 使用POST API进行复杂查询
+        const searchParams = {
+            ...baseParams,
+            ...filterParams
+        }
+        console.log('使用复杂查询API:', searchParams)
+        await productStore.searchWatches(searchParams)
+    } else {
+        // 使用GET API进行简单查询
+        const simpleParams = {
+            ...baseParams,
+            ...filterParams
+        }
+        console.log('使用简单查询API:', simpleParams)
+        await productStore.fetchWatches(simpleParams)
+    }
+    } catch (error) {
+        console.error('重新加载数据失败:', error)
+        throw error
+    } finally {
+        isReloading.value = false
+    }
 }
 
 // 页面生命周期 - onLoad

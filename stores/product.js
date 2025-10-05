@@ -197,7 +197,75 @@ export const useProductStore = defineStore('product', {
       }
     },
 
-    // 复杂查询手表列表
+    // 复杂查询手表列表 (简化版本，直接调用API)
+    async searchWatches(filters = {}, isLoadMore = false) {
+      if (!isLoadMore) {
+        this.watchesLoading = true
+        this.watchesList = []
+      }
+
+      try {
+        const requestFilters = {
+          page: isLoadMore ? this.watchesPagination.current_page + 1 : 1,
+          per_page: this.watchesPagination.per_page || 10,
+          ...filters
+        }
+
+        const response = await searchWatches(requestFilters)
+        console.log('searchWatches API响应:', response)
+
+        // 处理两种可能的响应格式
+        let data
+        if (response.code === 200 && response.data) {
+          // 标准格式: {code: 200, data: {...}}
+          data = response.data
+        } else if (response.watches && response.pagination) {
+          // 直接格式: {watches: [...], pagination: {...}, brand: {...}}
+          data = response
+        } else {
+          console.warn('复杂查询数据格式异常:', response)
+          if (!isLoadMore) {
+            this.watchesList = []
+          }
+          return
+        }
+
+        const { watches, pagination, brand } = data
+        console.log('解构复杂查询数据:', { watches, pagination, brand })
+
+        if (watches && Array.isArray(watches)) {
+          if (isLoadMore) {
+            this.watchesList.push(...watches)
+          } else {
+            this.watchesList = watches
+          }
+
+          this.watchesPagination = pagination || {}
+          if (brand) {
+            this.currentBrand = brand
+          }
+
+          console.log('复杂查询成功，手表数量:', watches.length)
+          return data
+        } else {
+          console.warn('复杂查询结果不是数组或为空:', watches)
+          if (!isLoadMore) {
+            this.watchesList = []
+          }
+        }
+
+      } catch (error) {
+        console.error('复杂查询手表失败:', error)
+        if (!isLoadMore) {
+          this.watchesList = []
+        }
+        throw error
+      } finally {
+        this.watchesLoading = false
+      }
+    },
+
+    // 复杂查询手表列表 (高级版本)
     async searchWatchesAdvanced(filters = {}, isLoadMore = false) {
       if (!isLoadMore) {
         this.watchesLoading = true
@@ -286,10 +354,35 @@ export const useProductStore = defineStore('product', {
     // 搜索手表关键词
     async searchByKeyword(keyword, params = {}) {
       this.searchKeyword = keyword
-      return await this.fetchWatches({
+
+      // 合并搜索关键词、传入参数和当前筛选条件
+      const searchParams = {
         keyword: keyword,
-        ...params
+        ...params,
+        ...this.watchesFilters
+      }
+
+      // 检查是否有来自FilterPanel的筛选条件，决定使用哪个API
+      const hasFilterPanelConditions =
+        this.watchesFilters.min_price || this.watchesFilters.max_price ||
+        Object.keys(this.watchesFilters).some(key => key.startsWith('attribute_')) ||
+        Object.keys(this.watchesFilters).some(key =>
+          !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)
+        )
+
+      console.log('searchByKeyword - 筛选条件检查:', {
+        hasMinPrice: !!this.watchesFilters.min_price,
+        hasMaxPrice: !!this.watchesFilters.max_price,
+        hasAttributes: Object.keys(this.watchesFilters).some(key => key.startsWith('attribute_')),
+        shouldUsePostAPI: hasFilterPanelConditions,
+        searchParams
       })
+
+      if (hasFilterPanelConditions) {
+        return await this.searchWatches(searchParams)
+      } else {
+        return await this.fetchWatches(searchParams)
+      }
     },
 
     // 搜索结果处理
@@ -298,7 +391,35 @@ export const useProductStore = defineStore('product', {
       this.searchKeyword = keyword
 
       try {
-        const data = await this.fetchWatches({ keyword })
+        // 合并搜索关键词和当前筛选条件
+        const searchParams = {
+          keyword: keyword,
+          ...this.watchesFilters
+        }
+
+        // 检查是否有来自FilterPanel的筛选条件，决定使用哪个API
+        const hasFilterPanelConditions =
+          this.watchesFilters.min_price || this.watchesFilters.max_price ||
+          Object.keys(this.watchesFilters).some(key => key.startsWith('attribute_')) ||
+          Object.keys(this.watchesFilters).some(key =>
+            !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)
+          )
+
+        console.log('performSearch - 筛选条件检查:', {
+          hasMinPrice: !!this.watchesFilters.min_price,
+          hasMaxPrice: !!this.watchesFilters.max_price,
+          hasAttributes: Object.keys(this.watchesFilters).some(key => key.startsWith('attribute_')),
+          shouldUsePostAPI: hasFilterPanelConditions,
+          searchParams
+        })
+
+        let data
+        if (hasFilterPanelConditions) {
+          data = await this.searchWatches(searchParams)
+        } else {
+          data = await this.fetchWatches(searchParams)
+        }
+
         this.searchResults = data?.watches || []
         return data
       } catch (error) {

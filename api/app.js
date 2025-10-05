@@ -50,8 +50,8 @@ export function getStores() {
 }
 
 /**
- * 简单查询手表列表
- * @param {Object} params - 查询参数
+ * 简单查询手表列表 (GET方式)
+ * @param {Object} params - 查询参数 (通过URL参数传递)
  * @param {number} [params.brand_id] - 品牌ID
  * @param {string} [params.keyword] - 搜索关键词
  * @param {number} [params.page=1] - 页码
@@ -66,7 +66,7 @@ export function getWatches(params = {}) {
 }
 
 /**
- * 复杂查询手表列表
+ * 复杂查询手表列表 (POST方式)
  * @param {Object} filters - 筛选条件
  * @param {number} [filters.brand_id] - 品牌ID
  * @param {string} [filters.keyword] - 搜索关键词
@@ -79,7 +79,7 @@ export function getWatches(params = {}) {
  * @returns {Promise}
  */
 export function searchWatches(filters = {}) {
-  return post('/watches/search', filters, {
+  return post('/watches', filters, {
     showLoading: false,
     showError: true
   })
