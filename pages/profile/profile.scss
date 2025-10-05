@@ -1,0 +1,308 @@
+.container {
+	height: 100vh;
+	background-color: #f5f5f5;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+}
+
+// 自定义下拉刷新样式
+.custom-refresher {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 80px;
+	width: 100%;
+	position: relative;
+
+	.pull-tips, .refreshing-tips {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+
+		.tip-text {
+			font-size: 14px;
+			color: #999;
+			transition: color 0.3s ease;
+
+			&.tip-release {
+				color: #007aff;
+				font-weight: 600;
+			}
+
+			&.refreshing {
+				color: #007aff;
+				font-weight: 500;
+			}
+		}
+
+		.icon-rotate {
+			transform: rotate(180deg);
+			transition: transform 0.3s ease;
+		}
+	}
+}
+
+.profile-scroll {
+	flex: 1;
+	height: calc(100vh - env(safe-area-inset-top) - 50px - env(safe-area-inset-bottom));
+	margin-top: env(safe-area-inset-top);
+	box-sizing: border-box;
+}
+
+.loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 50vh;
+
+	.loading-text {
+		margin-top: 10px;
+		font-size: 14px;
+		color: #999;
+	}
+}
+
+.not-login {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 50vh;
+
+	.not-login-text {
+		margin-top: 16px;
+		font-size: 16px;
+		color: #666;
+	}
+}
+
+.profile-content {
+	padding: 20px;
+
+	.user-info {
+		background: white;
+		border-radius: 16px;
+		padding: 24px;
+		margin-bottom: 20px;
+		box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+		border: 1px solid #f0f0f0;
+		display: flex;
+		align-items: center;
+		gap: 20px;
+
+		.avatar-container {
+			position: relative;
+			flex-shrink: 0;
+
+			.avatar {
+				width: 64px;
+				height: 64px;
+				border-radius: 16px;
+				background-color: #f8f9fa;
+			}
+
+			.status-dot {
+				position: absolute;
+				bottom: 2px;
+				right: 2px;
+				width: 16px;
+				height: 16px;
+				background: linear-gradient(135deg, #4ade80, #22c55e);
+				border: 3px solid white;
+				border-radius: 50%;
+				box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+			}
+		}
+
+		.user-content {
+			flex: 1;
+			min-width: 0;
+
+			.user-name {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				margin-bottom: 16px;
+
+				.name-text {
+					font-size: 20px;
+					font-weight: 600;
+					color: #3a3a3a; // 银黑色基础色
+
+					&.shimmer {
+						// 使用::after伪元素创建流光效果，固定显示"天辰表友"
+						position: relative;
+
+						&::after {
+							content: '天辰表友';
+							position: absolute;
+							top: 0;
+							left: 0;
+							background: linear-gradient(
+								135deg, // 左上到右下的角度
+								transparent 0%,
+								transparent 40%,
+								#c0c0c0 50%, // 银色流光
+								#e5e5e5 52%, // 亮银色流光峰值
+								#c0c0c0 54%, // 银色流光
+								transparent 60%,
+								transparent 100%
+							);
+							background-size: 300% 300%;
+							background-clip: text;
+							-webkit-background-clip: text;
+							-webkit-text-fill-color: transparent;
+							animation: shimmer 4s ease-in-out infinite;
+						}
+					}
+				}
+
+				.vip-badge {
+					background: linear-gradient(135deg, #fbbf24, #f59e0b);
+					color: white;
+					font-size: 10px;
+					font-weight: 600;
+					padding: 4px 8px;
+					border-radius: 6px;
+					text-transform: uppercase;
+					letter-spacing: 0.5px;
+				}
+			}
+
+			.user-stats {
+				display: flex;
+				align-items: center;
+				gap: 20px;
+
+				.stat-item {
+					flex: 1;
+					text-align: left;
+
+					.stat-value {
+						display: block;
+						font-size: 16px;
+						font-weight: 600;
+						color: #1a1a1a;
+						margin-bottom: 2px;
+
+						&.gold {
+							color: #f59e0b;
+						}
+					}
+
+					.stat-label {
+						font-size: 12px;
+						color: #64748b;
+						font-weight: 500;
+					}
+				}
+
+				.stat-divider {
+					width: 1px;
+					height: 32px;
+					background-color: #e2e8f0;
+					flex-shrink: 0;
+				}
+			}
+		}
+	}
+
+	.menu-section {
+		background: white;
+		border-radius: 12px;
+		margin-bottom: 20px;
+
+		.menu-item {
+			padding: 16px 20px;
+			border-bottom: 1px solid #f0f0f0;
+			font-size: 16px;
+			color: #333;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+
+			&:last-child {
+				border-bottom: none;
+			}
+
+			&:active {
+				background-color: #f5f5f5;
+			}
+
+			.menu-item-content {
+				display: flex;
+				align-items: center;
+				flex: 1;
+
+				.menu-text {
+					margin-left: 12px;
+					font-size: 16px;
+					color: #333;
+				}
+			}
+		}
+	}
+
+	.not-login-card {
+		background: #fff;
+		border-radius: 16px;
+		box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+		padding: 32px 24px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin: 32px auto;
+		max-width: 320px;
+
+		.not-login-icon {
+			width: 64px;
+			height: 64px;
+			background: linear-gradient(135deg, #f5f5f5 60%, #e0e0e0 100%);
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin-bottom: 18px;
+			box-shadow: 0 2px 8px rgba(192,192,192,0.12);
+		}
+
+		.not-login-tip {
+			font-size: 17px;
+			color: #666;
+			margin-bottom: 22px;
+			font-weight: 500;
+			letter-spacing: 1px;
+		}
+
+		.login-btn {
+			background: linear-gradient(90deg, #4fc08d 0%, #34bfa3 100%);
+			color: #fff;
+			border: none;
+			border-radius: 24px;
+			padding: 12px 0;
+			width: 100%;
+			font-size: 16px;
+			font-weight: 600;
+			box-shadow: 0 2px 8px rgba(52,191,163,0.08);
+			margin-top: 4px;
+			transition: background 0.2s;
+
+			&:active {
+				background: linear-gradient(90deg, #34bfa3 0%, #4fc08d 100%);
+			}
+		}
+	}
+}
+
+// 纯斜向流光动画 - 从左上到右下的单向流动
+@keyframes shimmer {
+	0% {
+		background-position: -150% -150%;
+	}
+	100% {
+		background-position: 150% 150%;
+	}
+}

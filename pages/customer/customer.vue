@@ -26,9 +26,30 @@
       scroll-y="true"
       @scrolltoupper="onPullDownRefresh"
       refresher-enabled="true"
+      :refresher-threshold="80"
+      refresher-default-style="none"
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
+      @refresherpulling="onRefresherPulling"
+      @refresherrestore="onRefreshRestore"
     >
+      <!-- 自定义下拉刷新内容 -->
+      <view slot="refresher" class="custom-refresher">
+        <view v-if="!isRefreshing" class="pull-tips">
+          <uni-icons
+            type="arrowthindown"
+            size="20"
+            color="#999"
+            :class="{ 'icon-rotate': pullDistance >= 80 }"
+          />
+          <text v-if="pullDistance < 80" class="tip-text">下拉刷新客户</text>
+          <text v-else class="tip-text tip-release">松手立即刷新</text>
+        </view>
+        <view v-else class="refreshing-tips">
+          <uni-icons type="spinner-cycle" size="20" color="#007aff" />
+          <text class="tip-text refreshing">正在刷新...</text>
+        </view>
+      </view>
       <view class="container">
         <!-- 加载状态 -->
         <view class="loading" v-if="userStore.consumersLoading">
@@ -119,12 +140,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { onLoad, onShow, onUnload, onPullDownRefresh } from '@dcloudio/uni-app'
-import CustomTabBar from '@/components/CustomTabBar.vue'
 import ConsumerPanel from "@/components/ConsumerPanel.vue"
+import CustomTabBar from '@/components/CustomTabBar.vue'
 import { useUserStore } from "@/stores"
 import ScanUtils from "@/utils/scanUtils.js"
+import { onLoad, onPullDownRefresh, onShow, onUnload } from '@dcloudio/uni-app'
+import { ref } from 'vue'
 
 // 定义组件名称
 defineOptions({
@@ -138,6 +159,7 @@ const userStore = useUserStore()
 const searchKeyword = ref("")
 const searchCard = ref("")
 const isRefreshing = ref(false)
+const pullDistance = ref(0)
 const selectedConsumer = ref(null)
 const currentActionType = ref('gift') // 'gift' 或 'verify'
 // 面板显示的动态数据，根据操作类型设置不同来源的数据
@@ -234,7 +256,19 @@ const onRefresh = async () => {
     })
   } finally {
     isRefreshing.value = false
+    pullDistance.value = 0
   }
+}
+
+// 下拉距离监听
+const onRefresherPulling = (e) => {
+  pullDistance.value = e.detail.deltaY || 0
+}
+
+// 刷新状态恢复
+const onRefreshRestore = () => {
+  isRefreshing.value = false
+  pullDistance.value = 0
 }
 
 // 刷新数据
@@ -377,11 +411,50 @@ const getAvatarText = (consumer) => {
   flex-direction: column;
   height: 100vh;
   background-color: #f8f8f8;
+  box-sizing: border-box;
+}
+
+// 自定义下拉刷新样式
+.custom-refresher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  width: 100%;
+  position: relative;
+
+  .pull-tips, .refreshing-tips {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    .tip-text {
+      font-size: 14px;
+      color: #999;
+      transition: color 0.3s ease;
+
+      &.tip-release {
+        color: #007aff;
+        font-weight: 600;
+      }
+
+      &.refreshing {
+        color: #007aff;
+        font-weight: 500;
+      }
+    }
+
+    .icon-rotate {
+      transform: rotate(180deg);
+      transition: transform 0.3s ease;
+    }
+  }
 }
 
 .fixed-search {
   position: fixed;
-  top: 0;
+  top: env(safe-area-inset-top);
   left: 0;
   right: 0;
   z-index: 999;
@@ -420,12 +493,15 @@ const getAvatarText = (consumer) => {
 
 .scroll-content {
   flex: 1;
-  padding-top: 80px; /* 给固定搜索栏留出空间 */
+  padding-top: calc(80px + env(safe-area-inset-top)); /* 给固定搜索栏和安全区域留出空间 */
+  padding-bottom: calc(50px + env(safe-area-inset-bottom)); /* 给tabbar留出空间 */
+  box-sizing: border-box;
 }
 
 .container {
   padding: 0;
-  min-height: calc(100vh - 110px);
+  min-height: calc(100vh - env(safe-area-inset-top) - 50px - env(safe-area-inset-bottom) - 110px);
+  box-sizing: border-box;
 }
 
 .loading {

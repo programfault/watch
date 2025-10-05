@@ -2,7 +2,7 @@
 	<uv-tabbar
 		:value="tabBarStore.activeTab"
 		:fixed="true"
-		activeColor="#ee0a24"
+		activeColor="#D81E06"
 		inactiveColor="#7d7e80"
 		@change="handleTabChange"
 	>
@@ -40,9 +40,10 @@ const mapIcon = (storeIcon) => {
 	const iconMap = {
 		'home-o': 'home',
 		'service-o': 'setting',
-		'contacts-o': 'account',
+		'contacts-o': 'integral',
 		'diamond-o': 'star',
-		'user-o': 'account'
+        'user-o': 'account',
+
 	}
 	return iconMap[storeIcon] || storeIcon.replace('-o', '')
 }

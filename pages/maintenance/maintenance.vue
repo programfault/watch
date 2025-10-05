@@ -372,9 +372,13 @@ onShow(() => {
 
 <style lang="scss">
 .container {
+	height: 100vh;
 	padding: 20px;
+	padding-top: calc(20px + env(safe-area-inset-top));
+	padding-bottom: calc(20px + 50px + env(safe-area-inset-bottom));
 	background-color: #f8f8f8;
-	min-height: 100vh;
+	box-sizing: border-box;
+	overflow-y: auto;
 }
 
 .page-header {
