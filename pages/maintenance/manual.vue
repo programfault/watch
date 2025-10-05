@@ -12,13 +12,23 @@
 
 		<!-- 空状态 -->
 		<view class="empty-state" v-else>
-			<text class="empty-text">暂无保养手册内容</text>
+			<view class="empty-icon">
+				<uni-icons type="book" size="60" color="#e0e0e0" />
+			</view>
+			<text class="empty-title">手册暂未上传</text>
+			<text class="empty-desc">保养手册内容正在准备中，
+敬请期待专业的手表保养指南</text>
+			<view class="empty-tip">
+				<uni-icons type="info" size="14" color="#999" />
+				<text class="tip-text">您可以先浏览服务门店信息</text>
+			</view>
 		</view>
 	</view>
 </template>
 
 <script>
 import { useAppStore } from '@/stores'
+import { PAGE_IDS, getPageDescription } from '@/utils/constants'
 
 export default {
 	setup() {
@@ -28,8 +38,13 @@ export default {
 		}
 	},
 	computed: {
-		manualData() {
-			return this.appStore.getPageById(1)
+        manualData() {
+			const pageData = this.appStore.getPageById(PAGE_IDS.MAINTENANCE_MANUAL)
+			// 检查对象是否存在且content不为空
+			if (pageData && pageData.content && pageData.content.trim()) {
+				return pageData
+			}
+			return null
 		}
 	},
 	async onLoad() {
@@ -68,10 +83,46 @@ export default {
 .empty-state {
 	text-align: center;
 	padding: 80px 20px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
 
-	.empty-text {
+	.empty-icon {
+		margin-bottom: 20px;
+		opacity: 0.8;
+	}
+
+	.empty-title {
+		font-size: 18px;
+		font-weight: 600;
+		color: #666;
+		margin-bottom: 12px;
+	}
+
+	.empty-desc {
 		font-size: 14px;
 		color: #999;
+		line-height: 1.6;
+		margin-bottom: 24px;
+		max-width: 280px;
+		text-align: center;
+	}
+
+	.empty-tip {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: #f8f9fa;
+		padding: 8px 16px;
+		border-radius: 20px;
+		border: 1px solid #e9ecef;
+
+		.tip-text {
+			font-size: 12px;
+			color: #666;
+			margin-left: 6px;
+		}
 	}
 }
 </style>

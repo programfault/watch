@@ -78,274 +78,296 @@
 	</view>
 </template>
 
-<script>
+<script setup>
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import { useAppStore, useTabBarStore } from '@/stores'
+import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+import { computed, onMounted, ref } from 'vue'
 
-export default {
-	components: {
-		CustomTabBar
-	},
-	setup() {
-		const appStore = useAppStore()
-		const tabBarStore = useTabBarStore()
-		return {
-			appStore,
-			tabBarStore
-		}
-	},
-	data() {
-		return {
-			// 地理位置权限状态
-			locationAuthorized: false,
-			// 用户当前位置
-			userLocation: null
-		}
-	},
-	computed: {
-		// 根据用户位置排序的门店列表
-		sortedStores() {
-			if (!this.appStore.allStores || !this.userLocation) {
-				return this.appStore.allStores || []
-			}
+// 初始化 stores
+const appStore = useAppStore()
+const tabBarStore = useTabBarStore()
 
-			// 计算距离并排序
-			return [...this.appStore.allStores].sort((a, b) => {
-				const distanceA = this.calculateDistance(a)
-				const distanceB = this.calculateDistance(b)
-				return distanceA - distanceB
+// 响应式数据
+const locationAuthorized = ref(false)
+const userLocation = ref(null)
+const isRefreshing = ref(false)
+
+// 计算属性 - 根据用户位置排序的门店列表
+const sortedStores = computed(() => {
+	if (!appStore.allStores || !userLocation.value) {
+		return appStore.allStores || []
+	}
+
+	// 计算距离并排序
+	return [...appStore.allStores].sort((a, b) => {
+		const distanceA = calculateDistance(a)
+		const distanceB = calculateDistance(b)
+		return distanceA - distanceB
+	})
+})
+
+// 显示店铺详情
+const showStoreDetail = (store) => {
+	uni.showModal({
+		title: store.name,
+		content: `地址: ${store.address}\n电话: ${store.phone}\n营业时间: ${store.opening_hours}\n\n${store.description}`,
+		showCancel: false
+	})
+}
+
+// 拨打电话
+const callStore = (store) => {
+	uni.makePhoneCall({
+		phoneNumber: store.phone,
+		fail: (err) => {
+			console.error('拨打电话失败:', err)
+			uni.showToast({
+				title: '拨打电话失败',
+				icon: 'none'
 			})
 		}
-	},
-	async onLoad() {
-		// 确保店铺数据已加载
-		if (!this.appStore.hasStores && !this.appStore.storesLoading) {
-			await this.appStore.fetchStores()
+	})
+}
+
+// 地图导航（只有有权限时才会调用）
+const navigateToStore = (store) => {
+	if (!store.latitude || !store.longitude) {
+		uni.showToast({
+			title: '该店铺暂无位置信息',
+			icon: 'none'
+		})
+		return
+	}
+
+	// 直接打开地图导航，因为已经确保有权限
+	uni.openLocation({
+		latitude: parseFloat(store.latitude),
+		longitude: parseFloat(store.longitude),
+		name: store.name,
+		address: store.address,
+		fail: (err) => {
+			console.error('打开地图失败:', err)
+			uni.showToast({
+				title: '打开地图失败',
+				icon: 'none'
+			})
+		}
+	})
+}
+
+// 跳转到保养手册
+const goToManual = () => {
+	uni.navigateTo({
+		url: '/pages/maintenance/manual'
+	})
+}
+
+// 下拉刷新处理函数
+const handleRefresh = async () => {
+	if (isRefreshing.value) return
+
+	isRefreshing.value = true
+	try {
+		// 重新获取店铺数据
+		await appStore.fetchStores()
+
+		// 如果有位置权限，重新获取位置信息
+		if (locationAuthorized.value) {
+			await getUserLocation()
 		}
 
-		// 进入页面时主动请求位置权限
-		await this.requestLocationOnEnter()
-	},
-
-	onShow() {
-		// 设置当前页面的tabBar状态
-		this.tabBarStore.setActiveTab('maintenance')
-	},
-	methods: {
-		// 显示店铺详情
-		showStoreDetail(store) {
-			uni.showModal({
-				title: store.name,
-				content: `地址: ${store.address}\n电话: ${store.phone}\n营业时间: ${store.opening_hours}\n\n${store.description}`,
-				showCancel: false
-			})
-		},
-
-		// 拨打电话
-		callStore(store) {
-			uni.makePhoneCall({
-				phoneNumber: store.phone,
-				fail: (err) => {
-					console.error('拨打电话失败:', err)
-					uni.showToast({
-						title: '拨打电话失败',
-						icon: 'none'
-					})
-				}
-			})
-		},
-
-		// 地图导航（只有有权限时才会调用）
-		navigateToStore(store) {
-			if (!store.latitude || !store.longitude) {
-				uni.showToast({
-					title: '该店铺暂无位置信息',
-					icon: 'none'
-				})
-				return
-			}
-
-			// 直接打开地图导航，因为已经确保有权限
-			uni.openLocation({
-				latitude: parseFloat(store.latitude),
-				longitude: parseFloat(store.longitude),
-				name: store.name,
-				address: store.address,
-				fail: (err) => {
-					console.error('打开地图失败:', err)
-					uni.showToast({
-						title: '打开地图失败',
-						icon: 'none'
-					})
-				}
-			})
-		},
-
-		// 跳转到保养手册
-		goToManual() {
-			uni.navigateTo({
-				url: '/pages/maintenance/manual'
-			})
-		},
-
-		// 页面进入时请求位置权限
-		async requestLocationOnEnter() {
-			try {
-				// 先检查当前权限状态
-				const setting = await uni.getSetting()
-
-				// 如果已经有权限，直接获取位置
-				if (setting.authSetting['scope.userLocation'] === true) {
-					this.locationAuthorized = true
-					await this.getUserLocation()
-					return
-				}
-
-				// 如果之前拒绝过，不再主动弹窗
-				if (setting.authSetting['scope.userLocation'] === false) {
-					this.locationAuthorized = false
-					return
-				}
-
-				// 首次使用，弹窗请求权限
-				const modalResult = await uni.showModal({
-					title: '位置权限请求',
-					content: '为了为您提供最近门店的导航服务和距离显示，需要获取您的位置信息。\n\n拒绝授权也可以正常使用其他功能。',
-					confirmText: '同意授权',
-					cancelText: '暂不授权'
-				})
-
-				if (modalResult.confirm) {
-					// 用户同意，尝试授权
-					try {
-						await uni.authorize({ scope: 'scope.userLocation' })
-						this.locationAuthorized = true
-						await this.getUserLocation()
-						uni.showToast({ title: '位置权限开启成功', icon: 'success' })
-					} catch (authError) {
-						// 授权失败
-						this.locationAuthorized = false
-						console.log('用户拒绝了位置权限:', authError)
-					}
-				} else {
-					// 用户拒绝
-					this.locationAuthorized = false
-				}
-
-			} catch (error) {
-				console.error('检查位置权限失败:', error)
-				this.locationAuthorized = false
-			}
-		},
-
-
-
-
-
-		// 获取用户当前位置（优化版）
-		async getUserLocation() {
-			try {
-				const res = await uni.getLocation({
-					type: 'gcj02',
-					highAccuracyExpireTime: 4000, // 高精度定位超时时间
-					isHighAccuracy: true // 开启高精度定位
-				})
-
-				this.userLocation = {
-					latitude: res.latitude,
-					longitude: res.longitude
-				}
-
-				console.log('获取用户位置成功:', this.userLocation)
-				return this.userLocation
-
-			} catch (error) {
-				console.error('获取位置失败:', error)
-
-				// 根据错误类型给出不同提示
-				if (error.errMsg?.includes('requiredPrivateInfos')) {
-					uni.showModal({
-						title: '配置错误',
-						content: '小程序需要重新发布才能使用位置功能，请联系开发者',
-						showCancel: false
-					})
-				} else if (error.errMsg?.includes('auth deny')) {
-					uni.showToast({
-						title: '位置权限被拒绝',
-						icon: 'none'
-					})
-				} else {
-					uni.showToast({
-						title: '获取位置失败',
-						icon: 'none'
-					})
-				}
-
-				// 重置权限状态
-				this.locationAuthorized = false
-				return null
-			}
-		},
-
-		// 计算门店距离（使用球面距离公式）
-		calculateDistance(store) {
-			if (!this.userLocation || !store.latitude || !store.longitude) {
-				return Infinity
-			}
-
-			const rad1 = (this.userLocation.latitude * Math.PI) / 180
-			const rad2 = (parseFloat(store.latitude) * Math.PI) / 180
-			const deltaLat = rad2 - rad1
-			const deltaLng = ((parseFloat(store.longitude) - this.userLocation.longitude) * Math.PI) / 180
-
-			const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-				Math.cos(rad1) * Math.cos(rad2) *
-				Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2)
-			const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-
-			// 地球半径（千米）
-			const R = 6371
-			return R * c
-		},
-
-		// 格式化距离显示
-		formatDistance(store) {
-			// 调试信息
-			console.log('formatDistance - store:', {
-				name: store.name,
-				latitude: store.latitude,
-				longitude: store.longitude,
-				userLocation: this.userLocation,
-				locationAuthorized: this.locationAuthorized
-			})
-
-			// 检查必要的数据
-			if (!this.userLocation) {
-				console.log('用户位置为空')
-				return ''
-			}
-
-			if (!store.latitude || !store.longitude) {
-				console.log('店铺经纬度为空:', store.latitude, store.longitude)
-				return ''
-			}
-
-			const distance = this.calculateDistance(store)
-			console.log('计算出的距离:', distance)
-
-			if (distance === Infinity || Number.isNaN(distance)) {
-				console.log('距离计算异常')
-				return ''
-			}
-
-			if (distance < 1) {
-				return `${Math.round(distance * 1000)}m`
-			} else {
-				return `${distance.toFixed(1)}km`
-			}
-		}
+		uni.showToast({
+			title: '刷新成功',
+			icon: 'success',
+			duration: 1000
+		})
+	} catch (error) {
+		console.error('刷新失败:', error)
+		uni.showToast({
+			title: '刷新失败，请重试',
+			icon: 'none'
+		})
+	} finally {
+		isRefreshing.value = false
+		uni.stopPullDownRefresh()
 	}
 }
+
+// 页面进入时请求位置权限
+const requestLocationOnEnter = async () => {
+	try {
+		// 先检查当前权限状态
+		const setting = await uni.getSetting()
+
+		// 如果已经有权限，直接获取位置
+		if (setting.authSetting['scope.userLocation'] === true) {
+			locationAuthorized.value = true
+			await getUserLocation()
+			return
+		}
+
+		// 如果之前拒绝过，不再主动弹窗
+		if (setting.authSetting['scope.userLocation'] === false) {
+			locationAuthorized.value = false
+			return
+		}
+
+		// 首次使用，弹窗请求权限
+		const modalResult = await uni.showModal({
+			title: '位置权限请求',
+			content: '为了为您提供最近门店的导航服务和距离显示，需要获取您的位置信息。\n\n拒绝授权也可以正常使用其他功能。',
+			confirmText: '同意授权',
+			cancelText: '暂不授权'
+		})
+
+		if (modalResult.confirm) {
+			// 用户同意，尝试授权
+			try {
+				await uni.authorize({ scope: 'scope.userLocation' })
+				locationAuthorized.value = true
+				await getUserLocation()
+				uni.showToast({ title: '位置权限开启成功', icon: 'success' })
+			} catch (authError) {
+				// 授权失败
+				locationAuthorized.value = false
+				console.log('用户拒绝了位置权限:', authError)
+			}
+		} else {
+			// 用户拒绝
+			locationAuthorized.value = false
+		}
+
+	} catch (error) {
+		console.error('检查位置权限失败:', error)
+		locationAuthorized.value = false
+	}
+}
+
+// 获取用户当前位置（优化版）
+const getUserLocation = async () => {
+	try {
+		const res = await uni.getLocation({
+			type: 'gcj02',
+			highAccuracyExpireTime: 4000, // 高精度定位超时时间
+			isHighAccuracy: true // 开启高精度��位
+		})
+
+		userLocation.value = {
+			latitude: res.latitude,
+			longitude: res.longitude
+		}
+
+		console.log('获取用户位置成功:', userLocation.value)
+		return userLocation.value
+
+	} catch (error) {
+		console.error('获取位置失败:', error)
+
+		// 根据错误类型给出不同提示
+		if (error.errMsg?.includes('requiredPrivateInfos')) {
+			uni.showModal({
+				title: '配置错误',
+				content: '小程序需要重新发布才能使用位置功能，请联系开发者',
+				showCancel: false
+			})
+		} else if (error.errMsg?.includes('auth deny')) {
+			uni.showToast({
+				title: '位置权限被拒绝',
+				icon: 'none'
+			})
+		} else {
+			uni.showToast({
+				title: '获取位置失败',
+				icon: 'none'
+			})
+		}
+
+		// 重置权限状态
+		locationAuthorized.value = false
+		return null
+	}
+}
+
+// 计算门店距离（使用球面距离公式）
+const calculateDistance = (store) => {
+	if (!userLocation.value || !store.latitude || !store.longitude) {
+		return Infinity
+	}
+
+	const rad1 = (userLocation.value.latitude * Math.PI) / 180
+	const rad2 = (parseFloat(store.latitude) * Math.PI) / 180
+	const deltaLat = rad2 - rad1
+	const deltaLng = ((parseFloat(store.longitude) - userLocation.value.longitude) * Math.PI) / 180
+
+	const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+		Math.cos(rad1) * Math.cos(rad2) *
+		Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2)
+	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+	// 地球半径（千米）
+	const R = 6371
+	return R * c
+}
+
+// 格式化距离显示
+const formatDistance = (store) => {
+	// 调试信息
+	console.log('formatDistance - store:', {
+		name: store.name,
+		latitude: store.latitude,
+		longitude: store.longitude,
+		userLocation: userLocation.value,
+		locationAuthorized: locationAuthorized.value
+	})
+
+	// 检查必要的数据
+	if (!userLocation.value) {
+		console.log('用户位置为空')
+		return ''
+	}
+
+	if (!store.latitude || !store.longitude) {
+		console.log('店铺经纬度为空:', store.latitude, store.longitude)
+		return ''
+	}
+
+	const distance = calculateDistance(store)
+	console.log('计算出的距离:', distance)
+
+	if (distance === Infinity || Number.isNaN(distance)) {
+		console.log('距离计算异常')
+		return ''
+	}
+
+	if (distance < 1) {
+		return `${Math.round(distance * 1000)}m`
+	} else {
+		return `${distance.toFixed(1)}km`
+	}
+}
+
+// 页面加载时的初始化
+onMounted(async () => {
+	// 确保店铺数据已加载
+	if (!appStore.hasStores && !appStore.storesLoading) {
+		await appStore.fetchStores()
+	}
+
+	// 进入页面时主动请求位置权限
+	await requestLocationOnEnter()
+})
+
+// 下拉刷新生命周期
+onPullDownRefresh(() => {
+	handleRefresh()
+})
+
+// uniapp 生命周期 - 页面显示时
+onShow(() => {
+	// 设置当前页面的tabBar状态
+	tabBarStore.setActiveTab('maintenance')
+})
 </script>
 
 <style lang="scss">

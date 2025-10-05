@@ -7,7 +7,9 @@
 	}, {
 		"path": "pages/maintenance/maintenance",
 		"style": {
-			"navigationBarTitleText": "保养"
+			"navigationBarTitleText": "保养",
+			"enablePullDownRefresh": true,
+			"backgroundTextStyle": "dark"
 		}
 	}, {
 		"path": "pages/rolex/rolex",
