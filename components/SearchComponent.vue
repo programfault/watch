@@ -142,7 +142,7 @@ const onInput = (value) => {
 	searchStore.setKeyword(value);
 };
 
-const checkFrom = async (from) => {
+const checkFrom = async (from, keyword) => {
     if(props.from === 'home' || props.from === 'index'){
     searchStore.hidePanel()
     uni.navigateTo({
@@ -213,7 +213,7 @@ const closePanel = () => {
 // 选择历史记录
 const selectHistory = async (keyword) => {
 	searchStore.setKeyword(keyword);
-	await checkFrom(props.from);
+	await checkFrom(props.from, keyword);
 };
 
 // 删除历史记录

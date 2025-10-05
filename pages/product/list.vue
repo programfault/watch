@@ -1,6 +1,9 @@
 <template>
 <view class="container">
-    <SearchComponent @search="onSearch" from="product" />
+    <!-- 搜索组件包裹容器 -->
+    <view class="search-wrapper">
+        <SearchComponent @search="onSearch" from="product" />
+    </view>
 
     <!-- 工具栏 -->
     <ToolbarComponent @priceSort="onPriceSort" @filter="onFilter" @displayModeChange="onDisplayModeChange" />
@@ -62,15 +65,15 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { storeToRefs } from 'pinia'
 import FilterPanelComponent from "@/components/FilterPanelComponent.vue"
 import SearchComponent from "@/components/SearchComponent.vue"
 import ToolbarComponent from "@/components/ToolbarComponent.vue"
 import { useAppStore } from "@/stores"
 import { useProductStore } from "@/stores/product.js"
 import { useToolbarStore } from "@/stores/toolbar.js"
+import { onLoad } from '@dcloudio/uni-app'
+import { storeToRefs } from 'pinia'
+import { computed, ref } from 'vue'
 
 // 定义组件名称
 defineOptions({
@@ -203,7 +206,9 @@ const reloadWithFilters = async (filterParams = {}) => {
     if (currentBrand.value) {
         params.brand_id = currentBrand.value.id
     }
-
+    console.log("==================")
+    console.log(params)
+    console.log("==================")
     await productStore.fetchWatches(params)
 }
 
@@ -223,6 +228,11 @@ onLoad((options) => {
 <style lang="scss" scoped>
 .container {
     min-height: 100vh;
+    background-color: #fff;
+}
+
+.search-wrapper {
+    padding: 0 20rpx;
     background-color: #fff;
 }
 
@@ -340,6 +350,7 @@ onLoad((options) => {
                     text-overflow: ellipsis;
                     display: -webkit-box;
                     -webkit-line-clamp: 2;
+                    line-clamp: 2;
                     -webkit-box-orient: vertical;
                     margin-bottom: 8rpx;
                 }
