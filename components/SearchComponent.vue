@@ -190,7 +190,7 @@ const onSearch = async (e) => {
 	// 添加到搜索历史
 	searchStore.addToHistory(keyword);
 
-	await checkFrom(props.from);
+	await checkFrom(props.from, keyword);
 };
 
 // 清空输入

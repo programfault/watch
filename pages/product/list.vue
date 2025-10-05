@@ -170,14 +170,10 @@ const goToDetail = (watchId) => {
 
 // 工具栏事件处理
 const onPriceSort = (sortOrder) => {
-    console.log('价格排序:', sortOrder)
-    // 重新加载数据，合并当前筛选条件和排序参数
-    const sortParams = {
-        sort_by: 'price',
-        sort_order: sortOrder,
-        ...watchesFilters.value  // 保持store中的筛选条件
-    }
-    reloadWithFilters(sortParams)
+    console.log('价格排序事件触发:', sortOrder)
+    console.log('当前toolbarStore.sortOrder:', toolbarStore.sortOrder)
+    // 直接重新加载数据，排序参数会从toolbarStore.getSortParams自动获取
+    reloadWithFilters(watchesFilters.value)
 }
 
 const onFilter = (isActive) => {
@@ -246,8 +242,12 @@ const reloadWithFilters = async (filterParams = {}) => {
             ...sortParams
         }
 
-    // 如果有品牌筛选，添加品牌ID
-    if (currentBrand.value) {
+    // 设置品牌ID，优先级：filterParams > watchesFilters > currentBrand
+    if (filterParams && filterParams.brand_id) {
+        baseParams.brand_id = filterParams.brand_id
+    } else if (watchesFilters.value.brand_id) {
+        baseParams.brand_id = watchesFilters.value.brand_id
+    } else if (currentBrand.value) {
         baseParams.brand_id = currentBrand.value.id
     }
 
@@ -266,6 +266,13 @@ const reloadWithFilters = async (filterParams = {}) => {
             hasMaxPrice: !!filterParams.max_price,
             hasAttributeFilters: !!filterParams.attribute_filters,
             hasKeyword: !!filterParams.keyword,
+            brandId: baseParams.brand_id,
+            sortBy: baseParams.sort_by,
+            sortOrder: baseParams.sort_order,
+            toolbarSortOrder: toolbarStore.sortOrder,
+            filterParamsBrandId: filterParams?.brand_id,
+            watchesFiltersBrandId: watchesFilters.value.brand_id,
+            currentBrandId: currentBrand.value?.id,
             attributeFiltersCount: filterParams.attribute_filters ? filterParams.attribute_filters.length : 0,
             hasOtherParams: Object.keys(filterParams).some(key =>
                 !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'min_price', 'max_price', 'attribute_filters', 'keyword'].includes(key)
@@ -303,8 +310,33 @@ onLoad((options) => {
     // 初始化筛选选项
     // appStore.fetchFilterOptions()
     console.log('路由参数:', options)
+
+    // 处理品牌ID
+    if (options.id) {
+        // 设置品牌ID到筛选条件中
+        watchesFilters.value.brand_id = parseInt(options.id)
+        console.log('设置品牌ID到筛选条件:', watchesFilters.value.brand_id)
+    } else {
+        // 清空品牌ID
+        watchesFilters.value.brand_id = null
+    }
+
+    // 处理搜索关键词
+    if (options.keyword) {
+        watchesFilters.value.keyword = decodeURIComponent(options.keyword)
+        console.log('设置搜索关键词到筛选条件:', watchesFilters.value.keyword)
+    }
+
+    // 加载数据
     if (options.id) {
         loadBrandWatches(options.id)
+    } else if (options.keyword) {
+        // 如果有搜索关键词，使用搜索参数加载
+        const searchParams = {
+            keyword: watchesFilters.value.keyword,
+            brand_id: watchesFilters.value.brand_id
+        }
+        reloadWithFilters(searchParams)
     } else {
         loadAllWatches()
     }

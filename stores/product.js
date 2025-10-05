@@ -20,9 +20,8 @@ export const useProductStore = defineStore('product', {
       brand_id: null,
       keyword: '',
       attribute_filters: [],  // 新格式：[{attribute_id: 1, values: [...]}]
-      price_range: null,
-      sort_by: 'sort',
-      sort_order: 'asc'
+      price_range: null
+      // 注意：排序参数由toolbarStore管理，不在这里设置
     },
 
     // 当前品牌信息
@@ -343,9 +342,8 @@ export const useProductStore = defineStore('product', {
         brand_id: null,
         keyword: '',
         attribute_filters: [],  // 新格式：[{attribute_id: 1, values: [...]}]
-        price_range: null,
-        sort_by: 'sort',
-        sort_order: 'asc'
+        price_range: null
+        // 注意：排序参数由toolbarStore管理，不在这里重置
       }
     },
 

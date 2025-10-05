@@ -57,8 +57,11 @@ export default {
   methods: {
     handlePriceSort() {
       this.toolbarStore.togglePriceSort();
-      // 发出事件让父组件处理数据重新加载
-      this.$emit("priceSort", this.sortOrder);
+      // 使用$nextTick确保store更新完成后再发出事件
+      this.$nextTick(() => {
+        console.log('ToolbarComponent 发出排序事件:', this.sortOrder)
+        this.$emit("priceSort", this.sortOrder);
+      });
     },
     handleFilter() {
       this.toolbarStore.toggleFilter();
