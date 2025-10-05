@@ -7,14 +7,13 @@
 		</view>
 
 		<!-- 未登录状态 - 显示提示信息 -->
-		<view v-else-if="!userStore.isLoggedIn" class="not-login">
+		<!-- <view v-else-if="!userStore.isLoggedIn" class="not-login">
 			<uni-icons type="info" size="40" color="#999"></uni-icons>
 			<text class="not-login-text">正在跳转到登录页面...</text>
-		</view>
+		</view> -->
 
 		<!-- 已登录状态 - 个人信息内容（支持下拉刷新） -->
 		<scroll-view
-			v-else
 			class="profile-scroll"
 			scroll-y="true"
 			enable-back-to-top="true"
@@ -25,22 +24,32 @@
 			<view class="profile-content">
 			<view class="user-info">
 				<view class="user-content">
-					<view class="user-name">
-						<text class="name-text shimmer">天辰表友</text>
-						<view class="vip-badge">VIP</view>
-					</view>
-
-					<view class="user-stats">
-						<view class="stat-item">
-							<text class="stat-value">会员卡号</text>
-							<text class="stat-label">{{ cardNumber }}</text>
-						</view>
-						<view class="stat-divider"></view>
-						<view class="stat-item">
-							<text class="stat-value gold">积分余额</text>
-							<text class="stat-label">{{ userPoints }}</text>
-						</view>
-					</view>
+					<template v-if="userStore.isLoggedIn">
+                        <view class="user-name">
+                            <text class="name-text shimmer">天辰表友</text>
+                            <view class="vip-badge">VIP</view>
+                        </view>
+                        <view class="user-stats">
+                            <view class="stat-item">
+                                <text class="stat-value">会员卡号</text>
+                                <text class="stat-label">{{ cardNumber }}</text>
+                            </view>
+                            <view class="stat-divider"></view>
+                            <view class="stat-item">
+                                <text class="stat-value gold">积分余额</text>
+                                <text class="stat-label">{{ userPoints }}</text>
+                            </view>
+                        </view>
+                    </template>
+                    <template v-else>
+                        <view class="not-login-card">
+                        <view class="not-login-icon">
+                            <uni-icons type="person" size="48" color="#c0c4cc" />
+                        </view>
+                        <text class="not-login-tip">您还未登录</text>
+                        <button class="login-btn" @click="goToLogin">立即登录</button>
+                        </view>
+                    </template>
 				</view>
 			</view>
 
@@ -78,8 +87,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
+import { computed, ref } from 'vue'
 import CouponList from '@/components/CouponList.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import PrivilegeList from '@/components/PrivilegeList.vue'
@@ -124,21 +133,10 @@ const privileges = computed(() => {
 })
 
 // 检查登录状态并跳转
-const checkLoginAndRedirect = () => {
-	if (!userStore.isLoggedIn) {
-		console.log('用户未登录，跳转到登录页面')
-		uni.showToast({
-			title: '请先登录',
-			icon: 'none'
-		})
-		setTimeout(() => {
-			uni.navigateTo({
-				url: '/pages/login/login'
-			})
-		}, 1000)
-		return false
-	}
-	return true
+const goToLogin = () => {
+    uni.navigateTo({
+        url: '/pages/login/login'
+    })
 }
 
 // 页面生命周期 - onLoad
@@ -421,7 +419,54 @@ const goToSettings = () => {
 		}
 	}
 
+.not-login-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 32px auto;
+  max-width: 320px;
 
+  .not-login-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #f5f5f5 60%, #e0e0e0 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 8px rgba(192,192,192,0.12);
+  }
+
+  .not-login-tip {
+    font-size: 17px;
+    color: #666;
+    margin-bottom: 22px;
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+
+  .login-btn {
+    background: linear-gradient(90deg, #4fc08d 0%, #34bfa3 100%);
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 0;
+    width: 100%;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(52,191,163,0.08);
+    margin-top: 4px;
+    transition: background 0.2s;
+    &:active {
+      background: linear-gradient(90deg, #34bfa3 0%, #4fc08d 100%);
+    }
+  }
+}
 }
 
 // 纯斜向流光动画 - 从左上到右下的单向流动
