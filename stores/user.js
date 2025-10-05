@@ -6,8 +6,8 @@ import {
     login,
     refreshToken
 } from "@/api";
+import { useTabBarStore } from '@/stores/tabBar';
 import { defineStore } from "pinia";
-
 export const useUserStore = defineStore("user", {
 	state: () => ({
 		// 用户信息
@@ -425,6 +425,7 @@ export const useUserStore = defineStore("user", {
 
 		// 用户登出
 		logout(shouldRedirect = true) {
+            const tabbarStore = useTabBarStore()
 			console.log('logout 方法被调用，shouldRedirect:', shouldRedirect);
 
 			// 清理本地状态
@@ -440,6 +441,8 @@ export const useUserStore = defineStore("user", {
 			uni.removeStorageSync("session_key");
 			uni.removeStorageSync("lastLoginTime");
 			console.log('已清除本地存储');
+            tabbarStore.setUserType("normal")
+            tabbarStore.setActiveTab("home")
 
 			// 只有明确退出登录时才跳转到首页
 			if (shouldRedirect) {
