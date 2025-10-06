@@ -165,11 +165,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
 		const historyItem = {
 			id: product.id,
 			title: product.title || product.name || '未知产品',
-			model: product.model || '未知型号',
 			price: product.price || 0,
-			image: product.images && product.images.length > 0
-				? (product.images[0].image_url || product.images[0].url || '')
-				: '',
 			viewedAt: new Date().toISOString()
 		}
 

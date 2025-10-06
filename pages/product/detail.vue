@@ -137,11 +137,12 @@
 </template>
 
 <script setup>
+import { useFavoritesStore } from '@/stores/favorites.js'
+import { useProductStore } from '@/stores/product.js'
+import { getCurrentTimeToMinute } from '@/utils/timeUtils.js'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
-import { useFavoritesStore } from '@/stores/favorites.js'
-import { useProductStore } from '@/stores/product.js'
 
 const productStore = useProductStore()
 const favoritesStore = useFavoritesStore()
@@ -181,9 +182,8 @@ const loadWatchDetail = async () => {
             favoritesStore.addToBrowsingHistory({
                 id: currentWatch.value.id,
                 title: currentWatch.value.name_cn || currentWatch.value.name,
-                model: currentWatch.value.model,
                 price: currentWatch.value.price,
-                images: currentWatch.value.images
+                visitedAt: getCurrentTimeToMinute()
             })
         }
     } catch (error) {
@@ -231,7 +231,8 @@ const handleFavorite = () => {
         title: currentWatch.value.name_cn || currentWatch.value.name,
         model: currentWatch.value.model,
         price: currentWatch.value.price,
-        images: currentWatch.value.images
+        images: currentWatch.value.images,
+        visitedAt: getCurrentTimeToMinute()
     })
 }
 

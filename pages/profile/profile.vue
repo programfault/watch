@@ -109,6 +109,9 @@ import CouponList from '@/components/CouponList.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import PrivilegeList from '@/components/PrivilegeList.vue'
 import { useTabBarStore, useUserStore } from '@/stores'
+import {
+    getFormattedBrowsingHistory
+} from '@/utils/browsingHistory.js'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
@@ -170,6 +173,9 @@ onLoad(async () => {
 	userInfoLoading.value = true
 
 	try {
+		// 测试浏览记录工具函数
+		const recentHistory = getFormattedBrowsingHistory(3)
+		console.log('最近浏览记录:', recentHistory)
 		// 初始化用户状态
 		await userStore.initUserState()
 
