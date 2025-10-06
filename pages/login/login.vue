@@ -44,17 +44,15 @@
 					@getphonenumber="handleGetPhoneNumber"
 					:disabled="!isAgreed"
 				>
-					<uni-icons type="phone" size="20" color="#fff"></uni-icons>
+					<uv-icon name="weixin" size="20" color="#fff"></uv-icon>
 					<text class="btn-text">微信一键登录</text>
 				</button>
 
 				<!-- 手机号已绑定提示 -->
-				<view v-if="userStore.isLoggedIn && userStore.userInfo?.phone" class="phone-status">
-					<uni-icons type="checkmarkempty" size="16" color="#52c41a"></uni-icons>
-					<text class="phone-text">手机号已绑定：{{ userStore.userInfo.phone }}</text>
-				</view>
-
-				<!-- 安全提示 -->
+		<view v-if="userStore.isLoggedIn && userStore.userInfo?.phone" class="phone-status">
+			<uv-icon name="checkmark" size="16" color="#52c41a"></uv-icon>
+			<text class="phone-text">手机号已绑定：{{ userStore.userInfo.phone }}</text>
+		</view>				<!-- 安全提示 -->
 				<view class="security-tips">
 					<uni-icons type="info" size="14" color="#999"></uni-icons>
 					<text class="tips-text">我们会保护您的隐私信息安全</text>
@@ -71,10 +69,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { useUserStore } from '@/stores/user'
 import { useTabBarStore } from '@/stores/tabBar'
+import { useUserStore } from '@/stores/user'
+import { onLoad } from '@dcloudio/uni-app'
+import { computed, ref } from 'vue'
+
 // 定义组件名称
 defineOptions({
 	name: 'LoginPage'

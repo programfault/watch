@@ -2,7 +2,7 @@
 	<view class="container">
 		<!-- 加载状态 -->
 		<view v-if="userInfoLoading" class="loading">
-			<uni-icons type="spinner-cycle" size="30" color="#999"></uni-icons>
+			<uv-icon name="loading" size="30" color="#999"></uv-icon>
 			<text class="loading-text">加载中...</text>
 		</view>
 
@@ -22,8 +22,8 @@
 			<!-- 自定义下拉刷新内容 -->
 			<view slot="refresher" class="custom-refresher">
 				<view v-if="!isRefreshing" class="pull-tips">
-					<uni-icons
-						type="arrowthindown"
+					<uv-icon
+						name="arrow-down"
 						size="20"
 						color="#999"
 						:class="{ 'icon-rotate': pullDistance >= 80 }"
@@ -34,7 +34,7 @@
 					<text v-else class="tip-text tip-release">松手去登录</text>
 				</view>
 				<view v-else class="refreshing-tips">
-					<uni-icons type="spinner-cycle" size="20" color="#007aff" />
+					<uv-icon name="loading" size="20" color="#007aff" />
 					<text v-if="userStore.isLoggedIn" class="tip-text refreshing">正在刷新...</text>
 				<text v-else class="tip-text refreshing">正在跳转...</text>
 				</view>
@@ -62,7 +62,7 @@
                     <template v-else>
                         <view class="not-login-card">
                         <view class="not-login-icon">
-                            <uni-icons type="person" size="48" color="#c0c4cc" />
+                            <uv-icon name="account" size="48" color="#c0c4cc" />
                         </view>
                         <text class="not-login-tip">您还未登录</text>
                         <button class="login-btn" @click="goToLogin">立即登录</button>
@@ -81,18 +81,18 @@
 			<view class="menu-section">
 				<view class="menu-item">
 					<view class="menu-item-content">
-						<uni-icons type="list" size="20" color="#666"></uni-icons>
+						<uv-icon name="list" size="20" color="#666"></uv-icon>
 						<text class="menu-text">浏览历史</text>
 					</view>
-					<uni-icons type="right" size="16" color="#ccc"></uni-icons>
+					<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
 				</view>
 
 				<view class="menu-item" @click="goToSettings">
 					<view class="menu-item-content">
-						<uni-icons type="gear-filled" size="20" color="#666"></uni-icons>
+						<uv-icon name="setting" size="20" color="#666"></uv-icon>
 						<text class="menu-text">设置</text>
 					</view>
-					<uni-icons type="right" size="16" color="#ccc"></uni-icons>
+					<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
 				</view>
 			</view>
 

@@ -10,28 +10,28 @@
 				<view class="settings-group">
 					<view class="setting-item">
 						<view class="item-content">
-							<uni-icons type="locked" size="20" color="#666"></uni-icons>
+							<uv-icon name="lock" size="20" color="#666"></uv-icon>
 							<text class="item-text">隐私政策</text>
 						</view>
-						<uni-icons type="right" size="16" color="#ccc"></uni-icons>
+						<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
 					</view>
 
 					<view class="setting-item">
 						<view class="item-content">
-							<uni-icons type="info" size="20" color="#666"></uni-icons>
+							<uv-icon name="info-circle" size="20" color="#666"></uv-icon>
 							<text class="item-text">关于我们</text>
 						</view>
-						<uni-icons type="right" size="16" color="#ccc"></uni-icons>
+						<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
 					</view>
 
 					<view class="setting-item">
 						<view class="item-content">
-							<uni-icons type="paperplane" size="20" color="#666"></uni-icons>
+							<uv-icon name="reload" size="20" color="#666"></uv-icon>
 							<text class="item-text">版本更新</text>
 						</view>
 						<view class="version-info">
 							<text class="version-text">v1.0.0</text>
-							<uni-icons type="right" size="16" color="#ccc"></uni-icons>
+							<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
 						</view>
 					</view>
 				</view>
@@ -40,7 +40,7 @@
 			<!-- 退出登录 -->
 			<view class="logout-section">
 				<button class="logout-btn" @click="handleLogout">
-					<uni-icons type="forward" size="16" color="#999"></uni-icons>
+					<uv-icon name="logout" size="16" color="#999"></uv-icon>
 					<text class="logout-text">退出登录</text>
 				</button>
 			</view>
@@ -49,9 +49,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 
 // 定义组件名称
 defineOptions({
@@ -82,7 +81,9 @@ onShow(() => {
 const initSettings = () => {
 	// 初始化页面设置
 	console.log('设置页面初始化完成')
-}// 其他功能方法可以在这里添加
+}
+
+// 其他功能方法可以在这里添加
 
 // 退出登录
 const handleLogout = () => {

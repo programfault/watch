@@ -15,7 +15,7 @@
           />
         </view>
         <view class="scan-btn" @click="handleScan">
-          <uni-icons type="scan" size="24" color="#007aff"></uni-icons>
+          <uv-icon name="scan" size="24" color="#007aff"></uv-icon>
         </view>
       </view>
     </view>
@@ -36,8 +36,8 @@
       <!-- 自定义下拉刷新内容 -->
       <view slot="refresher" class="custom-refresher">
         <view v-if="!isRefreshing" class="pull-tips">
-          <uni-icons
-            type="arrowthindown"
+          <uv-icon
+            name="arrow-down"
             size="20"
             color="#999"
             :class="{ 'icon-rotate': pullDistance >= 80 }"
@@ -46,7 +46,7 @@
           <text v-else class="tip-text tip-release">松手立即刷新</text>
         </view>
         <view v-else class="refreshing-tips">
-          <uni-icons type="spinner-cycle" size="20" color="#007aff" />
+          <uv-icon name="loading" size="20" color="#007aff" />
           <text class="tip-text refreshing">正在刷新...</text>
         </view>
       </view>

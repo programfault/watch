@@ -86,6 +86,18 @@ export function searchWatches(filters = {}) {
 }
 
 /**
+ * 获取手表详情
+ * @param {number|string} watchId - 手表ID
+ * @returns {Promise}
+ */
+export function getWatchDetail(watchId) {
+  return get(`/watches/${watchId}`, {}, {
+    showLoading: false,
+    showError: true
+  })
+}
+
+/**
  * 获取用户福利信息（优惠券和特权）
  * @param {Object} params - 查询参数
  * @param {string} [params.type] - 筛选类型 (coupon, privilege)

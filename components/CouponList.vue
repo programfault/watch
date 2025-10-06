@@ -28,7 +28,7 @@
 
 			<!-- 空状态 -->
 			<view v-if="!coupons.length" class="empty-state">
-				<uni-icons type="gift" size="32" color="#ccc"></uni-icons>
+				<uv-icon name="gift" size="32" color="#ccc"></uv-icon>
 				<text class="empty-text">暂无优惠券</text>
 			</view>
 		</view>

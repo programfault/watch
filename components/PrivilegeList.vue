@@ -26,7 +26,7 @@
 
 			<!-- 空状态 -->
 			<view v-if="!privileges.length" class="empty-state">
-				<uni-icons type="vip" size="32" color="#ccc"></uni-icons>
+				<uv-icon name="integral" size="32" color="#ccc"></uv-icon>
 				<text class="empty-text">暂无特权</text>
 			</view>
 		</view>

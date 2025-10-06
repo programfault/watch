@@ -10,7 +10,7 @@
 			<view class="section-header">
 				<view class="section-title">服务门店</view>
 				<view class="manual-entry" @click="goToManual">
-					<uni-icons type="book" size="14" color="#007aff" />
+					<uv-icon name="file-text" size="14" color="#007aff" />
 					<text class="manual-text">保养手册</text>
 				</view>
 			</view>
@@ -48,17 +48,17 @@
 							<!-- 按钮组在右侧 -->
 							<view class="button-group">
 								<view class="phone-section" @click.stop="callStore(store)">
-									<uni-icons type="phone" size="14" color="#007aff" />
+									<uv-icon name="phone" size="14" color="#007aff" />
 									<text class="store-phone">电话</text>
 								</view>
 								<!-- 只有有位置权限时才显示导航按钮 -->
 								<view v-if="locationAuthorized" class="nav-button" @click.stop="navigateToStore(store)">
-									<uni-icons type="navigate" size="16" color="#fff" />
+									<uv-icon name="map" size="16" color="#fff" />
 									<text class="nav-text">导航</text>
 								</view>
 								<!-- 没有位置权限时显示提示 -->
 								<view v-else class="nav-disabled">
-									<uni-icons type="navigate" size="14" color="#ccc" />
+									<uv-icon name="map" size="14" color="#ccc" />
 									<text class="nav-disabled-text">导航不可用</text>
 								</view>
 							</view>

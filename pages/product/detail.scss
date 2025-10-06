@@ -1,0 +1,397 @@
+.container {
+    min-height: 100vh;
+    background-color: #f8f9fa;
+    padding-bottom: calc(105rpx + env(safe-area-inset-bottom));
+}
+
+/* 加载状态 */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 200rpx 40rpx;
+}
+
+/* 空状态 */
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 200rpx 40rpx;
+
+    .empty-text {
+        margin-top: 20rpx;
+        font-size: 28rpx;
+        color: #999;
+    }
+}
+
+/* 图片轮播区域 */
+.images-section {
+    background-color: #000;
+    margin-bottom: 20rpx;
+    position: relative;
+    overflow: hidden;
+
+    .watch-images {
+        height: 600rpx;
+        width: 100%;
+
+        swiper-item {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .detail-image {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+            background-color: transparent;
+        }
+    }
+}
+
+/* 基本信息区域 */
+.basic-info-section {
+    background-color: #fff;
+    padding: 40rpx;
+    margin-bottom: 20rpx;
+
+    .brand-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 30rpx;
+
+        .brand-logo {
+            width: 60rpx;
+            height: 60rpx;
+            margin-right: 20rpx;
+        }
+
+        .brand-name {
+            font-size: 28rpx;
+            color: #666;
+            font-weight: 500;
+        }
+    }
+
+    .watch-title {
+        margin-bottom: 30rpx;
+
+        .watch-name {
+            display: block;
+            font-size: 40rpx;
+            font-weight: bold;
+            color: #1a1a1a;
+            line-height: 1.4;
+            margin-bottom: 10rpx;
+        }
+
+        .watch-name-en {
+            display: block;
+            font-size: 26rpx;
+            color: #888;
+            font-style: italic;
+        }
+    }
+
+    .price-section {
+        .price-label {
+            display: block;
+            font-size: 24rpx;
+            color: #999;
+            margin-bottom: 10rpx;
+        }
+
+        .watch-price {
+            display: block;
+            font-size: 48rpx;
+            color: #d73502;
+            font-weight: bold;
+        }
+    }
+}
+
+/* 通用区域样式 */
+.summary-section,
+.specs-section,
+.stores-section {
+    background-color: #fff;
+    margin-bottom: 20rpx;
+
+    .section-header {
+        padding: 30rpx 40rpx 20rpx;
+        border-bottom: 1rpx solid #f0f0f0;
+
+        .section-title {
+            font-size: 32rpx;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+    }
+}
+
+/* 产品介绍 */
+.summary-section {
+    .summary-content {
+        padding: 30rpx 40rpx;
+
+        .summary-text {
+            font-size: 28rpx;
+            color: #555;
+            line-height: 1.8;
+        }
+    }
+}
+
+/* 技术规格 */
+.specs-section {
+    .specs-grid {
+        padding: 20rpx 40rpx 40rpx;
+
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20rpx 0;
+            border-bottom: 1rpx solid #f5f5f5;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            .spec-label {
+                font-size: 28rpx;
+                color: #666;
+                flex: 1;
+            }
+
+            .spec-value {
+                font-size: 28rpx;
+                color: #1a1a1a;
+                font-weight: 500;
+                text-align: right;
+            }
+        }
+    }
+}
+
+/* 可售门店 */
+.stores-section {
+    .stores-list {
+        padding: 20rpx 40rpx 40rpx;
+
+        .store-item {
+            padding: 30rpx 0;
+            border-bottom: 1rpx solid #f0f0f0;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            .store-header {
+                margin-bottom: 12rpx;
+
+                .store-name {
+                    font-size: 30rpx;
+                    font-weight: bold;
+                    color: #1a1a1a;
+                    cursor: pointer;
+                }
+            }
+
+            .store-info {
+                margin-bottom: 12rpx;
+
+                .store-address {
+                    display: block;
+                    font-size: 26rpx;
+                    color: #666;
+                    line-height: 1.6;
+                    cursor: pointer;
+                }
+            }
+
+            .store-desc {
+                display: block;
+                font-size: 24rpx;
+                color: #999;
+                line-height: 1.5;
+                padding: 10rpx 20rpx;
+                background-color: #f8f9fa;
+                border-radius: 8rpx;
+                margin-bottom: 12rpx;
+                cursor: pointer;
+            }
+
+            .store-footer {
+                margin-bottom: 12rpx;
+
+                .store-hours {
+                    font-size: 24rpx;
+                    color: #888;
+                }
+            }
+
+            .action-buttons {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding-top: 8rpx;
+
+                .distance-info {
+                    .distance-text {
+                        font-size: 22rpx;
+                        color: #666;
+                    }
+
+                    .distance-placeholder {
+                        font-size: 22rpx;
+                        color: #ccc;
+                    }
+                }
+
+                .button-group {
+                    display: flex;
+                    align-items: center;
+                    gap: 12rpx;
+
+                    .phone-section {
+                        display: flex;
+                        align-items: center;
+                        gap: 6rpx;
+                        padding: 8rpx 16rpx;
+                        border-radius: 20rpx;
+                        background-color: #f0f8ff;
+                        cursor: pointer;
+
+                        &:active {
+                            background-color: #e6f3ff;
+                        }
+
+                        .store-phone {
+                            font-size: 22rpx;
+                            color: #007aff;
+                        }
+                    }
+
+                    .nav-button {
+                        display: flex;
+                        align-items: center;
+                        gap: 6rpx;
+                        padding: 8rpx 16rpx;
+                        border-radius: 20rpx;
+                        background-color: #007aff;
+                        cursor: pointer;
+
+                        &:active {
+                            background-color: #0056cc;
+                        }
+
+                        .nav-text {
+                            font-size: 22rpx;
+                            color: #fff;
+                        }
+                    }
+
+                    .nav-disabled {
+                        display: flex;
+                        align-items: center;
+                        gap: 6rpx;
+                        padding: 8rpx 16rpx;
+                        border-radius: 20rpx;
+                        background-color: #f5f5f5;
+                        cursor: pointer;
+
+                        &:active {
+                            background-color: #e8e8e8;
+                        }
+
+                        .nav-disabled-text {
+                            font-size: 22rpx;
+                            color: #999;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* 底部操作栏 */
+.bottom-actions {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    padding: 16rpx 32rpx;
+    padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+    border-top: 1rpx solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 24rpx;
+    z-index: 100;
+
+    .left-actions {
+        display: flex;
+        gap: 40rpx;
+        align-items: center;
+
+        .icon-btn {
+            width: 88rpx;
+            height: 72rpx;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6rpx;
+            cursor: pointer;
+
+            &:active {
+                background-color: rgba(0, 0, 0, 0.05);
+                transform: scale(0.95);
+                border-radius: 8rpx;
+            }
+
+            text {
+                font-size: 20rpx;
+                line-height: 1;
+                color: #666;
+                font-weight: 400;
+            }
+        }
+    }
+
+    .main-btn {
+        flex: 1;
+        height: 72rpx;
+        border-radius: 36rpx;
+        font-size: 28rpx;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: linear-gradient(90deg, #ff6b35 0%, #f7931e 100%);
+        color: #fff;
+
+        &:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        text {
+            font-size: 28rpx;
+            font-weight: 500;
+        }
+    }
+}
+
+/* 底部间距 */
+.bottom-spacer {
+    height: 105rpx;
+}

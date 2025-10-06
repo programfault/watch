@@ -1,4 +1,4 @@
-import { getWatches, searchWatches } from '@/api/app'
+import { getWatchDetail, getWatches, searchWatches } from '@/api/app'
 import { defineStore } from 'pinia'
 
 export const useProductStore = defineStore('product', {
@@ -461,7 +461,12 @@ export const useProductStore = defineStore('product', {
 
     // 获取指定手表详情
     getWatchById(watchId) {
-      return this.watchesList.find(watch => watch.id === watchId)
+      // 考虑ID可能是字符串或数字的情况
+      return this.watchesList.find(watch =>
+        watch.id === watchId ||
+        watch.id === Number(watchId) ||
+        String(watch.id) === String(watchId)
+      )
     },
 
     // 设置当前手表详情
@@ -479,38 +484,23 @@ export const useProductStore = defineStore('product', {
         const cachedWatch = this.getWatchById(watchId)
         if (cachedWatch) {
           this.currentWatch = cachedWatch
-          this.watchDetailLoading = false
           return cachedWatch
         }
 
-        // 如果本地没有，模拟API调用获取详情
-        // 这里应该调用真实的API，暂时用模拟数据
-        const mockDetail = {
-          id: watchId,
-          name_cn: '劳力士潜航者',
-          name_en: 'Rolex Submariner',
-          price: '89800.00',
-          summary: '经典的潜水手表，防水深度300米，不锈钢材质，自动机械机芯。',
-          brand: {
-            id: 1,
-            name_cn: '劳力士',
-            name_en: 'Rolex'
-          },
-          images: [
-            { id: 1, image_url: '/static/c1.png', weight: 100 },
-            { id: 2, image_url: '/static/c2.png', weight: 90 }
-          ],
-          attributes: [
-            { id: 1, name: '机芯类型', value: '自动机械' },
-            { id: 2, name: '表壳材质', value: '不锈钢' },
-            { id: 3, name: '表带材质', value: '不锈钢' },
-            { id: 4, name: '防水深度', value: '300米' },
-            { id: 5, name: '表径', value: '40mm' }
-          ]
+        // 本地缓存未找到，调用 API 获取详情
+        console.log('本地缓存未找到，调用 API 获取手表详情:', watchId)
+        const response = await getWatchDetail(watchId)
+        if (response?.data) {
+          this.currentWatch = response.data
+          // 将获取的详情添加到本地缓存
+          if (!this.watchesList.find(watch => watch.id === response.data.id)) {
+            this.watchesList.push(response.data)
+          }
+          return response.data
         }
 
-        this.currentWatch = mockDetail
-        return mockDetail
+        // API 也没有找到
+        throw new Error('手表信息不存在')
       } catch (error) {
         console.error('获取手表详情失败:', error)
         throw error
