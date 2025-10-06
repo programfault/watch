@@ -6,6 +6,7 @@ const pinia = createPinia()
 export default pinia
 
 export { useAppStore } from './app.js'
+export { useFavoritesStore } from './favorites.js'
 export { useProductStore } from './product.js'
 // 导出所有 stores
 export { useSearchStore } from './search.js'

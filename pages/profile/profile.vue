@@ -79,10 +79,10 @@
 
 			<!-- 功能菜单 -->
 			<view class="menu-section">
-				<view class="menu-item">
+				<view class="menu-item" @click="goToFavorites">
 					<view class="menu-item-content">
-						<uv-icon name="list" size="20" color="#666"></uv-icon>
-						<text class="menu-text">浏览历史</text>
+						<uv-icon name="heart" size="20" color="#666"></uv-icon>
+						<text class="menu-text">我的收藏</text>
 					</view>
 					<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
 				</view>
@@ -254,6 +254,14 @@ const goToSettings = () => {
 	console.log('跳转到设置页面')
 	uni.navigateTo({
 		url: '/pages/settings/settings'
+	})
+}
+
+// 跳转到收藏页面
+const goToFavorites = () => {
+	console.log('跳转到收藏页面')
+	uni.navigateTo({
+		url: '/pages/favorites/favorites'
 	})
 }
 </script>

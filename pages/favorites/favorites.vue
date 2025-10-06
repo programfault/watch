@@ -1,0 +1,310 @@
+<template>
+	<view class="container">
+		<!-- 页面标题 -->
+		<view class="page-header">
+			<text class="page-title">我的收藏</text>
+			<text class="count-badge">{{ favoritesStore.favoritesCount }}件</text>
+		</view>
+
+		<!-- 收藏列表 -->
+		<view v-if="favoritesStore.favoritesCount > 0" class="favorites-list">
+			<view
+				v-for="item in favoritesStore.favorites"
+				:key="item.id"
+				class="favorite-item"
+				@click="goToDetail(item.id)"
+			>
+				<view class="item-image">
+					<image
+						:src="item.image || '/static/logo.png'"
+						mode="aspectFill"
+						class="product-image"
+					/>
+				</view>
+				<view class="item-content">
+					<text class="product-name">{{ item.title || item.name }}</text>
+					<view class="price-row">
+						<text class="product-price">¥{{ formatPrice(item.price) }}</text>
+						<text class="added-time">{{ formatTime(item.addedAt) }}</text>
+					</view>
+				</view>
+				<view class="item-actions">
+					<view class="remove-btn" @click.stop="removeFavorite(item.id)">
+						<uv-icon name="close" size="20" color="#999"></uv-icon>
+					</view>
+				</view>
+			</view>
+		</view>
+
+		<!-- 空状态 -->
+		<view v-else class="empty-state">
+			<view class="empty-icon">
+				<uv-icon name="heart" size="80" color="#e0e0e0"></uv-icon>
+			</view>
+			<text class="empty-title">暂无收藏</text>
+			<text class="empty-desc">赶快去收藏心仪的手表吧</text>
+			<button class="browse-btn" @click="goToBrowse">
+				<text>去逛逛</text>
+			</button>
+		</view>
+
+		<!-- 底部操作栏 -->
+		<view v-if="favoritesStore.favoritesCount > 0" class="bottom-actions">
+			<button class="clear-btn" @click="clearAllFavorites">
+				<text>清空收藏</text>
+			</button>
+		</view>
+	</view>
+</template>
+
+<script setup>
+import { useFavoritesStore } from '@/stores'
+import { onShow } from '@dcloudio/uni-app'
+
+// 定义组件名称
+defineOptions({
+	name: 'FavoritesPage'
+})
+
+const favoritesStore = useFavoritesStore()
+
+// 页面显示时刷新数据
+onShow(() => {
+	// 由于数据是从本地存储加载的，不需要额外刷新
+	console.log('收藏页面显示，当前收藏数量:', favoritesStore.favoritesCount)
+})
+
+// 格式化价格
+const formatPrice = (price) => {
+	if (!price) return '0'
+	return Number(price).toLocaleString('zh-CN', {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 2
+	})
+}
+
+// 格式化时间
+const formatTime = (timeStr) => {
+	if (!timeStr) return ''
+	const date = new Date(timeStr)
+	const now = new Date()
+	const diff = now - date
+
+	// 小于1小时显示分钟
+	if (diff < 3600000) {
+		const minutes = Math.floor(diff / 60000)
+		return minutes < 1 ? '刚刚' : `${minutes}分钟前`
+	}
+
+	// 小于24小时显示小时
+	if (diff < 86400000) {
+		const hours = Math.floor(diff / 3600000)
+		return `${hours}小时前`
+	}
+
+	// 小于7天显示天数
+	if (diff < 604800000) {
+		const days = Math.floor(diff / 86400000)
+		return `${days}天前`
+	}
+
+	// 超过7天显示具体日期
+	return date.toLocaleDateString('zh-CN', {
+		month: 'short',
+		day: 'numeric'
+	})
+}
+
+// 跳转到产品详情
+const goToDetail = (productId) => {
+	uni.navigateTo({
+		url: `/pages/product/detail?id=${productId}`
+	})
+}
+
+// 移除收藏
+const removeFavorite = (productId) => {
+	uni.showModal({
+		title: '确认移除',
+		content: '确定要取消收藏这个商品吗？',
+		success: (res) => {
+			if (res.confirm) {
+				favoritesStore.removeFromFavorites(productId)
+			}
+		}
+	})
+}
+
+// 清空所有收藏
+const clearAllFavorites = () => {
+	uni.showModal({
+		title: '确认清空',
+		content: '确定要清空所有收藏吗？此操作不可恢复。',
+		success: (res) => {
+			if (res.confirm) {
+				favoritesStore.clearFavorites()
+			}
+		}
+	})
+}
+
+// 去浏览商品
+const goToBrowse = () => {
+	uni.switchTab({
+		url: '/pages/index/index'
+	})
+}
+</script>
+
+<style lang="scss" scoped>
+.container {
+	min-height: 100vh;
+	background-color: #f5f5f5;
+	padding-bottom: 20rpx;
+}
+
+.page-header {
+	background: #fff;
+	padding: 30rpx 40rpx;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid #eee;
+
+	.page-title {
+		font-size: 36rpx;
+		font-weight: 600;
+		color: #333;
+	}
+
+	.count-badge {
+		background: #007aff;
+		color: #fff;
+		padding: 8rpx 16rpx;
+		border-radius: 20rpx;
+		font-size: 24rpx;
+	}
+}
+
+.favorites-list {
+	padding: 20rpx;
+
+	.favorite-item {
+		background: #fff;
+		border-radius: 12rpx;
+		margin-bottom: 20rpx;
+		padding: 24rpx;
+		display: flex;
+		align-items: center;
+		box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+
+		.item-image {
+			width: 120rpx;
+			height: 120rpx;
+			border-radius: 8rpx;
+			overflow: hidden;
+			margin-right: 24rpx;
+			flex-shrink: 0;
+
+			.product-image {
+				width: 100%;
+				height: 100%;
+			}
+		}
+
+		.item-content {
+			flex: 1;
+
+			.product-name {
+				display: block;
+				font-size: 32rpx;
+				font-weight: 600;
+				color: #333;
+				margin-bottom: 12rpx;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.price-row {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+
+				.product-price {
+					font-size: 30rpx;
+					font-weight: 600;
+					color: #ff4d4f;
+				}
+
+				.added-time {
+					font-size: 24rpx;
+					color: #999;
+				}
+			}
+		}
+
+		.item-actions {
+			margin-left: 20rpx;
+
+			.remove-btn {
+				width: 60rpx;
+				height: 60rpx;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 50%;
+				background: #f5f5f5;
+			}
+		}
+	}
+}
+
+.empty-state {
+	text-align: center;
+	padding: 120rpx 40rpx;
+
+	.empty-icon {
+		margin-bottom: 40rpx;
+	}
+
+	.empty-title {
+		display: block;
+		font-size: 32rpx;
+		color: #666;
+		margin-bottom: 16rpx;
+	}
+
+	.empty-desc {
+		display: block;
+		font-size: 28rpx;
+		color: #999;
+		margin-bottom: 60rpx;
+	}
+
+	.browse-btn {
+		background: #007aff;
+		color: #fff;
+		padding: 24rpx 60rpx;
+		border-radius: 50rpx;
+		font-size: 28rpx;
+		border: none;
+	}
+}
+
+.bottom-actions {
+	padding: 40rpx;
+	background: #fff;
+	border-top: 1px solid #eee;
+
+	.clear-btn {
+		background: #ff4d4f;
+		color: #fff;
+		padding: 24rpx;
+		border-radius: 12rpx;
+		font-size: 28rpx;
+		border: none;
+		width: 100%;
+	}
+}
+</style>

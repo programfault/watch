@@ -65,6 +65,11 @@
 			"navigationBarTitleText": "登录调试",
 			"navigationBarBackgroundColor": "#f8f8f8"
 		}
+	}, {
+		"path": "pages/favorites/favorites",
+		"style": {
+			"navigationBarTitleText": "我的收藏"
+		}
 	}],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",

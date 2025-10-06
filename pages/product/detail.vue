@@ -114,9 +114,9 @@
                         <uv-icon name="server-man" size="26" color="#666"></uv-icon>
                         <text>客服</text>
                     </view>
-                    <view class="icon-btn favorite-btn" @click="handleFavorite">
-                        <uv-icon name="heart" size="26" color="#666"></uv-icon>
-                        <text>收藏</text>
+                    <view class="icon-btn favorite-btn" :class="{ 'favorited': isFavorited }" @click="handleFavorite">
+                        <uv-icon name="heart" size="26" :color="isFavorited ? '#ff4d4f' : '#666'"></uv-icon>
+                        <text>{{ isFavorited ? '已收藏' : '收藏' }}</text>
                     </view>
                 </view>
                 <button class="main-btn store-btn" @click="handleViewStores">
@@ -137,15 +137,23 @@
 </template>
 
 <script setup>
-import { useProductStore } from '@/stores/product.js'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
+import { useFavoritesStore } from '@/stores/favorites.js'
+import { useProductStore } from '@/stores/product.js'
 
 const productStore = useProductStore()
+const favoritesStore = useFavoritesStore()
 const { currentWatch, watchDetailLoading } = storeToRefs(productStore)
 
 const watchId = ref(null)
+
+// 收藏状态
+const isFavorited = computed(() => {
+    return currentWatch.value?.id ? favoritesStore.isFavorited(currentWatch.value.id) : false
+})
+
 // 定位相关状态
 const locationAuthorized = ref(false)
 const userLocation = ref(null)
@@ -167,6 +175,17 @@ const formatPrice = (price) => {
 const loadWatchDetail = async () => {
     try {
         await productStore.fetchWatchDetail(watchId.value)
+
+        // 如果加载成功且有产品信息，添加到浏览记录
+        if (currentWatch.value && currentWatch.value.id) {
+            favoritesStore.addToBrowsingHistory({
+                id: currentWatch.value.id,
+                title: currentWatch.value.name_cn || currentWatch.value.name,
+                model: currentWatch.value.model,
+                price: currentWatch.value.price,
+                images: currentWatch.value.images
+            })
+        }
     } catch (error) {
         console.error('加载手表详情失败:', error)
         uni.showToast({
@@ -198,11 +217,22 @@ const handleContact = () => {
 
 // 收藏功能
 const handleFavorite = () => {
-    uni.showToast({
-        title: '收藏成功',
-        icon: 'success'
+    if (!currentWatch.value?.id) {
+        uni.showToast({
+            title: '产品信息不完整',
+            icon: 'none'
+        })
+        return
+    }
+
+    // 切换收藏状态
+    favoritesStore.toggleFavorite({
+        id: currentWatch.value.id,
+        title: currentWatch.value.name_cn || currentWatch.value.name,
+        model: currentWatch.value.model,
+        price: currentWatch.value.price,
+        images: currentWatch.value.images
     })
-    // 这里可以调用收藏API
 }
 
 // 查看在售门店
