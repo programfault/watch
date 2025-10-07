@@ -4,18 +4,17 @@
     <view class="fixed-search">
       <view class="search-container">
         <view class="search-bar-wrapper">
-          <uni-search-bar
-            @input="onSearchInput"
-            @clear="onSearchClear"
-            @confirm="onSearchConfirm"
+          <uv-search
+            @custom="onSearchConfirm"
             placeholder="请输入手机号搜索"
             :focus="false"
             v-model="searchKeyword"
-            cancelButton="none"
+            :show-action="true"
+            action-text="搜索"
+            @search="onSearchConfirm"
+            :auto-search="false"
+            :clear-trigger="'click'"
           />
-        </view>
-        <view class="scan-btn" @click="handleScan">
-          <uv-icon name="scan" size="24" color="#007aff"></uv-icon>
         </view>
       </view>
     </view>
@@ -143,7 +142,7 @@
 import ConsumerPanel from "@/components/ConsumerPanel.vue"
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import { useUserStore } from "@/stores"
-import ScanUtils from "@/utils/scanUtils.js"
+import { searchConsumers } from "@/api/user.js"
 import { onLoad, onPullDownRefresh, onShow, onUnload } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
@@ -157,7 +156,6 @@ const userStore = useUserStore()
 
 // 响应式数据
 const searchKeyword = ref("")
-const searchCard = ref("")
 const isRefreshing = ref(false)
 const pullDistance = ref(0)
 const selectedConsumer = ref(null)
@@ -348,50 +346,113 @@ const handlePanelClose = () => {
   panelPrivileges.value = []
 }
 
-// 搜索输入事件（本地实时搜索）
-const onSearchInput = (e) => {
-  const keyword = e.detail?.value || e
-  console.log("搜索输入:", keyword)
-  searchKeyword.value = keyword
-  userStore.setConsumersSearchKeyword(keyword)
-}
-
 // 搜索清除事件
-const onSearchClear = () => {
+const onSearchClear = async () => {
   console.log("搜索清除")
   searchKeyword.value = ""
-  userStore.clearConsumersSearch()
+  
+  // 清除搜索后重新加载全部数据
+  try {
+    userStore.consumersLoading = true
+    await userStore.fetchConsumers()
+  } catch (error) {
+    console.error("重新加载数据失败:", error)
+  } finally {
+    userStore.consumersLoading = false
+  }
 }
 
 // 搜索确认事件
-const onSearchConfirm = (e) => {
+const onSearchConfirm = async (e) => {
   const keyword = e.detail?.value || e
   console.log("搜索确认:", keyword)
   searchKeyword.value = keyword
-  userStore.setConsumersSearchKeyword(keyword)
-}
-
-// 扫一扫功能
-const handleScan = async () => {
-  console.log('点击扫一扫')
-
+  
+  if (!keyword.trim()) {
+    // 如果关键词为空，加载全部数据
+    try {
+      userStore.consumersLoading = true
+      await userStore.fetchConsumers()
+    } catch (error) {
+      console.error("加载数据失败:", error)
+    } finally {
+      userStore.consumersLoading = false
+    }
+    return
+  }
+  
+  // 调用新的搜索API
   try {
-    // 使用通用扫码工具
-    const scanResult = await ScanUtils.quickScan()
-    if (scanResult) {
-      console.log('🔍 customer页面扫码结果:', scanResult)
-      searchCard.value = scanResult
-
-      // 先清除之前的搜索条件
-      userStore.clearConsumersSearch()
-
-      // 设置卡号搜索
-      userStore.setConsumersCardNumber(scanResult)
+    userStore.consumersLoading = true
+    const response = await searchConsumers({ keyword: keyword.trim() })
+    
+    // 处理搜索结果
+    try {
+      // 优先检查是否直接包含users和total字段（API直接返回的数据格式）
+      if (response && 'users' in response && 'total' in response) {
+        userStore.consumers = response.users || []
+        userStore.consumersTotal = response.total || 0
+        
+        // 如果搜索结果为空，显示提示
+        if ((response.users || []).length === 0) {
+          uni.showToast({
+            title: "未找到相关消费者",
+            icon: "none"
+          })
+        }
+      }
+      // 检查标准响应格式
+      else if (response?.code === 200 || response?.success) {
+        // 根据响应格式设置消费者数据
+        let consumersData = []
+        
+        if (response?.data?.users) {
+          consumersData = response.data.users || []
+          userStore.consumersTotal = response.data.total || consumersData.length
+        } else if (response?.data) {
+          consumersData = response.data || []
+          userStore.consumersTotal = consumersData.length
+        } else if (Array.isArray(response)) {
+          consumersData = response
+          userStore.consumersTotal = consumersData.length
+        }
+        
+        // 直接设置搜索结果到消费者列表
+        userStore.consumers = consumersData
+        
+        // 如果搜索结果为空，显示提示
+        if (consumersData.length === 0) {
+          uni.showToast({
+            title: "未找到相关消费者",
+            icon: "none"
+          })
+        }
+      } else {
+        console.error("搜索失败:", response?.message || "未知错误")
+        uni.showToast({
+          title: response?.message || "搜索失败",
+          icon: "none"
+        })
+      }
+    } catch (error) {
+      console.error("处理搜索结果时出错:", error)
+      uni.showToast({
+        title: "处理搜索结果时出错",
+        icon: "none"
+      })
     }
   } catch (error) {
-    console.error('扫码失败:', error)
+    console.error("搜索异常:", error)
+    uni.showToast({
+      title: "网络异常，搜索失败",
+      icon: "none"
+    })
+  } finally {
+    userStore.consumersLoading = false
   }
 }
+
+
 
 // 获取头像文本
 const getAvatarText = (consumer) => {

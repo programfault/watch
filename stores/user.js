@@ -61,6 +61,12 @@ export const useUserStore = defineStore("user", {
 		},
 	}),
 
+	// 配置持久化
+	persist: {
+		key: 'user-store',
+		paths: ['userInfo', 'isLoggedIn', 'tokens', 'settings'],
+	},
+
 	getters: {
 		// 用户昵称
 		nickname: (state) => {
@@ -243,50 +249,39 @@ export const useUserStore = defineStore("user", {
 	},
 
 	actions: {
-		// 初始化用户状态，检查本地存储的token
+		// 初始化用户状态（应用启动时调用）
 		async initUserState() {
-			try {
-				const storedTokens = uni.getStorageSync('tokens');
-				if (storedTokens) {
-					this.tokens = storedTokens;
+			// 检查是否刚登录，避免重复验证token
+			const justLoggedIn = uni.getStorageSync("justLoggedIn");
+			if (justLoggedIn === "true") {
+				console.log("刚登录，跳过token验证");
+				uni.removeStorageSync("justLoggedIn");
+				return;
+			}
 
-					// 检查是否刚登录完成（5分钟内），避免重复验证
+			// 检查是否有存储的token
+			if (this.tokens?.access_token) {
+				// 验证token是否有效
+				try {
+					// 检查最后登录时间，如果超过一定时间则重新验证
 					const lastLoginTime = uni.getStorageSync("lastLoginTime");
 					const now = Date.now();
-					const isRecentLogin = lastLoginTime && (now - lastLoginTime) < 5 * 60 * 1000; // 5分钟内
+					const timeDiff = now - parseInt(lastLoginTime || "0");
 
-					if (isRecentLogin) {
-						this.isLoggedIn = true;
-						// 尝试从本地存储恢复用户信息
-						const savedUserInfo = uni.getStorageSync("userInfo");
-						if (savedUserInfo) {
-							try {
-								this.userInfo = JSON.parse(savedUserInfo);
-							} catch (e) {
-								// 静默失败
-							}
-						}
+					// 如果超过24小时，重新验证用户信息
+					if (timeDiff > 24 * 60 * 60 * 1000) {
+						console.log("超过24小时，重新验证用户信息");
+						await this.fetchUserInfo();
 					} else {
-						// 尝试获取用户信息验证token有效性
-						try {
-							await this.fetchUserInfo();
-							this.isLoggedIn = true;
-						} catch (error) {
-							// 如果失败（可能是token过期），清除token并设置为未登录
-							this.tokens = null;
-							this.userInfo = null;
-							this.isLoggedIn = false;
-							uni.removeStorageSync('tokens');
-						}
+						console.log("token有效，使用缓存的用户信息");
 					}
-				} else {
-					this.isLoggedIn = false;
+				} catch (error) {
+					console.error("验证用户状态失败:", error);
+					this.logout(false); // 验证失败时只清理状态，不跳转页面
 				}
-			} catch (error) {
-				console.error('🔍 初始化用户状态失败:', error);
-				this.isLoggedIn = false;
-				this.tokens = null;
-				uni.removeStorageSync('tokens');
+			} else {
+				console.log("没有有效的token");
+				this.logout(false); // 没有token时只清理状态，不跳转页面
 			}
 		},
 
@@ -322,9 +317,8 @@ export const useUserStore = defineStore("user", {
 
 					this.tokens = cleanTokens;
 
-					// 保存到本地存储
-					uni.setStorageSync("userInfo", JSON.stringify(this.userInfo));
-					uni.setStorageSync("tokens", JSON.stringify(cleanTokens));					if (session_key) {
+					// 保存session_key到本地存储
+					if (session_key) {
 						uni.setStorageSync("session_key", session_key);
 					}
 
@@ -347,76 +341,37 @@ export const useUserStore = defineStore("user", {
 
 		// 获取用户信息
 		async fetchUserInfo() {
+			if (this.userInfoLoading) return;
+
 			this.userInfoLoading = true;
 
-			// 检查是否有token
-			if (!this.tokens?.access_token) {
-				this.userInfoLoading = false;
-				return;
-			}
+			try {
+				const response = await getUserInfo();
 
-		// 使用uni.request替代axios（避免header问题）
-		try {
-			const uniResponse = await new Promise((resolve, reject) => {
-				uni.request({
-					url: 'http://116.198.203.44:8000/api/mini/user',
-					method: 'GET',
-					header: {
-						'Authorization': `Bearer ${this.tokens.access_token}`,
-						'content-type': 'application/json'
-					},
-					success: (res) => {
-						console.log('🔍 uni.request获取用户信息成功:', res);
-						if (res.statusCode === 200) {
-							resolve(res.data);
-						} else {
-							reject(new Error(`HTTP ${res.statusCode}: ${res.data?.message || 'Unknown error'}`));
-						}
-					},
-					fail: (err) => {
-						reject(err);
-					}
-				});
-			});
+				if (response.success) {
+					// 合并用户信息，保留原有的coupons和privileges
+					this.userInfo = {
+						...this.userInfo,
+						...response.data.user,
+						coupons: this.userInfo?.coupons || [],
+						privileges: this.userInfo?.privileges || []
+					};
 
-			const response = uniResponse; // 使用uni.request的响应				// 处理API响应数据结构
-				let userData = null;
-				let coupons = [];
-				let privileges = [];
+					// 更新登录状态
+					this.isLoggedIn = true;
 
-				if (response?.data) {
-					// 嵌套在data字段中的情况
-					userData = response.data.user || response.data;
-					coupons = response.data.coupons || [];
-					privileges = response.data.privileges || [];
-				} else if (response?.user) {
-					// 直接包含user字段的情况
-					userData = response.user;
-					coupons = response.coupons || [];
-					privileges = response.privileges || [];
+					// 更新最后登录时间
+					const loginTime = Date.now();
+					uni.setStorageSync("lastLoginTime", loginTime);
+
+					return response.data;
 				} else {
-					// 直接是用户数据的情况
-					userData = response;
-					coupons = response.coupons || [];
-					privileges = response.privileges || [];
+					throw new Error(response.message || "获取用户信息失败");
 				}
-
-				// 合并用户信息和福利数据
-				this.userInfo = {
-					...userData,
-					coupons: coupons,
-					privileges: privileges
-				};
-
-				this.isLoggedIn = true;
-
-				// 同时更新本地存储
-				uni.setStorageSync("userInfo", JSON.stringify(this.userInfo));
-
-				return this.userInfo;
 			} catch (error) {
 				console.error("获取用户信息失败:", error);
-				this.logout();
+				// 获取用户信息失败时，清除用户状态
+				this.logout(false); // 只清理状态，不跳转页面
 				throw error;
 			} finally {
 				this.userInfoLoading = false;
@@ -424,55 +379,83 @@ export const useUserStore = defineStore("user", {
 		},
 
 		// 用户登出
-		logout(shouldRedirect = true) {
-            const tabbarStore = useTabBarStore()
-			console.log('logout 方法被调用，shouldRedirect:', shouldRedirect);
+		logout(redirect = true) {
+            const tabbarStore = useTabBarStore();
+			console.log('logout 方法被调用，redirect:', redirect);
 
-			// 清理本地状态
+			// 清理状态
 			this.userInfo = null;
 			this.isLoggedIn = false;
 			this.tokens = null;
-			this.permissions = [];
-			this.customers = [];
 
-			// 清除本地存储
-			uni.removeStorageSync("userInfo");
-			uni.removeStorageSync("tokens");
+			// 清理本地存储中插件不管理的数据
 			uni.removeStorageSync("session_key");
 			uni.removeStorageSync("lastLoginTime");
-			console.log('已清除本地存储');
-            tabbarStore.setUserType("normal")
-            tabbarStore.setActiveTab("home")
+			uni.removeStorageSync("justLoggedIn");
 
-			// 只有明确退出登录时才跳转到首页
-			if (shouldRedirect) {
-				console.log('准备跳转到首页');
-				uni.switchTab({
-					url: '/pages/index/index'
+			// 清理客户数据
+			this.customers = [];
+			this.customersPage = 1;
+			this.customersTotal = 0;
+			this.customersHasMore = true;
+
+			// 清理消费者数据
+			this.consumers = [];
+			this.consumersTotal = 0;
+			this.consumersSearchKeyword = "";
+			this.consumersCardNumber = "";
+
+			// 清理福利数据
+			this.benefits.coupons = [];
+			this.benefits.privileges = [];
+			this.benefits.coupons_count = 0;
+			this.benefits.privileges_count = 0;
+			this.benefits.total_count = 0;
+
+			// 重置权限
+			this.permissions = [];
+
+            tabbarStore.setUserType("normal");
+            tabbarStore.setActiveTab("home");
+
+			// 如果需要跳转到登录页
+			if (redirect) {
+				// 使用 uni.reLaunch 确保完全退出到首页
+				uni.reLaunch({
+					url: "/pages/index/index"
 				});
 			}
-		},		// 刷新 token
+		},		// 刷新用户token
 		async refreshUserToken() {
 			if (!this.tokens?.refresh_token) {
-				throw new Error("No refresh token available");
+				this.logout();
+				return false;
 			}
 
 			try {
-				const response = await refreshToken({
-					refresh_token: this.tokens.refresh_token,
-				});
+				const response = await refreshToken(this.tokens.refresh_token);
 
 				if (response.success) {
-					this.tokens = response.data.tokens;
-					uni.setStorageSync("tokens", JSON.stringify(this.tokens));
-					return this.tokens;
+					const newTokens = response.data.tokens;
+
+					// 更新tokens
+					this.tokens = {
+						...this.tokens,
+						access_token: newTokens.access_token,
+						expires_in: newTokens.expires_in,
+						refresh_expires_in: newTokens.refresh_expires_in
+					};
+
+					return true;
 				} else {
-					throw new Error(response.message || "Token refresh failed");
+					console.error("刷新token失败:", response.message);
+					this.logout();
+					return false;
 				}
 			} catch (error) {
-				console.error("刷新 token 失败:", error);
+				console.error("刷新token异常:", error);
 				this.logout();
-				throw error;
+				return false;
 			}
 		},
 
@@ -561,38 +544,29 @@ export const useUserStore = defineStore("user", {
 		// 更新用户设置
 		updateSettings(newSettings) {
 			this.settings = { ...this.settings, ...newSettings };
-			// 保存到本地存储
-			uni.setStorageSync("userSettings", JSON.stringify(this.settings));
 		},
 
 		// 从本地存储加载设置
 		loadSettings() {
-			try {
-				const settings = uni.getStorageSync("userSettings");
-				if (settings) {
-					this.settings = { ...this.settings, ...JSON.parse(settings) };
-				}
-			} catch (error) {
-				console.error("加载用户设置失败:", error);
-			}
+			// 插件会自动从本地存储恢复状态，无需手动加载
 		},
 
 		// 检查登录状态
 		async checkLoginStatus() {
-			const token = uni.getStorageSync("token");
-			if (token && !this.isLoggedIn) {
+			// 插件会自动从本地存储恢复tokens状态，我们只需要检查当前状态
+			if (this.tokens?.access_token && !this.isLoggedIn) {
 				try {
 					await this.fetchUserInfo();
 				} catch {
-					// token 无效，清除
-					uni.removeStorageSync("token");
+					// token 无效，清除状态（插件会自动清理本地存储）
+					this.tokens = null;
 				}
 			}
 		},
 
 		// 初始化用户状态
 		async initUser() {
-			this.loadSettings();
+			// 插件会自动从本地存储恢复状态，我们只需要检查登录状态
 			await this.checkLoginStatus();
 		},
 

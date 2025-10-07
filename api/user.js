@@ -119,3 +119,23 @@ export function getConsumers(params = {}) {
     throw error
   })
 }
+
+/**
+ * 搜索消费者
+ * @param {Object} searchData 搜索数据
+ * @param {string} searchData.keyword 搜索关键词（手机号或卡号）
+ * @returns {Promise}
+ */
+export function searchConsumers(searchData) {
+  console.log('发送搜索消费者API请求，数据:', searchData)
+  return post('/search', searchData, {
+    showLoading: true,
+    showError: true
+  }).then(response => {
+    console.log('搜索消费者API响应:', response)
+    return response
+  }).catch(error => {
+    console.error('搜索消费者API请求失败:', error)
+    throw error
+  })
+}

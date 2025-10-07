@@ -167,6 +167,27 @@ const emit = defineEmits(['close', 'success'])
 // 创建refs
 const consumerPopup = ref(null)
 
+// 基础函数定义（先定义后使用）
+const openPanel = () => {
+	if (consumerPopup.value) {
+		consumerPopup.value.open()
+	}
+}
+
+const closePanel = () => {
+	if (consumerPopup.value) {
+		consumerPopup.value.close()
+	}
+	resetSelections()
+	emit('close')
+}
+
+const resetSelections = () => {
+	giftPoints.value = ''
+	selectedCoupons.value = []
+	selectedPrivileges.value = []
+}
+
 // 响应式数据
 const giftPoints = ref('')
 const selectedCoupons = ref([])
@@ -217,6 +238,20 @@ const filteredCoupons = computed(() => {
 	})
 })
 
+// 格式化日期
+const formatDate = (dateStr) => {
+	if (!dateStr) return ''
+	try {
+		const date = new Date(dateStr)
+		const year = date.getFullYear()
+		const month = String(date.getMonth() + 1).padStart(2, '0')
+		const day = String(date.getDate()).padStart(2, '0')
+		return `${year}-${month}-${day}`
+	} catch (_error) {
+		return dateStr
+	}
+}
+
 // 生命周期
 onMounted(() => {
 	console.log(`ConsumerPanel 组件已加载 - 操作类型: ${props.actionType}, 优惠券: ${filteredCoupons.value.length}/${props.coupons.length}个, 特权: ${props.privileges.length}个, 用户积分: ${props.userPoints}`)
@@ -235,34 +270,6 @@ watch(() => props.actionType, () => {
 	// 当操作类型改变时，重置选择状态
 	resetSelections()
 })
-
-// 格式化日期
-const formatDate = (dateStr) => {
-	if (!dateStr) return ''
-	try {
-		const date = new Date(dateStr)
-		const year = date.getFullYear()
-		const month = String(date.getMonth() + 1).padStart(2, '0')
-		const day = String(date.getDate()).padStart(2, '0')
-		return `${year}-${month}-${day}`
-	} catch (_error) {
-		return dateStr
-	}
-}
-
-const openPanel = () => {
-	if (consumerPopup.value) {
-		consumerPopup.value.open()
-	}
-}
-
-const closePanel = () => {
-	if (consumerPopup.value) {
-		consumerPopup.value.close()
-	}
-	resetSelections()
-	emit('close')
-}
 
 // 切换优惠券选择状态
 const toggleCouponSelection = (couponId) => {
@@ -304,12 +311,7 @@ const togglePrivilegeSelection = (privilegeId) => {
 	}
 }
 
-// 重置选择状态
-const resetSelections = () => {
-	giftPoints.value = ''
-	selectedCoupons.value = []
-	selectedPrivileges.value = []
-}
+// 重置选择状态已在上方定义
 
 const confirmAction = async () => {
 	// 验证操作数据

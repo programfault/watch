@@ -65,45 +65,18 @@
                     <text class="section-title">可售门店</text>
                 </view>
                 <view class="stores-list">
-                    <view v-for="store in currentWatch.available_stores" :key="store.id" class="store-item">
-                        <view class="store-header">
-                            <text class="store-name" @click="showStoreDetail(store)">{{ store.name }}</text>
-                        </view>
-                        <view class="store-info">
-                            <text class="store-address" @click="showStoreDetail(store)">{{ store.address }}</text>
-                        </view>
-                        <text v-if="store.description" class="store-desc" @click="showStoreDetail(store)">{{ store.description }}</text>
-                        <view class="store-footer">
-                            <text class="store-hours">营业时间: {{ store.opening_hours }}</text>
-                        </view>
-                        <view class="action-buttons">
-                            <!-- 距离显示在左侧 -->
-                            <view class="distance-info">
-                                <text class="distance-text" v-if="locationAuthorized && userLocation && formatDistance(store)">距您 {{ formatDistance(store) }}</text>
-                                <text class="distance-placeholder" v-else-if="!locationAuthorized">位置未授权</text>
-                                <text class="distance-placeholder" v-else-if="!userLocation">获取位置中...</text>
-                                <text class="distance-placeholder" v-else-if="!store.latitude || !store.longitude">无位置信息</text>
-                                <text class="distance-placeholder" v-else>计算异常</text>
-                            </view>
-                            <!-- 按钮组在右侧 -->
-                            <view class="button-group">
-                                <view class="phone-section" @click.stop="callStore(store)">
-                                    <uv-icon name="phone" size="14" color="#007aff"></uv-icon>
-                                    <text class="store-phone">电话</text>
-                                </view>
-                                <!-- 只有有位置权限时才显示导航按钮 -->
-                                <view v-if="locationAuthorized" class="nav-button" @click.stop="navigateToStore(store)">
-                                    <uv-icon name="map" size="16" color="#fff"></uv-icon>
-                                    <text class="nav-text">导航</text>
-                                </view>
-                                <!-- 没有位置权限时显示提示 -->
-                                <view v-else class="nav-disabled" @click.stop="requestLocationPermission">
-                                    <uv-icon name="map" size="14" color="#ccc"></uv-icon>
-                                    <text class="nav-disabled-text">开启定位</text>
-                                </view>
-                            </view>
-                        </view>
-                    </view>
+                    <StoreCard
+                        v-for="store in currentWatch.available_stores"
+                        :key="store.id"
+                        :store="store"
+                        :location-authorized="locationAuthorized"
+                        :user-location="userLocation"
+                        :format-store-distance="formatStoreDistance"
+                        @show-detail="showStoreDetail"
+                        @call="callStore"
+                        @navigate="navigateToStore"
+                        @request-location="requestLocationPermission"
+                    />
                 </view>
             </view>
 
@@ -143,6 +116,16 @@ import { getCurrentTimeToMinute } from '@/utils/timeUtils.js'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
+import StoreCard from '@/components/StoreCard.vue'
+// 导入位置相关工具函数
+import {
+	checkLocationPermission,
+	requestLocationPermission,
+	getUserLocation,
+	calculateDistance,
+	formatDistance,
+	openMapNavigation
+} from '@/utils/locationUtils.js'
 
 const productStore = useProductStore()
 const favoritesStore = useFavoritesStore()
@@ -276,7 +259,7 @@ const callStore = (store) => {
 }
 
 // 地图导航
-const navigateToStore = (store) => {
+const navigateToStore = async (store) => {
     if (!store.latitude || !store.longitude) {
         uni.showToast({
             title: '该店铺暂无位置信息',
@@ -284,119 +267,23 @@ const navigateToStore = (store) => {
         })
         return
     }
-
-    uni.openLocation({
-        latitude: parseFloat(store.latitude),
-        longitude: parseFloat(store.longitude),
-        name: store.name,
-        address: store.address,
-        fail: (err) => {
-            console.error('打开地图失败:', err)
-            uni.showToast({
-                title: '打开地图失败',
-                icon: 'none'
-            })
-        }
-    })
-}
-
-// 请求定位权限
-const requestLocationPermission = async () => {
-    try {
-        const modalResult = await uni.showModal({
-            title: '位置权限请求',
-            content: '为了为您提供最近门店的导航服务和距离显示，需要获取您的位置信息。',
-            confirmText: '同意授权',
-            cancelText: '暂不授权'
-        })
-
-        if (modalResult.confirm) {
-            try {
-                await uni.authorize({ scope: 'scope.userLocation' })
-                locationAuthorized.value = true
-                await getUserLocation()
-                uni.showToast({ title: '位置权限开启成功', icon: 'success' })
-            } catch (authError) {
-                locationAuthorized.value = false
-                uni.showToast({ title: '授权失败', icon: 'none' })
-            }
-        }
-    } catch (error) {
-        console.error('请求权限失败:', error)
-    }
-}
-
-// 获取用户当前位置
-const getUserLocation = async () => {
-    try {
-        const res = await uni.getLocation({
-            type: 'gcj02',
-            highAccuracyExpireTime: 4000,
-            isHighAccuracy: true
-        })
-
-        userLocation.value = {
-            latitude: res.latitude,
-            longitude: res.longitude
-        }
-
-        return userLocation.value
-    } catch (error) {
-        console.error('获取位置失败:', error)
-        locationAuthorized.value = false
-        return null
-    }
+    
+    await openMapNavigation(store)
 }
 
 // 计算门店距离
-const calculateDistance = (store) => {
+const calculateStoreDistance = (store) => {
     if (!userLocation.value || !store.latitude || !store.longitude) {
         return Infinity
     }
-
-    const rad1 = (userLocation.value.latitude * Math.PI) / 180
-    const rad2 = (parseFloat(store.latitude) * Math.PI) / 180
-    const deltaLat = rad2 - rad1
-    const deltaLon = (parseFloat(store.longitude) - userLocation.value.longitude) * Math.PI / 180
-
-    const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-              Math.cos(rad1) * Math.cos(rad2) *
-              Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    const distance = 6371 * c // 地球半径(公里)
-
-    return distance
+    return calculateDistance(userLocation.value, store)
 }
 
-// 格式化距离显示
-const formatDistance = (store) => {
-    const distance = calculateDistance(store)
+// 格式化门店距离显示
+const formatStoreDistance = (store) => {
+    const distance = calculateStoreDistance(store)
     if (distance === Infinity) return null
-
-    if (distance < 1) {
-        return `${Math.round(distance * 1000)}m`
-    } else if (distance < 10) {
-        return `${distance.toFixed(1)}km`
-    } else {
-        return `${Math.round(distance)}km`
-    }
-}
-
-// 检查定位权限
-const checkLocationPermission = async () => {
-    try {
-        const setting = await uni.getSetting()
-
-        if (setting.authSetting['scope.userLocation'] === true) {
-            locationAuthorized.value = true
-            await getUserLocation()
-        } else {
-            locationAuthorized.value = false
-        }
-    } catch (error) {
-        console.error('检查位置权限失败:', error)
-        locationAuthorized.value = false
-    }
+    return formatDistance(distance)
 }
 
 // 页面显示时检查权限

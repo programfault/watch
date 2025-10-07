@@ -1,5 +1,5 @@
 <script>
-	import { useFavoritesStore } from '@/stores';
+	import { useFavoritesStore, useUserStore } from '@/stores';
 
 	export default {
 		onLaunch: function() {
@@ -9,6 +9,10 @@
 			// 初始化收藏和浏览记录store
 			const favoritesStore = useFavoritesStore()
 			favoritesStore.init()
+
+			// 初始化用户状态
+			const userStore = useUserStore()
+			userStore.initUser()
 		},
 		onShow: function() {
 			console.log('App Show')
@@ -30,7 +34,7 @@
 		background-color: #f5f5f5;
 	}
 
-	/* #endif */
+
 	.example-info {
 		font-size: 14px;
 		color: #333;
