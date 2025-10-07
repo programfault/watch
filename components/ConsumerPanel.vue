@@ -27,7 +27,7 @@
 
 				<!-- 优惠券区域 -->
 				<view v-if="showCoupons" class="action-section">
-					<text class="section-title">{{ couponsTitle }}</text>
+					<text class="section-title">{{ couponsTitle }}{{ actionType === 'verify' ? '（单选）' : '（多选）' }}</text>
 					<view class="coupons-list">
 						<view
 							v-for="coupon in filteredCoupons"
@@ -60,7 +60,7 @@
 
 				<!-- 特权区域 -->
 				<view v-if="showPrivileges" class="action-section">
-					<text class="section-title">{{ privilegesTitle }}</text>
+					<text class="section-title">{{ privilegesTitle }}{{ actionType === 'verify' ? '（单选）' : '（多选）' }}</text>
 					<view class="privileges-list">
 						<view
 							v-for="privilege in privileges"
@@ -266,21 +266,41 @@ const closePanel = () => {
 
 // 切换优惠券选择状态
 const toggleCouponSelection = (couponId) => {
-	const index = selectedCoupons.value.indexOf(couponId)
-	if (index > -1) {
-		selectedCoupons.value.splice(index, 1)
+	if (props.actionType === 'verify') {
+		// 核销模式下为单选
+		if (selectedCoupons.value.includes(couponId)) {
+			selectedCoupons.value = []
+		} else {
+			selectedCoupons.value = [couponId]
+		}
 	} else {
-		selectedCoupons.value.push(couponId)
+		// 赠送模式下为多选
+		const index = selectedCoupons.value.indexOf(couponId)
+		if (index > -1) {
+			selectedCoupons.value.splice(index, 1)
+		} else {
+			selectedCoupons.value.push(couponId)
+		}
 	}
 }
 
 // 切换特权选择状态
 const togglePrivilegeSelection = (privilegeId) => {
-	const index = selectedPrivileges.value.indexOf(privilegeId)
-	if (index > -1) {
-		selectedPrivileges.value.splice(index, 1)
+	if (props.actionType === 'verify') {
+		// 核销模式下为单选
+		if (selectedPrivileges.value.includes(privilegeId)) {
+			selectedPrivileges.value = []
+		} else {
+			selectedPrivileges.value = [privilegeId]
+		}
 	} else {
-		selectedPrivileges.value.push(privilegeId)
+		// 赠送模式下为多选
+		const index = selectedPrivileges.value.indexOf(privilegeId)
+		if (index > -1) {
+			selectedPrivileges.value.splice(index, 1)
+		} else {
+			selectedPrivileges.value.push(privilegeId)
+		}
 	}
 }
 
