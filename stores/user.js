@@ -3,6 +3,7 @@ import {
     getBenefits,
     getConsumers,
     getCustomers,
+    getUserInfo,
     login,
     refreshToken
 } from "@/api";
@@ -341,18 +342,56 @@ export const useUserStore = defineStore("user", {
 
 		// 获取用户信息
 		async fetchUserInfo() {
-			if (this.userInfoLoading) return;
+			if (this.userInfoLoading) {
+				console.log('🔍 fetchUserInfo - 正在加载中，跳过重复请求');
+				return;
+			}
+
+			console.log('🔍 fetchUserInfo - 开始执行，当前登录状态:', this.isLoggedIn);
+			console.log('🔍 fetchUserInfo - 当前tokens状态:', this.tokens ? '存在' : '不存在');
+			if (this.tokens) {
+				console.log('🔍 fetchUserInfo - access_token预览:', this.tokens.access_token?.substring(0, 10) + '...');
+			}
 
 			this.userInfoLoading = true;
 
 			try {
+				console.log('🔍 fetchUserInfo - 准备调用getUserInfo API');
 				const response = await getUserInfo();
+				console.log('🔍 fetchUserInfo - API响应成功:', response);
 
-				if (response.success) {
+				// 处理不同的响应格式
+				if (response.success !== undefined) {
+					// 标准格式 {success, data, message}
+					if (response.success) {
+						// 合并用户信息，保留原有的coupons和privileges
+						this.userInfo = {
+							...this.userInfo,
+							...response.data.user,
+							coupons: this.userInfo?.coupons || [],
+							privileges: this.userInfo?.privileges || []
+						};
+
+						// 更新登录状态
+						this.isLoggedIn = true;
+
+						// 更新最后登录时间
+						const loginTime = Date.now();
+						uni.setStorageSync("lastLoginTime", loginTime);
+						console.log('🔍 fetchUserInfo - 刷新成功，已更新用户信息和登录时间');
+
+						return response.data;
+					} else {
+						console.log('🔍 fetchUserInfo - API返回失败状态:', response);
+						throw new Error(response.message || "获取用户信息失败");
+					}
+				} else {
+					// 直接返回数据的格式（兼容旧版API）
+					console.log('🔍 fetchUserInfo - 处理直接返回的数据格式');
 					// 合并用户信息，保留原有的coupons和privileges
 					this.userInfo = {
 						...this.userInfo,
-						...response.data.user,
+						...response.user,
 						coupons: this.userInfo?.coupons || [],
 						privileges: this.userInfo?.privileges || []
 					};
@@ -363,18 +402,25 @@ export const useUserStore = defineStore("user", {
 					// 更新最后登录时间
 					const loginTime = Date.now();
 					uni.setStorageSync("lastLoginTime", loginTime);
+					console.log('🔍 fetchUserInfo - 刷新成功（直接数据格式），已更新用户信息和登录时间');
 
-					return response.data;
-				} else {
-					throw new Error(response.message || "获取用户信息失败");
+					return response;
 				}
 			} catch (error) {
-				console.error("获取用户信息失败:", error);
+				console.error('🔍 fetchUserInfo - 捕获异常:', error);
+				console.error('🔍 fetchUserInfo - 异常详情:', {
+					message: error.message,
+					response: error.response,
+					config: error.config
+				});
+				
 				// 获取用户信息失败时，清除用户状态
+				console.log('🔍 fetchUserInfo - 失败后执行logout(false)清理状态');
 				this.logout(false); // 只清理状态，不跳转页面
 				throw error;
 			} finally {
 				this.userInfoLoading = false;
+				console.log('🔍 fetchUserInfo - 请求结束');
 			}
 		},
 
