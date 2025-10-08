@@ -70,6 +70,13 @@
 		"style": {
 			"navigationBarTitleText": "我的收藏"
 		}
+	}, {
+		"path": "pages/benefits/benefits",
+		"style": {
+			"navigationBarTitleText": "福利中心",
+			"enablePullDownRefresh": true,
+			"backgroundTextStyle": "dark"
+		}
 	}],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",

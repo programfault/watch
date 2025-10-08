@@ -1,0 +1,424 @@
+<template>
+  <view class="container">
+    <!-- 加载状态 -->
+    <view v-if="userInfoLoading" class="loading">
+      <uv-icon name="loading" size="30" color="#999"></uv-icon>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 内容区域（支持下拉刷新） -->
+    <scroll-view
+      class="benefits-scroll"
+      scroll-y="true"
+      enable-back-to-top="true"
+      refresher-enabled="true"
+      :refresher-threshold="100"
+      refresher-default-style="none"
+      refresher-background="#f5f5f5"
+      :refresher-triggered="isRefreshing"
+      @refresherrefresh="onRefresh"
+      @refresherpulling="onRefresherPulling"
+      @refresherrestore="onRefreshRestore"
+    >
+      <!-- 自定义下拉刷新内容 -->
+      <view slot="refresher" class="custom-refresher">
+        <view v-if="!isRefreshing" class="pull-tips">
+          <uv-icon
+            name="arrow-down"
+            size="20"
+            color="#999"
+            :class="{ 'icon-rotate': pullDistance >= 80 }"
+          />
+          <text v-if="userStore.isLoggedIn && pullDistance < 80" class="tip-text">下拉刷新福利信息</text>
+          <text v-else-if="userStore.isLoggedIn && pullDistance >= 80" class="tip-text tip-release">松手立即刷新</text>
+          <text v-else-if="!userStore.isLoggedIn && pullDistance < 80" class="tip-text">下拉去登录</text>
+          <text v-else class="tip-text tip-release">松手去登录</text>
+        </view>
+        <view v-else class="refreshing-tips">
+          <uv-icon name="loading" size="20" color="#007aff" />
+          <text v-if="userStore.isLoggedIn" class="tip-text refreshing">正在刷新...</text>
+          <text v-else class="tip-text refreshing">正在跳转...</text>
+        </view>
+      </view>
+      
+      <view class="benefits-content">
+      
+        <!-- 优惠券列表 -->
+        <CouponList :coupons="coupons" />
+
+        <!-- 特权列表 -->
+        <PrivilegeList :privileges="privileges" />
+      </view>
+    </scroll-view>
+    
+    <!-- 底部标签栏组件 -->
+    <CustomTabBar />
+  </view>
+</template>
+
+<script setup>
+import CouponList from '@/components/CouponList.vue'
+import CustomTabBar from '@/components/CustomTabBar.vue'
+import PrivilegeList from '@/components/PrivilegeList.vue'
+import { useTabBarStore, useUserStore } from '@/stores'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { computed, ref } from 'vue'
+
+// 定义组件名称
+defineOptions({
+  name: 'BenefitsPage'
+})
+
+// 获取 stores
+const userStore = useUserStore()
+const tabBarStore = useTabBarStore()
+
+// 响应式数据
+const userInfoLoading = ref(false)
+const isRefreshing = ref(false)
+const pullDistance = ref(0)
+const externalUserId = ref('')
+const targetUserInfo = ref(null) // 存储通过ID获取的目标用户信息
+
+const userInfo = computed(() => {
+  return userStore.userInfo || {}
+})
+
+// 优惠券列表 - 优先使用通过userId获取的用户对象中的数据
+const coupons = computed(() => {
+  return targetUserInfo.value?.coupons || userInfo.value.coupons || []
+})
+
+// 特权列表 - 优先使用通过userId获取的用户对象中的数据
+const privileges = computed(() => {
+  return targetUserInfo.value?.privileges || userInfo.value.privileges || []
+})
+
+// 检查登录状态并跳转
+const goToLogin = () => {
+  uni.navigateTo({
+    url: '/pages/login/login'
+  })
+}
+
+// 检查登录状态
+const checkLoginAndRedirect = () => {
+  // 这里只是检查，不做跳转，因为我们支持未登录状态的下拉刷新
+  return true
+}
+
+// 页面生命周期 - onLoad
+onLoad(async (options) => {
+  console.log('Benefits页面 onLoad', options)
+  userInfoLoading.value = true
+
+  try {
+    // 初始化用户状态
+    await userStore.initUserState()
+
+    // 检查登录状态
+    if (!checkLoginAndRedirect()) {
+      userInfoLoading.value = false
+      return
+    }
+
+    // 检查是否有外部传入的用户ID
+    if (options.userId) {
+      console.log('接收到外部用户ID:', options.userId)
+      externalUserId.value = options.userId
+      
+      // 通过用户ID获取完整用户对象
+      await fetchUserById(options.userId)
+    }
+  } catch (error) {
+    console.error('Benefits页面 - 初始化失败:', error)
+  } finally {
+    userInfoLoading.value = false
+  }
+})
+
+// 通过用户ID获取完整用户对象
+const fetchUserById = async (userId) => {
+  try {
+    console.log('通过用户ID获取完整用户对象:', userId)
+    
+    // 先检查当前已加载的消费者列表中是否有该用户
+    const consumer = userStore.consumers.find(c => c.id === userId)
+    if (consumer) {
+      console.log('从已有消费者列表中找到用户:', consumer)
+      targetUserInfo.value = consumer
+      return
+    }
+    
+    // 如果没有找到，则通过API获取该用户信息
+    console.log('调用fetchConsumers方法获取指定用户:', userId)
+    
+    // 根据项目中API的使用模式，这里使用user_id作为查询参数
+    await userStore.fetchConsumers({ user_id: userId })
+    
+    // 调用fetchBenefits方法获取该用户的优惠券和特权数据
+    console.log('调用fetchBenefits方法获取用户福利数据，用户ID:', userId)
+    await userStore.fetchBenefits({ user_id: userId })
+    console.log('福利数据获取完成:', userStore.benefits)
+    
+    // 从返回的消费者列表中查找特定用户
+    const fetchedConsumer = userStore.consumers.find(c => c.id === userId)
+    if (fetchedConsumer) {
+      console.log('成功获取用户对象:', fetchedConsumer)
+      
+      // 检查是否有通过fetchBenefits获取的福利数据
+      if (userStore.benefits && userStore.benefits.coupons) {
+        console.log('检测到有福利数据，合并到用户对象中')
+        // 合并福利数据到用户对象
+        targetUserInfo.value = {
+          ...fetchedConsumer,
+          coupons: userStore.benefits.coupons || [],
+          privileges: userStore.benefits.privileges || []
+        }
+      } else {
+        // 没有福利数据，直接使用获取到的用户对象
+        targetUserInfo.value = fetchedConsumer
+      }
+    } else {
+      console.log('未能找到指定用户ID的用户:', userId)
+      // 如果找不到，可以显示一个提示
+      uni.showToast({
+        title: '未找到该用户的福利信息',
+        icon: 'none'
+      })
+    }
+  } catch (error) {
+    console.error('通过用户ID获取用户对象失败:', error)
+    uni.showToast({
+      title: '获取用户信息失败',
+      icon: 'error'
+    })
+  }
+}
+
+// 页面生命周期 - onShow
+onShow(() => {
+  console.log('Benefits页面 onShow')
+
+  // 检查登录状态
+  if (!checkLoginAndRedirect()) {
+    return
+  }
+  // 设置当前页面的tabBar状态
+  tabBarStore.setActiveTab('profile')
+  // 页面显示，状态由Pinia自动管理
+})
+
+// 下拉刷新
+const onRefresh = async () => {
+  console.log('Benefits页面 - 开始下拉刷新')
+  isRefreshing.value = true
+
+  try {
+    if (!userStore.isLoggedIn) {
+      // 未登录状态，跳转到登录页面
+      console.log('未登录，跳转到登录页面')
+      // 等待一下让用户看到动画
+      await new Promise(resolve => setTimeout(resolve, 800))
+      uni.navigateTo({
+        url: '/pages/login/login'
+      })
+      return
+    }
+    console.log('已登录状态，刷新用户信息')
+    // 已登录状态，刷新用户信息（包含优惠券和特权）
+    await userStore.fetchUserInfo()
+    if(userStore.userInfo.status === 1){
+      tabBarStore.setUserType('admin')
+    } else {
+      tabBarStore.setUserType('normal')
+    }
+    uni.showToast({
+      title: '刷新成功',
+      icon: 'success'
+    })
+  } catch (error) {
+    console.error('Benefits页面 - 刷新失败:', error)
+    uni.showToast({
+      title: '刷新失败',
+      icon: 'error'
+    })
+  } finally {
+    isRefreshing.value = false
+    pullDistance.value = 0
+  }
+}
+
+// 下拉距离监听
+const onRefresherPulling = (e) => {
+  pullDistance.value = e.detail.deltaY || 0
+}
+
+// 刷新状态恢复
+const onRefreshRestore = () => {
+  isRefreshing.value = false
+  pullDistance.value = 0
+}
+</script>
+
+<style lang="scss">
+.container {
+  width: 100%;
+  height: 100vh;
+  background-color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+}
+
+.benefits-scroll {
+  flex: 1;
+  width: 100%;
+}
+
+.benefits-content {
+  padding: 0 20rpx 80px;
+}
+
+.loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff;
+  z-index: 999;
+}
+
+.loading-text {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  color: #999;
+}
+
+.custom-refresher {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120rpx;
+  padding: 20px 0;
+}
+
+.pull-tips,
+.refreshing-tips {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.tip-text {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 10rpx;
+  text-align: center;
+}
+
+.tip-release {
+  color: #007aff;
+}
+
+.refreshing {
+  color: #007aff;
+}
+
+.icon-rotate {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
+
+.user-info-header {
+  background-color: #fff;
+  padding: 30rpx 30rpx 20rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.user-name-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.name-text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.vip-badge {
+  margin-left: 12rpx;
+  padding: 2rpx 12rpx;
+  background-color: #ff6b35;
+  color: #fff;
+  font-size: 20rpx;
+  border-radius: 10rpx;
+}
+
+.user-stats {
+  display: flex;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 4rpx;
+}
+
+.stat-value.gold {
+  color: #ff6b35;
+}
+
+.stat-label {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.stat-divider {
+  width: 2rpx;
+  height: 40rpx;
+  background-color: #eee;
+  margin: 0 30rpx;
+}
+
+.not-login-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx 0;
+}
+
+.not-login-icon {
+  margin-bottom: 20rpx;
+}
+
+.not-login-tip {
+  font-size: 28rpx;
+  color: #999;
+  margin-bottom: 20rpx;
+}
+
+.login-btn {
+  background-color: #007aff;
+  color: #fff;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  padding: 20rpx 40rpx;
+  line-height: 1.4;
+}
+</style>

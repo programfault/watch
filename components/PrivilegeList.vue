@@ -65,43 +65,43 @@ export default {
 <style lang="scss" scoped>
 // 特权列表样式
 .benefits-section {
-	margin-bottom: 20px;
+	margin-bottom: 20rpx;
 
 	.section-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 12px;
-		padding: 0 4px;
+		margin-bottom: 12rpx;
+		padding: 0 4rpx;
 
 		.section-title {
-			font-size: 16px;
+			font-size: 32rpx;
 			font-weight: 600;
 			color: #1a1a1a;
 		}
 
 		.section-count {
-			font-size: 12px;
+			font-size: 24rpx;
 			color: #64748b;
 			background: #f1f5f9;
-			padding: 2px 8px;
-			border-radius: 10px;
+			padding: 4rpx 16rpx;
+			border-radius: 20rpx;
 		}
 	}
 
 	.benefits-list {
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: 12rpx;
 		padding: 0;
 
 		.benefit-card {
 			width: 100%;
 			background: white;
-			border-radius: 16px;
-			padding: 20px;
-			border: 1px solid #f0f0f0;
-			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+			border-radius: 16rpx;
+			padding: 20rpx;
+			border: 1rpx solid #f0f0f0;
+			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
 			position: relative;
 			overflow: hidden;
 			box-sizing: border-box;
@@ -119,32 +119,32 @@ export default {
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
-				margin-bottom: 8px;
+				margin-bottom: 8rpx;
 
 				.card-title {
-					font-size: 14px;
+					font-size: 28rpx;
 					font-weight: 600;
 					color: #1a1a1a;
 					flex: 1;
-					margin-right: 8px;
+					margin-right: 8rpx;
 				}
 
 				.privilege-badge {
 					background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 					color: white;
-					font-size: 10px;
+					font-size: 20rpx;
 					font-weight: 600;
-					padding: 4px 8px;
-					border-radius: 6px;
+					padding: 4rpx 8rpx;
+					border-radius: 6rpx;
 					text-transform: uppercase;
 				}
 			}
 
 			.card-desc {
-				font-size: 12px;
+				font-size: 24rpx;
 				color: #64748b;
 				line-height: 1.4;
-				margin-bottom: 12px;
+				margin-bottom: 12rpx;
 			}
 
 			.card-footer {
@@ -153,12 +153,12 @@ export default {
 				justify-content: space-between;
 
 				.valid-date {
-					font-size: 11px;
+					font-size: 22rpx;
 					color: #94a3b8;
 				}
 
 				.status-text {
-					font-size: 11px;
+					font-size: 22rpx;
 					font-weight: 500;
 
 					&.valid {
@@ -175,18 +175,18 @@ export default {
 		.empty-state {
 			width: 100%;
 			background: white;
-			border-radius: 16px;
-			padding: 40px 20px;
-			border: 1px solid #f0f0f0;
+			border-radius: 16rpx;
+			padding: 40rpx 20rpx;
+			border: 1rpx solid #f0f0f0;
 			text-align: center;
 			display: flex;
 			flex-direction: column;
 			align-items: center;
-			gap: 8px;
+			gap: 8rpx;
 			box-sizing: border-box;
 
 			.empty-text {
-				font-size: 12px;
+				font-size: 24rpx;
 				color: #94a3b8;
 			}
 		}

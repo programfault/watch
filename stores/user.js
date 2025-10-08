@@ -252,6 +252,7 @@ export const useUserStore = defineStore("user", {
 	actions: {
 		// 初始化用户状态（应用启动时调用）
 		async initUserState() {
+			console.log('🔍 initUserState - 开始执行');
 			// 检查是否刚登录，避免重复验证token
 			const justLoggedIn = uni.getStorageSync("justLoggedIn");
 			if (justLoggedIn === "true") {
@@ -260,30 +261,9 @@ export const useUserStore = defineStore("user", {
 				return;
 			}
 
-			// 检查是否有存储的token
-			if (this.tokens?.access_token) {
-				// 验证token是否有效
-				try {
-					// 检查最后登录时间，如果超过一定时间则重新验证
-					const lastLoginTime = uni.getStorageSync("lastLoginTime");
-					const now = Date.now();
-					const timeDiff = now - parseInt(lastLoginTime || "0");
-
-					// 如果超过24小时，重新验证用户信息
-					if (timeDiff > 24 * 60 * 60 * 1000) {
-						console.log("超过24小时，重新验证用户信息");
-						await this.fetchUserInfo();
-					} else {
-						console.log("token有效，使用缓存的用户信息");
-					}
-				} catch (error) {
-					console.error("验证用户状态失败:", error);
-					this.logout(false); // 验证失败时只清理状态，不跳转页面
-				}
-			} else {
-				console.log("没有有效的token");
-				this.logout(false); // 没有token时只清理状态，不跳转页面
-			}
+			// 统一调用checkLoginStatus方法，确保逻辑一致
+			await this.checkLoginStatus();
+			console.log('🔍 initUserState - 执行完成');
 		},
 
 		// 微信小程序登录
@@ -364,12 +344,12 @@ export const useUserStore = defineStore("user", {
 				if (response.success !== undefined) {
 					// 标准格式 {success, data, message}
 					if (response.success) {
-						// 合并用户信息，保留原有的coupons和privileges
+						// 合并用户信息，优先使用API返回的优惠券和特权数据
 						this.userInfo = {
 							...this.userInfo,
 							...response.data.user,
-							coupons: this.userInfo?.coupons || [],
-							privileges: this.userInfo?.privileges || []
+							coupons: response.data.coupons || this.userInfo?.coupons || [],
+							privileges: response.data.privileges || this.userInfo?.privileges || []
 						};
 
 						// 更新登录状态
@@ -388,12 +368,12 @@ export const useUserStore = defineStore("user", {
 				} else {
 					// 直接返回数据的格式（兼容旧版API）
 					console.log('🔍 fetchUserInfo - 处理直接返回的数据格式');
-					// 合并用户信息，保留原有的coupons和privileges
+					// 合并用户信息，优先使用API返回的优惠券和特权数据
 					this.userInfo = {
 						...this.userInfo,
 						...response.user,
-						coupons: this.userInfo?.coupons || [],
-						privileges: this.userInfo?.privileges || []
+						coupons: response.coupons || this.userInfo?.coupons || [],
+						privileges: response.privileges || this.userInfo?.privileges || []
 					};
 
 					// 更新登录状态
@@ -599,21 +579,50 @@ export const useUserStore = defineStore("user", {
 
 		// 检查登录状态
 		async checkLoginStatus() {
-			// 插件会自动从本地存储恢复tokens状态，我们只需要检查当前状态
-			if (this.tokens?.access_token && !this.isLoggedIn) {
-				try {
-					await this.fetchUserInfo();
-				} catch {
-					// token 无效，清除状态（插件会自动清理本地存储）
-					this.tokens = null;
+			console.log('🔍 checkLoginStatus - 开始执行');
+			// 直接从本地存储获取tokens，确保能正确恢复
+			const storedTokens = uni.getStorageSync('user-store')?.tokens || null;
+			const storedUserInfo = uni.getStorageSync('user-store')?.userInfo || null;
+			const storedIsLoggedIn = uni.getStorageSync('user-store')?.isLoggedIn || false;
+			
+			console.log('🔍 checkLoginStatus - 本地存储tokens状态:', storedTokens ? '存在' : '不存在');
+			console.log('🔍 checkLoginStatus - 本地存储用户登录状态:', storedIsLoggedIn);
+			
+			// 如果store中没有token，但本地存储有，则手动恢复
+			if (!this.tokens?.access_token && storedTokens?.access_token) {
+				console.log('🔍 checkLoginStatus - store中无token，从本地存储恢复');
+				this.tokens = storedTokens;
+				// 同时恢复用户信息和登录状态
+				if (storedUserInfo && storedIsLoggedIn) {
+					this.userInfo = storedUserInfo;
+					this.isLoggedIn = storedIsLoggedIn;
 				}
 			}
+			
+			// 当有token但isLoggedIn为false时，验证token并刷新用户信息
+			if (this.tokens?.access_token && !this.isLoggedIn) {
+				console.log('🔍 checkLoginStatus - 有token但未登录，尝试刷新用户信息');
+				try {
+					await this.fetchUserInfo();
+				} catch (error) {
+					console.error('🔍 checkLoginStatus - 验证token失败:', error);
+					// token 无效，清除状态
+					this.tokens = null;
+				}
+			} else if (!this.tokens?.access_token) {
+				console.log('🔍 checkLoginStatus - 无有效token，保持未登录状态');
+			} else {
+				console.log('🔍 checkLoginStatus - 已登录且token有效');
+			}
+			console.log('🔍 checkLoginStatus - 执行完成，最终登录状态:', this.isLoggedIn);
 		},
 
 		// 初始化用户状态
 		async initUser() {
-			// 插件会自动从本地存储恢复状态，我们只需要检查登录状态
+			console.log('🔍 initUser - 开始执行');
+			// 统一调用checkLoginStatus方法，确保逻辑一致
 			await this.checkLoginStatus();
+			console.log('🔍 initUser - 执行完成');
 		},
 
 		// 获取消费者列表

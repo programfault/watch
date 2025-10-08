@@ -6,39 +6,13 @@
 			<text class="loading-text">加载中...</text>
 		</view>
 
-		<!-- 个人信息内容（支持下拉刷新） -->
+		<!-- 个人信息内容 -->
 		<scroll-view
 			class="profile-scroll"
 			scroll-y="true"
 			enable-back-to-top="true"
-			refresher-enabled="true"
-			:refresher-threshold="80"
-			refresher-default-style="none"
-			:refresher-triggered="isRefreshing"
-			@refresherrefresh="onRefresh"
-			@refresherpulling="onRefresherPulling"
-			@refresherrestore="onRefreshRestore"
 		>
-			<!-- 自定义下拉刷新内容 -->
-			<view slot="refresher" class="custom-refresher">
-				<view v-if="!isRefreshing" class="pull-tips">
-					<uv-icon
-						name="arrow-down"
-						size="20"
-						color="#999"
-						:class="{ 'icon-rotate': pullDistance >= 80 }"
-					/>
-					<text v-if="userStore.isLoggedIn && pullDistance < 80" class="tip-text">下拉刷新信息</text>
-					<text v-else-if="userStore.isLoggedIn && pullDistance >= 80" class="tip-text tip-release">松手立即刷新</text>
-					<text v-else-if="!userStore.isLoggedIn && pullDistance < 80" class="tip-text">下拉去登录</text>
-					<text v-else class="tip-text tip-release">松手去登录</text>
-				</view>
-				<view v-else class="refreshing-tips">
-					<uv-icon name="loading" size="20" color="#007aff" />
-					<text v-if="userStore.isLoggedIn" class="tip-text refreshing">正在刷新...</text>
-				<text v-else class="tip-text refreshing">正在跳转...</text>
-				</view>
-			</view>
+			<!-- 不使用下拉刷新功能，已移至福利中心页面 -->
 			<view class="profile-content">
 			<view class="user-info">
 				<view class="user-content">
@@ -71,14 +45,16 @@
 				</view>
 			</view>
 
-			<!-- 优惠券列表 -->
-			<CouponList :coupons="coupons" />
-
-			<!-- 特权列表 -->
-			<PrivilegeList :privileges="privileges" />
-
 			<!-- 功能菜单 -->
 			<view class="menu-section">
+				<view class="menu-item" @click="goToBenefits">
+					<view class="menu-item-content">
+						<uv-icon name="gift" size="20" color="#ff6b35"></uv-icon>
+						<text class="menu-text">福利中心</text>
+					</view>
+					<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
+				</view>
+
 				<view class="menu-item" @click="goToFavorites">
 					<view class="menu-item-content">
 						<uv-icon name="heart" size="20" color="#666"></uv-icon>
@@ -105,9 +81,7 @@
 </template>
 
 <script setup>
-import CouponList from '@/components/CouponList.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
-import PrivilegeList from '@/components/PrivilegeList.vue'
 import { useTabBarStore, useUserStore } from '@/stores'
 import {
     getFormattedBrowsingHistory
@@ -126,8 +100,6 @@ const tabBarStore = useTabBarStore()
 
 // 响应式数据
 const userInfoLoading = ref(false)
-const isRefreshing = ref(false)
-const pullDistance = ref(0)
 
 const userInfo = computed(() => {
 	return userStore.userInfo || {}
@@ -142,16 +114,6 @@ const cardNumber = computed(() => {
 const userPoints = computed(() => {
 	const points = userInfo.value.points || 12580
 	return points.toLocaleString()
-})
-
-// 优惠券列表
-const coupons = computed(() => {
-	return userInfo.value.coupons || []
-})
-
-// 特权列表
-const privileges = computed(() => {
-	return userInfo.value.privileges || []
 })
 
 // 检查登录状态并跳转
@@ -204,62 +166,24 @@ onShow(() => {
 	// 页面显示，状态由Pinia自动管理
 })
 
-// 下拉刷新
-const onRefresh = async () => {
-	console.log('Profile页面 - 开始下拉刷新')
-	isRefreshing.value = true
 
-	try {
-		if (!userStore.isLoggedIn) {
-			// 未登录状态，跳转到登录页面
-			console.log('未登录，跳转到登录页面')
-			// 等待一下让用户看到动画
-			await new Promise(resolve => setTimeout(resolve, 800))
-			uni.navigateTo({
-				url: '/pages/login/login'
-			})
-			return
-		}
-        console.log('已登录状态，刷新用户信息')
-		// 已登录状态，刷新用户信息
-		await userStore.fetchUserInfo()
-        if(userStore.userInfo.status === 1){
-            tabBarStore.setUserType('admin')
-        } else {
-            tabBarStore.setUserType('normal')
-        }
-		uni.showToast({
-			title: '刷新成功',
-			icon: 'success'
-		})
-	} catch (error) {
-		console.error('Profile页面 - 刷新失败:', error)
-		uni.showToast({
-			title: '刷新失败',
-			icon: 'error'
-		})
-	} finally {
-		isRefreshing.value = false
-		pullDistance.value = 0
-	}
-}
-
-// 下拉距离监听
-const onRefresherPulling = (e) => {
-	pullDistance.value = e.detail.deltaY || 0
-}
-
-// 刷新状态恢复
-const onRefreshRestore = () => {
-	isRefreshing.value = false
-	pullDistance.value = 0
-}
 
 // 跳转到设置页面
 const goToSettings = () => {
 	console.log('跳转到设置页面')
 	uni.navigateTo({
 		url: '/pages/settings/settings'
+	})
+}
+
+// 跳转到福利中心页面
+const goToBenefits = () => {
+	console.log('跳转到福利中心页面')
+	// 从userInfo中获取用户ID并传递
+	const userId = userInfo.value.id
+	console.log('传递的用户ID:', userId)
+	uni.navigateTo({
+		url: `/pages/benefits/benefits?userId=${userId}`
 	})
 }
 
