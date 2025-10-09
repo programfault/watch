@@ -5,7 +5,7 @@
 
 // API 配置
 const API_CONFIG = {
-  baseURL: 'http://116.198.203.44:8000/api/mini',
+  baseURL: 'http://localhost:8000/api/mini',
   timeout: 10000
 }
 
@@ -32,7 +32,7 @@ function getTokens() {
     } else {
       console.log('🔍 getTokens - user-store不存在')
     }
-    
+
     // 2. 尝试从传统的 'tokens' 键获取
     const tokens = uni.getStorageSync('tokens')
     if (tokens) {
@@ -42,11 +42,11 @@ function getTokens() {
         return parsedTokens
       }
     }
-    
+
     // 3. 检查是否有会话信息
     const sessionInfo = uni.getStorageSync('userInfo')
     console.log('🔍 getTokens - 会话信息检查:', sessionInfo ? '存在' : '不存在')
-    
+
     console.log('🔍 getTokens - 未获取到有效token')
     return null
   } catch (error) {
@@ -87,10 +87,10 @@ function requestInterceptor(config) {
       if (!config.headers) {
         config.headers = {}
       }
-      
+
       // 创建纯净的headers对象，确保没有__proto__属性
       const plainHeaders = {}
-      
+
       // 复制现有的headers
       if (config.headers) {
         Object.keys(config.headers).forEach(key => {
@@ -100,15 +100,15 @@ function requestInterceptor(config) {
           }
         })
       }
-      
+
       // 添加Authorization头
       plainHeaders['Authorization'] = `Bearer ${tokens.access_token}`
-      
+
       // 确保Content-Type存在
       if (!plainHeaders['content-type'] && !plainHeaders['Content-Type']) {
         plainHeaders['content-type'] = 'application/json'
       }
-      
+
       // 设置回纯净的headers对象
       config.headers = plainHeaders
       console.log('🔍 请求拦截器 - 已添加Authorization头:', config.headers.Authorization)
@@ -188,7 +188,7 @@ async function errorHandler(err, config) {
         if (!tokens?.refresh_token) {
           throw new Error('没有 refresh_token')
         }
-        
+
         // 使用uni.request刷新token
         const refreshResult = await new Promise((resolve, reject) => {
           uni.request({
@@ -279,13 +279,13 @@ function doRequest(options) {
 
   // 应用请求拦截器
   const processedConfig = requestInterceptor(config)
-  
+
   // 构建完整URL
   let fullUrl = processedConfig.url
   if (!fullUrl.startsWith('http')) {
     fullUrl = `${processedConfig.baseURL}${fullUrl.startsWith('/') ? '' : '/'}${fullUrl}`
   }
-  
+
   // 如果是GET请求，构建查询参数
   if (processedConfig.method?.toUpperCase() === 'GET' && processedConfig.params) {
     const queryString = Object.keys(processedConfig.params)
@@ -394,7 +394,7 @@ export function testNativeRequest() {
   }
 
   console.log('🧪 发送测试请求，headers:', headers)
-  
+
   uni.request({
     url: `${API_CONFIG.baseURL}/user`,
     method: 'GET',

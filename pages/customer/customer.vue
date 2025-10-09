@@ -98,12 +98,21 @@
                   </view>
                   <!-- 下半部分：操作按钮 -->
                   <view class="consumer-actions">
-                    <view class="action-btn gift-btn" @click="handleGift(consumer)">
-                      <text class="btn-text">赠送</text>
-                    </view>
-                    <view class="action-btn verify-btn" @click="handleVerification(consumer)">
-                      <text class="btn-text">核销</text>
-                    </view>
+                    <uv-button
+                      type="primary"
+                      size="small"
+                      :custom-style="{ marginRight: '10px' }"
+                      @click="handleGift(consumer)"
+                    >
+                      赠送
+                    </uv-button>
+                    <uv-button
+                      type="warning"
+                      size="small"
+                      @click="handleVerification(consumer)"
+                    >
+                      核销
+                    </uv-button>
                   </view>
               </view>
             </view>
@@ -139,10 +148,10 @@
 </template>
 
 <script setup>
+import { searchConsumers } from "@/api/user.js"
 import ConsumerPanel from "@/components/ConsumerPanel.vue"
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import { useUserStore } from "@/stores"
-import { searchConsumers } from "@/api/user.js"
 import { onLoad, onPullDownRefresh, onShow, onUnload } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
@@ -350,7 +359,7 @@ const handlePanelClose = () => {
 const onSearchClear = async () => {
   console.log("搜索清除")
   searchKeyword.value = ""
-  
+
   // 清除搜索后重新加载全部数据
   try {
     userStore.consumersLoading = true
@@ -367,7 +376,7 @@ const onSearchConfirm = async (e) => {
   const keyword = e.detail?.value || e
   console.log("搜索确认:", keyword)
   searchKeyword.value = keyword
-  
+
   if (!keyword.trim()) {
     // 如果关键词为空，加载全部数据
     try {
@@ -380,19 +389,19 @@ const onSearchConfirm = async (e) => {
     }
     return
   }
-  
+
   // 调用新的搜索API
   try {
     userStore.consumersLoading = true
     const response = await searchConsumers({ keyword: keyword.trim() })
-    
+
     // 处理搜索结果
     try {
       // 优先检查是否直接包含users和total字段（API直接返回的数据格式）
       if (response && 'users' in response && 'total' in response) {
         userStore.consumers = response.users || []
         userStore.consumersTotal = response.total || 0
-        
+
         // 如果搜索结果为空，显示提示
         if ((response.users || []).length === 0) {
           uni.showToast({
@@ -405,7 +414,7 @@ const onSearchConfirm = async (e) => {
       else if (response?.code === 200 || response?.success) {
         // 根据响应格式设置消费者数据
         let consumersData = []
-        
+
         if (response?.data?.users) {
           consumersData = response.data.users || []
           userStore.consumersTotal = response.data.total || consumersData.length
@@ -416,10 +425,10 @@ const onSearchConfirm = async (e) => {
           consumersData = response
           userStore.consumersTotal = consumersData.length
         }
-        
+
         // 直接设置搜索结果到消费者列表
         userStore.consumers = consumersData
-        
+
         // 如果搜索结果为空，显示提示
         if (consumersData.length === 0) {
           uni.showToast({
@@ -466,334 +475,6 @@ const getAvatarText = (consumer) => {
 }
 </script>
 
-<style lang="scss">
-.page-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background-color: #f8f8f8;
-  box-sizing: border-box;
-}
-
-// 自定义下拉刷新样式
-.custom-refresher {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 80px;
-  width: 100%;
-  position: relative;
-
-  .pull-tips, .refreshing-tips {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    .tip-text {
-      font-size: 14px;
-      color: #999;
-      transition: color 0.3s ease;
-
-      &.tip-release {
-        color: #007aff;
-        font-weight: 600;
-      }
-
-      &.refreshing {
-        color: #007aff;
-        font-weight: 500;
-      }
-    }
-
-    .icon-rotate {
-      transform: rotate(180deg);
-      transition: transform 0.3s ease;
-    }
-  }
-}
-
-.fixed-search {
-  position: fixed;
-  top: env(safe-area-inset-top);
-  left: 0;
-  right: 0;
-  z-index: 999;
-  background-color: #fff;
-  padding: 10px 16px 8px;
-  border-bottom: 1px solid #f0f0f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-  .search-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    .search-bar-wrapper {
-      flex: 1;
-    }
-
-    .scan-btn {
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      border: 1px solid #e9ecef;
-      transition: all 0.2s ease;
-
-      &:active {
-        transform: scale(0.95);
-        background-color: #e9ecef;
-      }
-    }
-  }
-}
-
-.scroll-content {
-  flex: 1;
-  padding-top: calc(80px + env(safe-area-inset-top)); /* 给固定搜索栏和安全区域留出空间 */
-  padding-bottom: calc(50px + env(safe-area-inset-bottom)); /* 给tabbar留出空间 */
-  box-sizing: border-box;
-}
-
-.container {
-  padding: 0;
-  min-height: calc(100vh - env(safe-area-inset-top) - 50px - env(safe-area-inset-bottom) - 110px);
-  box-sizing: border-box;
-}
-
-.loading {
-  text-align: center;
-  padding: 40px 0;
-}
-
-.consumers-list {
-  padding: 0 12px;
-
-  // 移除uni-list-item的默认样式
-  ::v-deep .custom-list-item {
-    .uni-list-item {
-      background: transparent !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      border: none !important;
-
-      .uni-list-item__container {
-        background: transparent !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: none !important;
-      }
-    }
-  }
-
-  .consumer-item {
-    display: flex;
-    flex-direction: column;
-    background: #fff;
-    margin: 0 0 12px 0;
-    border-radius: 12px;
-    padding: 16px 18px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 1px solid #f5f5f5;
-    transition: all 0.2s ease;
-
-    &:active {
-      transform: scale(0.98);
-      background: #fafafa;
-    }
-
-    .consumer-avatar {
-      margin-right: 16px;
-
-      .avatar-circle {
-        width: 44px;
-        height: 44px;
-        border-radius: 22px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-
-        &.avatar-female {
-          background: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);
-        }
-
-        .avatar-text {
-          color: #fff;
-          font-size: 16px;
-          font-weight: 600;
-        }
-      }
-    }
-
-    .consumer-main {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 16px;
-    }
-
-    .consumer-content {
-      flex: 1;
-
-      .consumer-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        .consumer-info {
-          flex: 1;
-
-          .consumer-phone {
-            font-size: 14px;
-            font-weight: 500;
-            color: #666;
-            letter-spacing: 0.3px;
-            display: block;
-            margin-bottom: 4px;
-          }
-
-          .consumer-card {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-bottom: 2px;
-
-            .card-label {
-              font-size: 12px;
-              color: #999;
-            }
-
-            .card-value {
-              font-size: 12px;
-              font-weight: 600;
-              color: #999;
-            }
-          }
-
-          .consumer-points {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-
-            .points-label {
-              font-size: 12px;
-              color: #999;
-            }
-
-            .points-value {
-              font-size: 12px;
-              font-weight: 600;
-              color: #52c41a;
-            }
-          }
-        }
-
-        .consumer-badges {
-          display: flex;
-          gap: 12px;
-          margin-top: 2px;
-
-          .badge-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 36px;
-
-            .badge-label {
-              font-size: 10px;
-              color: #999;
-              margin-bottom: 2px;
-              line-height: 1;
-            }
-
-            .badge-value {
-              font-size: 14px;
-              font-weight: 600;
-              padding: 3px 8px;
-              border-radius: 8px;
-              color: #fff;
-              min-width: 24px;
-              text-align: center;
-              line-height: 1.2;
-
-              &.success {
-                background: #52c41a;
-              }
-
-              &.error {
-                background: #ff4d4f;
-              }
-
-              &.warning {
-                background: #faad14;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    .consumer-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      padding-top: 12px;
-      margin-top: 8px;
-      border-top: 1px solid #f0f0f0;
-
-      .action-btn {
-        padding: 8px 16px;
-        border-radius: 16px;
-        font-size: 12px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        min-width: 56px;
-        text-align: center;
-
-        .btn-text {
-          color: #fff;
-          font-size: 12px;
-          font-weight: 500;
-        }
-
-        &:active {
-          transform: scale(0.95);
-          opacity: 0.8;
-        }
-
-        &.gift-btn {
-          background: linear-gradient(135deg, #007aff 0%, #0056d3 100%);
-        }
-
-        &.verify-btn {
-          background: linear-gradient(135deg, #ff9500 0%, #e6850e 100%);
-        }
-      }
-    }
-  }
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-
-  .empty-text {
-    display: block;
-    font-size: 16px;
-    color: #999;
-    margin-bottom: 20px;
-  }
-
-  .empty-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-  }
-}
+<style lang="scss" scoped>
+@import './customer.scss';
 </style>
