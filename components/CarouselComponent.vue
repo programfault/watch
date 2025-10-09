@@ -28,7 +28,7 @@
     </view>
     <!-- 加载状态 -->
     <view class="loading-section" v-if="appStore.carouselLoading">
-      <uv-icon name="loading" :size="24" />
+      <uni-load-more status="loading" />
     </view>
 
     <!-- 空状态 -->
