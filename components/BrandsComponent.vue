@@ -41,89 +41,88 @@
   </view>
 </template>
 
-<script>
+<script setup>
 import { useAppStore } from '@/stores';
+import { computed } from 'vue';
 
-export default {
-  name: 'BrandsComponent',
-  props: {
-    // 是否显示标题
-    showTitle: {
-      type: Boolean,
-      default: true
-    },
-    // 自定义标题
-    title: {
-      type: String,
-      default: '手表品牌'
-    },
-    // 网格列数
-    columns: {
-      type: Number,
-      default: 3
-    }
+// 定义组件名称
+defineOptions({
+  name: 'BrandsComponent'
+});
+
+// 定义props
+const props = defineProps({
+  // 是否显示标题
+  showTitle: {
+    type: Boolean,
+    default: true
   },
-  setup() {
-    const appStore = useAppStore()
-    return {
-      appStore
-    }
+  // 自定义标题
+  title: {
+    type: String,
+    default: '手表品牌'
   },
-  computed: {
-    // 根据 sort 字段从小到大排序的品牌列表
-    sortedBrandsList() {
-      if (!this.appStore.brandsList || this.appStore.brandsList.length === 0) {
-        return []
-      }
-
-      return [...this.appStore.brandsList].sort((a, b) => {
-        // 从小到大排序 (升序)
-        const sortA = a.sort || 0
-        const sortB = b.sort || 0
-        return sortA - sortB
-      })
-    }
-  },
-  methods: {
-    // 品牌点击事件
-    onBrandClick(brand) {
-      console.log('点击品牌:', brand)
-
-      // 检查品牌数据
-      if (!brand) {
-        console.error('品牌数据为空')
-        uni.showToast({
-          title: '品牌数据错误',
-          icon: 'none'
-        })
-        return
-      }
-
-      console.log('品牌ID:', brand.id)
-      console.log('品牌中文名:', brand.name_cn)
-      console.log('品牌英文名:', brand.name_en)
-
-      // 构建跳转URL，只传递品牌ID
-      const url = `/pages/product/list?id=${brand.id}`
-      console.log('跳转URL:', url)
-
-      // 跳转到产品列表页面，传递品牌信息
-      uni.navigateTo({
-        url: url,
-        success: (res) => {
-          console.log('页面跳转成功:', res)
-        },
-        fail: (err) => {
-          console.error('页面跳转失败:', err)
-          uni.showToast({
-            title: '页面跳转失败',
-            icon: 'none'
-          })
-        }
-      })
-    }
+  // 网格列数
+  columns: {
+    type: Number,
+    default: 3
   }
-}
+});
+
+// Store实例
+const appStore = useAppStore();
+
+// 根据 sort 字段从小到大排序的品牌列表
+const sortedBrandsList = computed(() => {
+  if (!appStore.brandsList || appStore.brandsList.length === 0) {
+    return [];
+  }
+
+  return [...appStore.brandsList].sort((a, b) => {
+    // 从小到大排序 (升序)
+    const sortA = a.sort || 0;
+    const sortB = b.sort || 0;
+    return sortA - sortB;
+  });
+});
+
+// 品牌点击事件
+const onBrandClick = (brand) => {
+  console.log('点击品牌:', brand);
+
+  // 检查品牌数据
+  if (!brand) {
+    console.error('品牌数据为空');
+    uni.showToast({
+      title: '品牌数据错误',
+      icon: 'none'
+    });
+    return;
+  }
+
+  console.log('品牌ID:', brand.id);
+  console.log('品牌中文名:', brand.name_cn);
+  console.log('品牌英文名:', brand.name_en);
+
+  // 构建跳转URL，只传递品牌ID
+  const url = `/pages/product/list?id=${brand.id}`;
+  console.log('跳转URL:', url);
+
+  // 跳转到产品列表页面，传递品牌信息
+  uni.navigateTo({
+    url: url,
+    success: (res) => {
+      console.log('页面跳转成功:', res);
+    },
+    fail: (err) => {
+      console.error('页面跳转失败:', err);
+      uni.showToast({
+        title: '页面跳转失败',
+        icon: 'none'
+      });
+    }
+  });
+};
 </script>
 
 <style lang="scss">

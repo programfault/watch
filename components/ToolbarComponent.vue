@@ -28,58 +28,64 @@
   </view>
 </template>
 
-<script>
+<script setup>
 import { useToolbarStore } from "@/stores";
+import { computed, nextTick } from "vue";
 
-export default {
-  name: "ToolbarComponent",
-  emits: ["priceSort", "filter", "displayModeChange"],
-  setup() {
-    const toolbarStore = useToolbarStore();
-    return {
-      toolbarStore,
-    };
-  },
-  computed: {
-    sortOrder() {
-      return this.toolbarStore.sortOrder;
-    },
-    isFilterActive() {
-      return this.toolbarStore.isFilterActive;
-    },
-    displayMode() {
-      return this.toolbarStore.displayMode;
-    },
-    filterCount() {
-      return this.toolbarStore.filterCount;
-    },
-  },
-  methods: {
-    handlePriceSort() {
-      this.toolbarStore.togglePriceSort();
-      // 使用$nextTick确保store更新完成后再发出事件
-      this.$nextTick(() => {
-        console.log('ToolbarComponent 发出排序事件:', this.sortOrder)
-        this.$emit("priceSort", this.sortOrder);
-      });
-    },
-    handleFilter() {
-      this.toolbarStore.toggleFilter();
-      // 发出事件让父组件处理筛选
-      this.$emit("filter", this.isFilterActive);
-    },
-    setDisplayMode(mode) {
-      this.toolbarStore.setDisplayMode(mode);
-      // 发出事件让父组件处理显示模式变更
-      this.$emit("displayModeChange", mode);
-    },
+// 定义组件名称和emits
+defineOptions({
+  name: "ToolbarComponent"
+});
 
-    // 切换显示模式
-    toggleDisplayMode() {
-      const newMode = this.displayMode === "single" ? "grid" : "single";
-      this.setDisplayMode(newMode);
-    },
-  },
+// 定义emits
+const emit = defineEmits(["priceSort", "filter", "displayModeChange"]);
+
+// Store实例
+const toolbarStore = useToolbarStore();
+
+// 计算属性
+const sortOrder = computed(() => {
+  return toolbarStore.sortOrder;
+});
+
+const isFilterActive = computed(() => {
+  return toolbarStore.isFilterActive;
+});
+
+const displayMode = computed(() => {
+  return toolbarStore.displayMode;
+});
+
+const filterCount = computed(() => {
+  return toolbarStore.filterCount;
+});
+
+// 方法
+const handlePriceSort = () => {
+  toolbarStore.togglePriceSort();
+  // 使用nextTick确保store更新完成后再发出事件
+  nextTick(() => {
+    console.log('ToolbarComponent 发出排序事件:', sortOrder.value);
+    emit("priceSort", sortOrder.value);
+  });
+};
+
+const handleFilter = () => {
+  toolbarStore.toggleFilter();
+  // 发出事件让父组件处理筛选
+  emit("filter", isFilterActive.value);
+};
+
+const setDisplayMode = (mode) => {
+  toolbarStore.setDisplayMode(mode);
+  // 发出事件让父组件处理显示模式变更
+  emit("displayModeChange", mode);
+};
+
+// 切换显示模式
+const toggleDisplayMode = () => {
+  const newMode = displayMode.value === "single" ? "grid" : "single";
+  setDisplayMode(newMode);
 };
 </script>
 

@@ -64,187 +64,189 @@
 	</uni-popup>
 </template>
 
-<script>
+<script setup>
 import { useAppStore } from "@/stores";
-export default {
-	name: 'FilterPanelComponent',
+import { computed, onMounted, ref, watch } from 'vue';
 
-	data() {
-		return {
-			selectedFilters: {
-				minPrice: '',
-				maxPrice: '',
-				attributes: {} // { attribute_id: [selected_values] }
-			}
-		}
-	},
+// 定义组件名称和emits
+defineOptions({
+	name: 'FilterPanelComponent'
+});
 
-	computed: {
-		filterOptions() {
-			const appStore = useAppStore()
-			console.log('FilterPanel filterOptions:', appStore.filterOptions)
-			return appStore.filterOptions || []
-		},
+// 定义emits
+const emit = defineEmits(['filterCountChange', 'close', 'filterChange']);
 
-		isFilterActive() {
-			// 从工具栏store获取筛选状态
-			return this.$store?.state?.toolbar?.isFilterActive || false
-		},
+// Store实例
+const appStore = useAppStore();
 
-		// 计算活跃的筛选条件数量
-		activeFilterCount() {
-			let count = 0
+// 响应式数据
+const selectedFilters = ref({
+	minPrice: '',
+	maxPrice: '',
+	attributes: {} // { attribute_id: [selected_values] }
+});
 
-			// 价格筛选
-			if (this.selectedFilters.minPrice || this.selectedFilters.maxPrice) {
-				count++
-			}
+// 组件引用
+const filterPopup = ref(null);
 
-			// 属性筛选
-			Object.keys(this.selectedFilters.attributes).forEach(attributeId => {
-				const values = this.selectedFilters.attributes[attributeId]
-				if (values && values.length > 0) {
-					count++
-				}
-			})
+// 计算属性
+const filterOptions = computed(() => {
+	console.log('FilterPanel filterOptions:', appStore.filterOptions);
+	return appStore.filterOptions || [];
+});
 
-			return count
-		}
-	},
+const isFilterActive = computed(() => {
+	// 从工具栏store获取筛选状态
+	// 注意：这里需要根据实际的store结构来调整
+	// 如果有工具栏store，应该直接导入使用
+	return false; // 临时返回false，需要根据实际store结构调整
+});
 
-	watch: {
-		isFilterActive: {
-			handler(newVal) {
-				if (newVal) {
-					this.openPanel()
-				}
-			},
-			immediate: true
-		},
+// 计算活跃的筛选条件数量
+const activeFilterCount = computed(() => {
+	let count = 0;
 
-		// 监听筛选条件变化，实时更新筛选条件数量
-		activeFilterCount: {
-			handler(newCount) {
-				// 通知父组件筛选条件数量发生变化
-				this.$emit('filterCountChange', newCount)
-			},
-			immediate: true
-		}
-	},
-
-	mounted() {
-		// 组件挂载时，发送当前的筛选条件数量
-		this.$emit('filterCountChange', this.activeFilterCount)
-	},
-
-	methods: {
-		openPanel() {
-			if (this.$refs.filterPopup) {
-				this.$refs.filterPopup.open()
-			}
-		},
-
-		closePanel() {
-			if (this.$refs.filterPopup) {
-				this.$refs.filterPopup.close()
-			}
-			// 通知父组件关闭筛选状态
-			this.$emit('close')
-		},
-
-		isOptionSelected(attributeId, value) {
-			const selectedValues = this.selectedFilters.attributes[attributeId]
-			return selectedValues?.includes(value) || false
-		},
-
-		toggleOption(attributeId, value) {
-			if (!this.selectedFilters.attributes[attributeId]) {
-				this.$set(this.selectedFilters.attributes, attributeId, [])
-			}
-
-			const selectedValues = this.selectedFilters.attributes[attributeId]
-			const index = selectedValues.indexOf(value)
-
-			if (index > -1) {
-				selectedValues.splice(index, 1)
-			} else {
-				selectedValues.push(value)
-			}
-		},
-
-		resetFilters() {
-			// 清空所有筛选条件
-			this.selectedFilters = {
-				minPrice: '',
-				maxPrice: '',
-				attributes: {}
-			}
-
-			// 构建空的筛选参数并触发更新，传递筛选条件数量为0
-			const emptyFilterParams = {}
-			this.$emit('filterChange', emptyFilterParams, 0)
-
-			// 关闭筛选面板
-			this.closePanel()
-
-			// 显示重置成功提示
-			uni?.showToast({
-				title: '筛选条件已重置',
-				icon: 'success'
-			})
-		},
-
-		confirmFilters() {
-			const filterParams = this.buildFilterParams()
-
-			console.log('=== 筛选条件构建完成 ===')
-			console.log('构建的筛选参数:', filterParams)
-			if (filterParams.attribute_filters) {
-				console.log('属性筛选详情:', JSON.stringify(filterParams.attribute_filters, null, 2))
-			}
-
-			// 传递筛选参数和筛选条件数量
-			this.$emit('filterChange', filterParams, this.activeFilterCount)
-
-			this.closePanel()
-
-			uni?.showToast({
-				title: '筛选条件已应用',
-				icon: 'success'
-			})
-		},
-
-		buildFilterParams() {
-			const params = {}
-
-			// 价格筛选
-			if (this.selectedFilters.minPrice) {
-				params.min_price = this.selectedFilters.minPrice
-			}
-			if (this.selectedFilters.maxPrice) {
-				params.max_price = this.selectedFilters.maxPrice
-			}
-
-			// 属性筛选 - 构建为 attribute_filters 数组格式
-			const attributeFilters = []
-			Object.keys(this.selectedFilters.attributes).forEach(attributeId => {
-				const values = this.selectedFilters.attributes[attributeId]
-				if (values && values.length > 0) {
-					attributeFilters.push({
-						attribute_id: parseInt(attributeId),
-						values: values
-					})
-				}
-			})
-
-			if (attributeFilters.length > 0) {
-				params.attribute_filters = attributeFilters
-			}
-
-			return params
-		}
+	// 价格筛选
+	if (selectedFilters.value.minPrice || selectedFilters.value.maxPrice) {
+		count++;
 	}
-}
+
+	// 属性筛选
+	Object.keys(selectedFilters.value.attributes).forEach(attributeId => {
+		const values = selectedFilters.value.attributes[attributeId];
+		if (values && values.length > 0) {
+			count++;
+		}
+	});
+
+	return count;
+});
+
+// 监听器
+watch(isFilterActive, (newVal) => {
+	if (newVal) {
+		openPanel();
+	}
+}, { immediate: true });
+
+// 监听筛选条件变化，实时更新筛选条件数量
+watch(activeFilterCount, (newCount) => {
+	// 通知父组件筛选条件数量发生变化
+	emit('filterCountChange', newCount);
+}, { immediate: true });
+
+// 生命周期
+onMounted(() => {
+	// 组件挂载时，发送当前的筛选条件数量
+	emit('filterCountChange', activeFilterCount.value);
+});
+
+// 方法
+const openPanel = () => {
+	if (filterPopup.value) {
+		filterPopup.value.open();
+	}
+};
+
+const closePanel = () => {
+	if (filterPopup.value) {
+		filterPopup.value.close();
+	}
+	// 通知父组件关闭筛选状态
+	emit('close');
+};
+
+const isOptionSelected = (attributeId, value) => {
+	const selectedValues = selectedFilters.value.attributes[attributeId];
+	return selectedValues?.includes(value) || false;
+};
+
+const toggleOption = (attributeId, value) => {
+	if (!selectedFilters.value.attributes[attributeId]) {
+		selectedFilters.value.attributes[attributeId] = [];
+	}
+
+	const selectedValues = selectedFilters.value.attributes[attributeId];
+	const index = selectedValues.indexOf(value);
+
+	if (index > -1) {
+		selectedValues.splice(index, 1);
+	} else {
+		selectedValues.push(value);
+	}
+};
+
+const resetFilters = () => {
+	// 清空所有筛选条件
+	selectedFilters.value = {
+		minPrice: '',
+		maxPrice: '',
+		attributes: {}
+	};
+
+	// 构建空的筛选参数并触发更新，传递筛选条件数量为0
+	const emptyFilterParams = {};
+	emit('filterChange', emptyFilterParams, 0);
+
+	// 关闭筛选面板
+	closePanel();
+
+	// 显示重置成功提示
+	uni?.showToast({
+		title: '筛选条件已重置',
+		icon: 'success'
+	});
+};
+
+const confirmFilters = () => {
+	const filterParams = buildFilterParams();
+
+	console.log('=== 筛选条件构建完成 ===');
+	console.log('构建的筛选参数:', filterParams);
+	if (filterParams.attribute_filters) {
+		console.log('属性筛选详情:', JSON.stringify(filterParams.attribute_filters, null, 2));
+	}
+
+	// 传递筛选参数和筛选条件数量
+	emit('filterChange', filterParams, activeFilterCount.value);
+
+	closePanel();
+
+	uni?.showToast({
+		title: '筛选条件已应用',
+		icon: 'success'
+	});
+};
+
+const buildFilterParams = () => {
+	const params = {};
+
+	// 价格筛选
+	if (selectedFilters.value.minPrice) {
+		params.min_price = selectedFilters.value.minPrice;
+	}
+	if (selectedFilters.value.maxPrice) {
+		params.max_price = selectedFilters.value.maxPrice;
+	}
+
+	// 属性筛选 - 构建为 attribute_filters 数组格式
+	const attributeFilters = [];
+	Object.keys(selectedFilters.value.attributes).forEach(attributeId => {
+		const values = selectedFilters.value.attributes[attributeId];
+		if (values && values.length > 0) {
+			attributeFilters.push({
+				attribute_id: parseInt(attributeId),
+				values: values
+			});
+		}
+	});
+
+	if (attributeFilters.length > 0) {
+		params.attribute_filters = attributeFilters;
+	}
+
+	return params;
+};
 </script>
 
 <style lang="scss" scoped>

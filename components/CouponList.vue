@@ -35,33 +35,37 @@
 	</view>
 </template>
 
-<script>
-export default {
-	name: 'CouponList',
-	props: {
-		coupons: {
-			type: Array,
-			default: () => []
-		}
-	},
-	computed: {
-		couponCount() {
-			return this.coupons.length;
-		}
-	},
-	methods: {
-		// 格式化日期范围
-		formatDateRange(startDate, endDate) {
-			const formatDate = (dateStr) => {
-				const date = new Date(dateStr);
-				return `${date.getMonth() + 1}.${date.getDate()}`;
-			};
+<script setup>
+import { computed } from 'vue';
 
-			if (!startDate || !endDate) return '永久有效';
-			return `${formatDate(startDate)} - ${formatDate(endDate)}`;
-		}
+// 定义组件名称
+defineOptions({
+	name: 'CouponList'
+});
+
+// 定义props
+const props = defineProps({
+	coupons: {
+		type: Array,
+		default: () => []
 	}
-}
+});
+
+// 计算属性
+const couponCount = computed(() => {
+	return props.coupons.length;
+});
+
+// 格式化日期范围
+const formatDateRange = (startDate, endDate) => {
+	const formatDate = (dateStr) => {
+		const date = new Date(dateStr);
+		return `${date.getMonth() + 1}.${date.getDate()}`;
+	};
+
+	if (!startDate || !endDate) return '永久有效';
+	return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+};
 </script>
 
 <style lang="scss" scoped>

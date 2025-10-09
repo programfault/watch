@@ -33,33 +33,37 @@
 	</view>
 </template>
 
-<script>
-export default {
-	name: 'PrivilegeList',
-	props: {
-		privileges: {
-			type: Array,
-			default: () => []
-		}
-	},
-	computed: {
-		privilegeCount() {
-			return this.privileges.length;
-		}
-	},
-	methods: {
-		// 格式化日期范围
-		formatDateRange(startDate, endDate) {
-			const formatDate = (dateStr) => {
-				const date = new Date(dateStr);
-				return `${date.getMonth() + 1}.${date.getDate()}`;
-			};
+<script setup>
+import { computed } from 'vue';
 
-			if (!startDate || !endDate) return '永久有效';
-			return `${formatDate(startDate)} - ${formatDate(endDate)}`;
-		}
+// 定义组件名称
+defineOptions({
+	name: 'PrivilegeList'
+});
+
+// 定义props
+const props = defineProps({
+	privileges: {
+		type: Array,
+		default: () => []
 	}
-}
+});
+
+// 计算属性
+const privilegeCount = computed(() => {
+	return props.privileges.length;
+});
+
+// 格式化日期范围
+const formatDateRange = (startDate, endDate) => {
+	const formatDate = (dateStr) => {
+		const date = new Date(dateStr);
+		return `${date.getMonth() + 1}.${date.getDate()}`;
+	};
+
+	if (!startDate || !endDate) return '永久有效';
+	return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+};
 </script>
 
 <style lang="scss" scoped>
