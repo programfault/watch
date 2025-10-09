@@ -66,7 +66,10 @@ const handleTabChange = (name) => {
 	console.log('🏷️ 标签切换到:', name)
 	const selectedTab = tabBarStore.tabList.find(tab => tab.name === name)
 	if (selectedTab && selectedTab.path) {
-		tabBarStore.switchTab(selectedTab.name)
+		// 如果切换到的不是当前激活的tab，才显示loading
+		if (tabBarStore.activeTab !== name) {
+			tabBarStore.switchTabWithLoading(selectedTab.name)
+		}
 	} else {
 		console.warn('🏷️ 标签没有路径:', selectedTab?.name)
 	}

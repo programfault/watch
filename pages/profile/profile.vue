@@ -77,15 +77,19 @@
 
 		<!-- 底部标签栏组件 -->
 		<CustomTabBar />
+		<!-- 全局Loading组件 -->
+		<GlobalLoading />
 	</view>
 </template>
 
 <script setup>
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import GlobalLoading from '@/components/GlobalLoading.vue'
 import { useTabBarStore, useUserStore } from '@/stores'
 import {
     getFormattedBrowsingHistory
 } from '@/utils/browsingHistory.js'
+import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
@@ -164,6 +168,8 @@ onShow(() => {
 	// 设置当前页面的tabBar状态
 	tabBarStore.setActiveTab('profile')
 	// 页面显示，状态由Pinia自动管理
+	// 隐藏tab切换loading
+	hideTabSwitchLoading()
 })
 
 

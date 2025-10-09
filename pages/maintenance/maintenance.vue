@@ -44,23 +44,28 @@
 
 		<!-- 底部标签栏组件 -->
 		<CustomTabBar />
+		<!-- 全局Loading组件 -->
+		<GlobalLoading />
 	</view>
 </template>
 
 <script setup>
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import GlobalLoading from '@/components/GlobalLoading.vue'
 import StoreCard from '@/components/StoreCard.vue'
 import { useAppStore, useTabBarStore } from '@/stores'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
+// 导入工具函数
+import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
 // 导入位置相关工具函数
 import {
-	checkLocationPermission,
-	requestLocationPermission,
-	getUserLocation,
-	calculateDistance,
-	formatDistance,
-	openMapNavigation
+    calculateDistance,
+    checkLocationPermission,
+    formatDistance,
+    getUserLocation,
+    openMapNavigation,
+    requestLocationPermission
 } from '@/utils/locationUtils.js'
 
 // 初始化 stores
@@ -207,7 +212,7 @@ const initPage = async () => {
 	if (!appStore.hasStores && !appStore.storesLoading) {
 		await appStore.fetchStores()
 	}
-	
+
 	// 仅静默检查权限状态，不主动请求，也不自动获取位置信息
 	const hasPermission = await checkLocationPermission()
 	locationAuthorized.value = hasPermission
@@ -225,6 +230,8 @@ onShow(async () => {
 	tabBarStore.setActiveTab('maintenance')
 	// 页面显示时初始化
 	await initPage()
+	// 隐藏tab切换loading
+	hideTabSwitchLoading()
 })
 </script>
 

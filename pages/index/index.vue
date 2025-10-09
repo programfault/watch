@@ -56,14 +56,18 @@
 		</view>
 	</scroll-view>
     <CustomTabBar />
+	<!-- 全局Loading组件 -->
+	<GlobalLoading />
 </template>
 
 <script setup>
 import BrandsComponent from '@/components/BrandsComponent.vue'
 import CarouselComponent from '@/components/CarouselComponent.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import GlobalLoading from '@/components/GlobalLoading.vue'
 import SearchComponent from '@/components/SearchComponent.vue'
 import { useAppStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
+import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
 import ScanUtils from '@/utils/scanUtils.js'
 import { onHide, onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
@@ -187,6 +191,8 @@ onPullDownRefresh(async () => {
 
 onShow(() => {
     searchStore.setKeyword('');
+	// 隐藏tab切换loading
+	hideTabSwitchLoading()
 })
 
 onHide(() => {

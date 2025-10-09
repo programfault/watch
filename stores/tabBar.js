@@ -121,6 +121,33 @@ export const useTabBarStore = defineStore('tabbar', {
 			}
 		},
 
+		// 带loading的切换标签方法
+		switchTabWithLoading(tabName) {
+			const tab = this.tabList.find(t => t.name === tabName)
+			if (tab) {
+				// 通过全局状态管理loading，避免循环依赖
+				uni.$emit('showTabSwitchLoading', tabName)
+
+				this.setActiveTab(tabName)
+				console.log('🏷️ 切换标签 (带Loading):', tabName, '跳转到:', tab.path)
+
+				uni.switchTab({
+					url: tab.path,
+					success: () => {
+						console.log('✅ 标签切换成功')
+						// 延迟隐藏loading，让用户看到切换效果
+						setTimeout(() => {
+							uni.$emit('hideTabSwitchLoading')
+						}, 600)
+					},
+					fail: (err) => {
+						console.error('❌ 标签切换失败:', err)
+						uni.$emit('hideTabSwitchLoading')
+					}
+				})
+			}
+		},
+
 		// 根据当前页面路径自动设置激活标签
 		setActiveTabByPath(currentPath) {
 			try {

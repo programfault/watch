@@ -152,6 +152,8 @@
     />
     <!-- 底部标签栏组件 -->
 		<CustomTabBar />
+		<!-- 全局Loading组件 -->
+		<GlobalLoading />
   </view>
 </template>
 
@@ -159,6 +161,7 @@
 import { searchConsumers } from "@/api/user.js"
 import ConsumerPanel from "@/components/ConsumerPanel.vue"
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import GlobalLoading from '@/components/GlobalLoading.vue'
 import { useUserStore } from "@/stores"
 import { onLoad, onPullDownRefresh, onShow, onUnload } from '@dcloudio/uni-app'
 import { ref } from 'vue'
