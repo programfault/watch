@@ -12,8 +12,65 @@
 			<!-- 内容区域 -->
 			<scroll-view scroll-y class="consumer-content">
 				<!-- 操作区域 -->
+
+				<!-- 用户信息更新区域 -->
+				<view v-if="actionType === 'update'" class="action-section user-info-section">
+					<!-- 姓名 -->
+					<view class="form-item">
+						<text class="form-label">姓名</text>
+						<uni-easyinput
+							v-model="userForm.name"
+							placeholder="请输入姓名"
+							:clearable="true"
+						/>
+					</view>
+
+					<!-- 性别 -->
+					<view class="form-item">
+						<text class="form-label">性别</text>
+						<uni-data-select
+							v-model="userForm.gender"
+							:localdata="genderOptions"
+							placeholder="请选择性别"
+						/>
+					</view>
+
+					<!-- 手机号 -->
+					<view class="form-item">
+						<text class="form-label">手机号</text>
+						<uni-easyinput
+							v-model="userForm.phone"
+							placeholder="请输入手机号"
+							:clearable="true"
+						/>
+					</view>
+
+					<!-- 生日 -->
+					<view class="form-item">
+						<text class="form-label">生日</text>
+						<uni-datetime-picker
+							v-model="userForm.birthday"
+							type="date"
+							placeholder="请选择生日"
+							:clearIcon="true"
+						/>
+					</view>
+
+					<!-- 备注 -->
+					<view class="form-item">
+						<text class="form-label">备注</text>
+						<uni-easyinput
+							v-model="userForm.remark"
+							type="textarea"
+							placeholder="请输入备注信息"
+							:clearable="true"
+							:autoHeight="true"
+						/>
+					</view>
+				</view>
+
 				<!-- 积分区域 -->
-				<view v-if="showPoints" class="action-section">
+				<view v-if="showPoints && actionType !== 'update'" class="action-section">
 					<text class="section-title">{{ pointsTitle }}</text>
 					<view class="points-input-wrapper">
 						<uni-easyinput
@@ -26,7 +83,7 @@
 				</view>
 
 				<!-- 优惠券区域 -->
-				<view v-if="showCoupons" class="action-section">
+				<view v-if="showCoupons && actionType !== 'update'" class="action-section">
 					<text class="section-title">{{ couponsTitle }}{{ actionType === 'verify' ? '（单选）' : '（多选）' }}</text>
 					<view class="coupons-list">
 						<view
@@ -59,7 +116,7 @@
 				</view>
 
 				<!-- 特权区域 -->
-				<view v-if="showPrivileges" class="action-section">
+				<view v-if="showPrivileges && actionType !== 'update'" class="action-section">
 					<text class="section-title">{{ privilegesTitle }}{{ actionType === 'verify' ? '（单选）' : '（多选）' }}</text>
 					<view class="privileges-list">
 						<view
@@ -88,7 +145,7 @@
 				</view>
 
 				<!-- 默认提示区域（当所有区域都隐藏时） -->
-				<view v-if="!showPoints && !showCoupons && !showPrivileges" class="action-section">
+				<view v-if="actionType !== 'update' && !showPoints && !showCoupons && !showPrivileges" class="action-section">
 					<text class="section-title">选择内容</text>
 					<view class="placeholder-content">
 						<text class="placeholder-text">{{ selectHintText }}</text>
@@ -107,8 +164,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
 import { processConsumerAction } from '@/api/app'
+import { computed, onMounted, ref, watch } from 'vue'
 
 // 定义组件名称
 defineOptions({
@@ -186,6 +243,14 @@ const resetSelections = () => {
 	giftPoints.value = ''
 	selectedCoupons.value = []
 	selectedPrivileges.value = []
+	// 重置用户表单
+	userForm.value = {
+		name: '',
+		gender: '',
+		phone: '',
+		birthday: '',
+		remark: ''
+	}
 }
 
 // 响应式数据
@@ -193,8 +258,25 @@ const giftPoints = ref('')
 const selectedCoupons = ref([])
 const selectedPrivileges = ref([])
 
+// 用户信息表单数据
+const userForm = ref({
+	name: '',
+	gender: '',
+	phone: '',
+	birthday: '',
+	remark: ''
+})
+
+// 性别选项
+const genderOptions = [
+	{ value: '1', text: '男' },
+	{ value: '2', text: '女' },
+	{ value: '0', text: '未知' }
+]
+
 // 计算属性
 const panelTitle = computed(() => {
+	if (props.actionType === 'update') return '更新用户信息'
 	return props.actionType === 'gift' ? '赠送' : '核销'
 })
 
@@ -215,6 +297,7 @@ const pointsPlaceholder = computed(() => {
 })
 
 const confirmText = computed(() => {
+	if (props.actionType === 'update') return '确定更新'
 	return `确定${props.actionType === 'gift' ? '赠送' : '核销'}`
 })
 
@@ -269,7 +352,31 @@ watch(() => props.visible, (newVal) => {
 watch(() => props.actionType, () => {
 	// 当操作类型改变时，重置选择状态
 	resetSelections()
+	// 如果是更新模式，初始化用户表单数据
+	if (props.actionType === 'update' && props.consumerData) {
+		initUserForm()
+	}
 })
+
+watch(() => props.consumerData, () => {
+	// 如果是更新模式，初始化用户表单数据
+	if (props.actionType === 'update' && props.consumerData) {
+		initUserForm()
+	}
+})
+
+// 初始化用户表单数据
+const initUserForm = () => {
+	if (props.consumerData) {
+		userForm.value = {
+			name: props.consumerData.name || '',
+			gender: props.consumerData.gender ? String(props.consumerData.gender) : '',
+			phone: '',
+			birthday: props.consumerData.birthday || '',
+			remark: props.consumerData.remark || ''
+		}
+	}
+}
 
 // 切换优惠券选择状态
 const toggleCouponSelection = (couponId) => {
@@ -323,27 +430,46 @@ const confirmAction = async () => {
 		return
 	}
 
-	// 获取操作数据
-	const points = giftPoints.value ? parseInt(giftPoints.value) : 0
-	const coupons = selectedCoupons.value || []
-	const privileges = selectedPrivileges.value || []
+	let payload = {}
 
-	// 验证是否有选择内容
-	if (points <= 0 && coupons.length === 0 && privileges.length === 0) {
-		uni.showToast({
-			title: `请选择要${props.actionType === 'gift' ? '赠送' : '核销'}的内容`,
-			icon: 'none'
-		})
-		return
-	}
+	if (props.actionType === 'update') {
+		// 更新用户信息模式
+		// 构建用户信息更新payload
+		payload = {
+			actionType: props.actionType,
+			consumerId: props.consumerData.id,
+			userInfo: {
+				name: userForm.value.name.trim(),
+				gender: userForm.value.gender ? parseInt(userForm.value.gender) : 0,
+				phone: userForm.value.phone.trim(),
+				birthday: userForm.value.birthday,
+				remark: userForm.value.remark.trim()
+			}
+		}
+	} else {
+		// 赠送/核销模式
+		// 获取操作数据
+		const points = giftPoints.value ? parseInt(giftPoints.value) : 0
+		const coupons = selectedCoupons.value || []
+		const privileges = selectedPrivileges.value || []
 
-	// 构建简化的payload
-	const payload = {
-		actionType: props.actionType,
-		consumerId: props.consumerData.id,
-		points: points,
-		coupons: coupons,
-		privileges: privileges
+		// 验证是否有选择内容
+		if (points <= 0 && coupons.length === 0 && privileges.length === 0) {
+			uni.showToast({
+				title: `请选择要${props.actionType === 'gift' ? '赠送' : '核销'}的内容`,
+				icon: 'none'
+			})
+			return
+		}
+
+		// 构建赠送/核销payload
+		payload = {
+			actionType: props.actionType,
+			consumerId: props.consumerData.id,
+			points: points,
+			coupons: coupons,
+			privileges: privileges
+		}
 	}
 
 	try {
@@ -355,8 +481,10 @@ const confirmAction = async () => {
 		console.log('消费者操作响应:', response)
 
 		// 显示成功提示
+		const successTitle = props.actionType === 'update' ? '用户信息更新成功' :
+			`${props.actionType === 'gift' ? '赠送' : '核销'}操作成功`
 		uni.showToast({
-			title: `${props.actionType === 'gift' ? '赠送' : '核销'}操作成功`,
+			title: successTitle,
 			icon: 'success'
 		})
 
@@ -374,8 +502,10 @@ const confirmAction = async () => {
 		console.error('消费者操作失败:', error)
 
 		// 显示错误提示
+		const errorTitle = props.actionType === 'update' ? '用户信息更新失败' :
+			`${props.actionType === 'gift' ? '赠送' : '核销'}操作失败`
 		uni.showToast({
-			title: error.message || `${props.actionType === 'gift' ? '赠送' : '核销'}操作失败`,
+			title: error.message || errorTitle,
 			icon: 'none'
 		})
 	}
@@ -445,6 +575,55 @@ defineExpose({
 		color: #333;
 		margin-bottom: 20rpx;
 		padding-top: 30rpx;
+	}
+}
+
+// 用户信息表单样式
+.user-info-section {
+	.form-item {
+		margin-bottom: 30rpx;
+
+		.form-label {
+			display: block;
+			font-size: 28rpx;
+			color: #333;
+			margin-bottom: 10rpx;
+			font-weight: 500;
+		}
+
+		:deep(.uni-easyinput) {
+			border: 1px solid #e0e0e0;
+			border-radius: 8rpx;
+
+			.uni-easyinput__content {
+				padding: 16rpx 20rpx;
+			}
+
+			.uni-easyinput__content-input {
+				font-size: 28rpx;
+				color: #333;
+			}
+		}
+
+		:deep(.uni-data-select) {
+			border: 1px solid #e0e0e0;
+			border-radius: 8rpx;
+
+			.uni-select {
+				padding: 16rpx 20rpx;
+				font-size: 28rpx;
+			}
+		}
+
+		:deep(.uni-datetime-picker) {
+			border: 1px solid #e0e0e0;
+			border-radius: 8rpx;
+
+			.uni-datetime-picker-item {
+				padding: 16rpx 20rpx;
+				font-size: 28rpx;
+			}
+		}
 	}
 }
 
@@ -579,6 +758,7 @@ defineExpose({
 				/* 显示两行 */
 				display: -webkit-box;
 				-webkit-line-clamp: 2;
+				line-clamp: 2;
 				-webkit-box-orient: vertical;
 			}
 

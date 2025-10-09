@@ -101,7 +101,7 @@
                     <uv-button
                       type="primary"
                       size="small"
-                      :custom-style="{ marginRight: '10px' }"
+                      :custom-style="{ marginRight: '8px' }"
                       @click="handleGift(consumer)"
                     >
                       赠送
@@ -109,9 +109,17 @@
                     <uv-button
                       type="warning"
                       size="small"
+                      :custom-style="{ marginRight: '8px' }"
                       @click="handleVerification(consumer)"
                     >
                       核销
+                    </uv-button>
+                    <uv-button
+                      type="success"
+                      size="small"
+                      @click="handleUpdate(consumer)"
+                    >
+                      更新
                     </uv-button>
                   </view>
               </view>
@@ -323,6 +331,17 @@ const handleVerification = (consumer) => {
   // 核销时直接从消费者对象中获取已有的福利数据
   panelCoupons.value = consumer.coupons || []
   panelPrivileges.value = consumer.privileges || []
+  consumerPanel.value.openPanel()
+}
+
+// 更新用户信息操作
+const handleUpdate = (consumer) => {
+  console.log("更新用户信息操作:", consumer)
+  selectedConsumer.value = consumer
+  currentActionType.value = 'update'
+  // 更新模式下不需要福利数据
+  panelCoupons.value = []
+  panelPrivileges.value = []
   consumerPanel.value.openPanel()
 }
 
