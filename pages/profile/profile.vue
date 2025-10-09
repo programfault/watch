@@ -179,7 +179,7 @@ const goToSettings = () => {
 // 跳转到福利中心页面
 const goToBenefits = () => {
 	console.log('跳转到福利中心页面')
-	
+
 	// 检查用户是否已登录
 	if (!userStore.isLoggedIn) {
 		uni.showToast({
@@ -188,16 +188,16 @@ const goToBenefits = () => {
 		})
 		return
 	}
-	
+
 	// 从userInfo中获取用户ID并传递
 	const userId = userInfo.value.id
 	console.log('传递的用户ID:', userId, '用户信息:', userInfo.value)
-	
+
 	// 确保用户数据完整（包含福利信息）
 	if (!userInfo.value.coupons && !userInfo.value.privileges) {
 		console.log('用户信息中缺少福利数据，可能需要刷新')
 	}
-	
+
 	uni.navigateTo({
 		url: `/pages/benefits/benefits?userId=${userId}`
 	})

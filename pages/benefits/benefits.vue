@@ -40,9 +40,9 @@
           <text v-else class="tip-text refreshing">正在跳转...</text>
         </view>
       </view>
-      
+
       <view class="benefits-content">
-      
+
         <!-- 优惠券列表 -->
         <CouponList :coupons="coupons" />
 
@@ -50,7 +50,7 @@
         <PrivilegeList :privileges="privileges" />
       </view>
     </scroll-view>
-    
+
     <!-- 底部标签栏组件 -->
     <CustomTabBar />
   </view>
@@ -126,7 +126,7 @@ onLoad(async (options) => {
     if (options.userId) {
       console.log('接收到外部用户ID:', options.userId)
       externalUserId.value = options.userId
-      
+
       // 通过用户ID获取完整用户对象
       await fetchUserById(options.userId)
     }
@@ -141,7 +141,7 @@ onLoad(async (options) => {
 const fetchUserById = async (userId) => {
   try {
     console.log('通过用户ID获取完整用户对象:', userId)
-    
+
     // 检查传入的userId是否与当前登录用户ID一致
     const currentUserId = userStore.userInfo?.id
     if (currentUserId && String(currentUserId) === String(userId)) {
@@ -155,7 +155,7 @@ const fetchUserById = async (userId) => {
       }
       return
     }
-    
+
     // 先检查当前已加载的消费者列表中是否有该用户
     const consumer = userStore.consumers.find(c => String(c.id) === String(userId))
     if (consumer) {
@@ -163,23 +163,23 @@ const fetchUserById = async (userId) => {
       targetUserInfo.value = consumer
       return
     }
-    
+
     // 如果是其他用户ID，才进行API请求
     console.log('需要通过API获取其他用户的福利信息:', userId)
-    
+
     // 根据项目中API的使用模式，这里使用user_id作为查询参数
     await userStore.fetchConsumers({ user_id: userId })
-    
+
     // 调用fetchBenefits方法获取该用户的优惠券和特权数据
     console.log('调用fetchBenefits方法获取用户福利数据，用户ID:', userId)
     await userStore.fetchBenefits({ user_id: userId })
     console.log('福利数据获取完成:', userStore.benefits)
-    
+
     // 从返回的消费者列表中查找特定用户
     const fetchedConsumer = userStore.consumers.find(c => String(c.id) === String(userId))
     if (fetchedConsumer) {
       console.log('成功获取用户对象:', fetchedConsumer)
-      
+
       // 检查是否有通过fetchBenefits获取的福利数据
       if (userStore.benefits && userStore.benefits.coupons) {
         console.log('检测到有福利数据，合并到用户对象中')

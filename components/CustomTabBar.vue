@@ -17,8 +17,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, nextTick } from 'vue'
 import { useTabBarStore } from '@/stores'
+import { nextTick, onMounted } from 'vue'
 
 // 定义组件名称（可选）
 defineOptions({
@@ -61,24 +61,37 @@ const handleTabChange = (name) => {
 
 // 初始化函数
 const initTabBar = async () => {
-	// 如果没有设置activeTab，默认设置为首页
-	if (!tabBarStore.activeTab) {
-		tabBarStore.setActiveTab('home')
-	}
-
-	// 等待下一个tick后再处理页面路径
-	await nextTick()
-
-	// 根据当前页面路径自动设置激活标签
 	try {
+		// 确保tabBarStore已正确初始化
+		if (!tabBarStore || !tabBarStore.tabList) {
+			console.warn('🏷️ TabBar store 未正确初始化')
+			return
+		}
+
+		// 如果没有设置activeTab，默认设置为首页
+		if (!tabBarStore.activeTab) {
+			tabBarStore.setActiveTab('home')
+		}
+
+		// 等待下一个tick后再处理页面路径
+		await nextTick()
+
+		// 根据当前页面路径自动设置激活标签
 		const pages = getCurrentPages()
 		if (pages && pages.length > 0) {
 			const currentPage = pages[pages.length - 1]
-			const currentRoute = '/' + currentPage.route
-			tabBarStore.setActiveTabByPath(currentRoute)
+			if (currentPage && currentPage.route) {
+				const currentRoute = '/' + currentPage.route
+				console.log('🏷️ 当前页面路径:', currentRoute)
+				tabBarStore.setActiveTabByPath(currentRoute)
+			} else {
+				console.warn('🏷️ 当前页面信息不完整:', currentPage)
+			}
+		} else {
+			console.warn('🏷️ 无法获取页面栈信息')
 		}
 	} catch (error) {
-		console.warn('🏷️ 获取当前页面路径失败:', error)
+		console.error('🏷️ TabBar 初始化失败:', error)
 	}
 }
 

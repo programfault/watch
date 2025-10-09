@@ -59,12 +59,12 @@ export const useTabBarStore = defineStore('tabbar', {
 
 		// 获取当前激活的标签信息
 		currentTab(state) {
-			return this.tabList.find(tab => tab.name === state.activeTab)
+			return state.tabList.find(tab => tab.name === state.activeTab)
 		},
 
 		// 根据路径获取对应的标签名称
 		getTabByPath: (state) => (path) => {
-			return this.tabList.find(tab => tab.path === path)
+			return state.tabList.find(tab => tab.path === path)
 		},
 
 		// 获取当前用户类型的显示名称
@@ -123,10 +123,16 @@ export const useTabBarStore = defineStore('tabbar', {
 
 		// 根据当前页面路径自动设置激活标签
 		setActiveTabByPath(currentPath) {
-			const tab = this.getTabByPath(currentPath)
-			if (tab) {
-				this.activeTab = tab.name
-				console.log('🏷️ 根据路径自动设置标签:', tab.name)
+			try {
+				const tab = this.getTabByPath(currentPath)
+				if (tab) {
+					this.activeTab = tab.name
+					console.log('🏷️ 根据路径自动设置标签:', tab.name)
+				} else {
+					console.log('🏷️ 未找到匹配的标签，路径:', currentPath)
+				}
+			} catch (error) {
+				console.error('🏷️ 设置激活标签时出错:', error, '路径:', currentPath)
 			}
 		}
 	}
