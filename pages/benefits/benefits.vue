@@ -2,7 +2,7 @@
   <view class="container">
     <!-- 加载状态 -->
     <view v-if="userInfoLoading" class="loading">
-      <uv-icon name="loading" size="30" color="#999"></uv-icon>
+      <ui-icon name="loading" size="30" color="#999"></ui-icon>
       <text class="loading-text">加载中...</text>
     </view>
 
@@ -29,15 +29,12 @@
             color="#999"
             :class="{ 'icon-rotate': pullDistance >= 80 }"
           />
-          <text v-if="userStore.isLoggedIn && pullDistance < 80" class="tip-text">下拉刷新福利信息</text>
-          <text v-else-if="userStore.isLoggedIn && pullDistance >= 80" class="tip-text tip-release">松手立即刷新</text>
-          <text v-else-if="!userStore.isLoggedIn && pullDistance < 80" class="tip-text">下拉去登录</text>
-          <text v-else class="tip-text tip-release">松手去登录</text>
+          <text v-if="pullDistance < 80" class="tip-text">下拉刷新福利</text>
+          <text v-else class="tip-text tip-release">松手立即刷新</text>
         </view>
         <view v-else class="refreshing-tips">
-          <uv-icon name="loading" size="20" color="#007aff" />
-          <text v-if="userStore.isLoggedIn" class="tip-text refreshing">正在刷新...</text>
-          <text v-else class="tip-text refreshing">正在跳转...</text>
+          <ui-icon name="loading" size="20" />
+          <text class="tip-text refreshing">正在刷新...</text>
         </view>
       </view>
 
@@ -313,35 +310,79 @@ const onRefreshRestore = () => {
   color: #999;
 }
 
+// 自定义下拉刷新样式
 .custom-refresher {
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 120rpx;
-  padding: 20px 0;
+  justify-content: center;
+  height: 80px;
+  width: 100%;
+  position: relative;
+
+  .pull-tips, .refreshing-tips {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    .tip-text {
+      font-size: 14px;
+      color: #999;
+      transition: color 0.3s ease;
+
+      &.tip-release {
+        font-weight: 600;
+      }
+      &.refreshing {
+        font-weight: 500;
+      }
+    }
+
+    .icon-rotate {
+      transform: rotate(180deg);
+      transition: transform 0.3s ease;
+    }
+  }
 }
 
-.pull-tips,
-.refreshing-tips {
+
+
+.pull-icon-container,
+.loading-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.loading-container {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .tip-text {
-  font-size: 24rpx;
-  color: #999;
-  margin-top: 10rpx;
+  font-size: 28rpx;
+  color: #666;
   text-align: center;
+  margin-top: 0;
+  padding: 0;
 }
 
 .tip-release {
-  color: #007aff;
+  color: #07c160;
+  font-weight: 500;
 }
 
 .refreshing {
-  color: #007aff;
+  color: #07c160;
 }
 
 .icon-rotate {

@@ -45,7 +45,7 @@
           <text v-else class="tip-text tip-release">松手立即刷新</text>
         </view>
         <view v-else class="refreshing-tips">
-          <uv-icon name="loading" size="20" color="#007aff" />
+          <ui-icon name="loading" size="20" />
           <text class="tip-text refreshing">正在刷新...</text>
         </view>
       </view>
