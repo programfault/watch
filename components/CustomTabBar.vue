@@ -1,24 +1,34 @@
 <template>
-	<uv-tabbar
-		:value="tabBarStore.activeTab"
-		:fixed="true"
-		activeColor="#D81E06"
-		inactiveColor="#7d7e80"
-		@change="handleTabChange"
-	>
-		<uv-tabbar-item
-			v-for="tab in tabBarStore.tabList"
-			:key="tab.name"
-            :name="tab.name"
-			:text="tab.text"
-			:icon="mapIcon(tab.icon)"
-		></uv-tabbar-item>
-	</uv-tabbar>
+	<view class="custom-tabbar">
+		<view class="tabbar-content">
+			<view
+				v-for="tab in tabBarStore.tabList"
+				:key="tab.name"
+				class="tabbar-item"
+				:class="{ 'active': tabBarStore.activeTab === tab.name }"
+				@tap="handleTabChange(tab.name)"
+			>
+				<uv-icon
+					:name="mapIcon(tab.icon)"
+					:color="tabBarStore.activeTab === tab.name ? '#D81E06' : '#7d7e80'"
+					size="22"
+				/>
+				<text
+					class="tabbar-text"
+					:style="{ color: tabBarStore.activeTab === tab.name ? '#D81E06' : '#7d7e80' }"
+				>
+					{{ tab.text }}
+				</text>
+			</view>
+		</view>
+		<!-- 安全区域填充 -->
+		<view class="safe-area-bottom" :style="{ height: safeBottom + 'px' }"></view>
+	</view>
 </template>
 
 <script setup>
 import { useTabBarStore } from '@/stores'
-import { nextTick, onMounted } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 
 // 定义组件名称（可选）
 defineOptions({
@@ -27,6 +37,9 @@ defineOptions({
 
 // 获取 tabBar store
 const tabBarStore = useTabBarStore()
+
+// 安全区域高度
+const safeBottom = ref(0)
 
 // 计算当前激活标签的索引
 // const activeTabIndex = computed(() => {
@@ -95,12 +108,80 @@ const initTabBar = async () => {
 	}
 }
 
+// 获取安全区域高度
+const getSafeAreaHeight = () => {
+	try {
+		// 使用新的API获取设备信息和窗口信息
+		const deviceInfo = uni.getDeviceInfo ? uni.getDeviceInfo() : {}
+		const windowInfo = uni.getWindowInfo ? uni.getWindowInfo() : {}
+
+		// 微信小程序中，安全区域底部高度
+		if (deviceInfo.platform === 'ios' && windowInfo.safeAreaInsets) {
+			safeBottom.value = windowInfo.safeAreaInsets.bottom || 0
+		} else if (windowInfo.safeArea) {
+			// 兼容旧版本，使用safeArea计算
+			const screenHeight = windowInfo.screenHeight || windowInfo.windowHeight || 0
+			const safeAreaBottom = windowInfo.safeArea ? windowInfo.safeArea.bottom : screenHeight
+			safeBottom.value = Math.max(0, screenHeight - safeAreaBottom)
+		} else {
+			safeBottom.value = 0
+		}
+	} catch (error) {
+		console.warn('获取安全区域高度失败，使用默认值:', error)
+		safeBottom.value = 0
+	}
+}
+
 // 组件挂载时的初始化
 onMounted(() => {
+	getSafeAreaHeight()
 	initTabBar()
 })
 </script>
 
 <style lang="scss" scoped>
-/* 如果需要自定义uv-tabbar的样式，可以在这里添加 */
+.custom-tabbar {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 1000;
+	background-color: #fff;
+	border-top: 1rpx solid #e4e7ed;
+
+	.tabbar-content {
+		display: flex;
+		flex-direction: row;
+		height: 100rpx;
+
+		.tabbar-item {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 10rpx 0;
+			transition: all 0.3s ease;
+
+			&:active {
+				background-color: #f7f8fa;
+			}
+
+			.tabbar-text {
+				font-size: 20rpx;
+				margin-top: 6rpx;
+				line-height: 1;
+			}
+		}
+	}
+
+	.safe-area-bottom {
+		background-color: #fff;
+	}
+}
+
+/* 为页面内容添加底部padding，避免被tabbar遮挡 */
+:global(.container) {
+	padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
+}
 </style>

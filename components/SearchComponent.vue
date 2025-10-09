@@ -52,7 +52,7 @@
 
 		<!-- 加载状态 -->
 		<view class="loading" v-if="searchStore.loading">
-			<uni-load-more status="loading" />
+			<uv-loading-icon mode="circle" />
 		</view>
 	</view>
 </template>

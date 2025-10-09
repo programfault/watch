@@ -2,37 +2,26 @@
   <view>
     <!-- 轮播图 -->
     <view class="carousel-section" v-if="appStore.hasCarousel">
-      <swiper
-        class="carousel-swiper"
-        indicator-dots
-        autoplay
-        interval="3000"
-        duration="500"
-        circular
-      >
-        <swiper-item
-          v-for="(item, index) in appStore.activeCarousel"
-          :key="index"
-          @click="onCarouselClick(item)"
-        >
-          <image
-            :src="item.image"
-            mode="aspectFill"
-            class="carousel-image"
-            :alt="item.title"
-          />
-          <view class="carousel-content" v-if="item.title">
-            <text class="carousel-title">{{ item.title }}</text>
-            <text class="carousel-desc" v-if="item.description">{{
-              item.description
-            }}</text>
-          </view>
-        </swiper-item>
-      </swiper>
+      <uv-swiper
+        :list="carouselList"
+        :height="height"
+        :autoplay="autoplay"
+        :interval="interval"
+        :duration="duration"
+        :circular="true"
+        :indicator="showDots"
+        indicator-mode="dot"
+        indicator-active-color="#fff"
+        indicator-inactive-color="rgba(255, 255, 255, 0.4)"
+        :radius="12"
+        key-name="image"
+        img-mode="aspectFill"
+        @click="onCarouselClick"
+      />
     </view>
     <!-- 加载状态 -->
     <view class="loading-section" v-if="appStore.carouselLoading">
-      <uni-load-more status="loading" />
+      <uv-loading-icon mode="circle" />
     </view>
 
     <!-- 空状态 -->
@@ -65,14 +54,15 @@
 
 <script>
 import { useAppStore } from "@/stores";
+import { computed } from "vue";
 
 export default {
   name: "CarouselComponent",
   props: {
     // 轮播图高度
     height: {
-      type: String,
-      default: "200px",
+      type: [String, Number],
+      default: 200,
     },
     // 自动播放间隔时间
     interval: {
@@ -97,18 +87,24 @@ export default {
   },
   setup() {
     const appStore = useAppStore();
+
+    // 转换轮播图数据格式以适配 uv-swiper
+    const carouselList = computed(() => {
+      return appStore.activeCarousel || [];
+    });
+
     return {
       appStore,
+      carouselList,
     };
   },
 
-
-
   methods: {
     // 轮播图点击事件
-    onCarouselClick(carouselItem) {
+    onCarouselClick(index) {
+      const carouselItem = this.appStore.activeCarousel[index];
       console.log("点击轮播图:", carouselItem);
-      if (carouselItem.has_content === 0) {
+      if (!carouselItem || carouselItem.has_content === 0) {
         console.log("无内容可跳转");
         return;
       }
@@ -129,38 +125,10 @@ export default {
 .carousel-section {
   margin-bottom: 20px;
 
-  .carousel-swiper {
-    height: 200px;
+  // uv-swiper 组件样式定制
+  :deep(.uv-swiper) {
     border-radius: 12px;
     overflow: hidden;
-
-    .carousel-image {
-      width: 100%;
-      height: 100%;
-    }
-
-    .carousel-content {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
-      padding: 20px 15px 15px;
-      color: white;
-
-      .carousel-title {
-        font-size: 16px;
-        font-weight: bold;
-        margin-bottom: 5px;
-        display: block;
-      }
-
-      .carousel-desc {
-        font-size: 12px;
-        opacity: 0.9;
-        display: block;
-      }
-    }
   }
 }
 
