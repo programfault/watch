@@ -27,12 +27,10 @@
       transition: color 0.3s ease;
 
       &.tip-release {
-        color: #007aff;
         font-weight: 600;
       }
 
       &.refreshing {
-        color: #007aff;
         font-weight: 500;
       }
     }
