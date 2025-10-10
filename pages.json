@@ -82,6 +82,16 @@
 			"enablePullDownRefresh": true,
 			"backgroundTextStyle": "dark"
 		}
+	}, {
+		"path": "pages/agreement/agreement",
+		"style": {
+			"navigationBarTitleText": "用户服务协议"
+		}
+	}, {
+		"path": "pages/privacy/privacy",
+		"style": {
+			"navigationBarTitleText": "隐私政策"
+		}
 	}],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",

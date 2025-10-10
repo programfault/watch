@@ -9,11 +9,11 @@
 
 		<!-- 登录头部 -->
 		<view class="login-header">
-			<view class="logo-wrapper">
+			<!-- <view class="logo-wrapper">
 				<image class="logo" src="/static/logo.png" mode="aspectFit"></image>
 				<view class="logo-glow"></view>
-			</view>
-			<text class="app-name">天辰表友</text>
+			</view> -->
+			<text class="app-name">天辰表行</text>
 			<text class="welcome-text">专业手表服务平台</text>
 			<text class="sub-text">欢迎回来，请登录您的账户</text>
 		</view>
@@ -44,15 +44,16 @@
 					@getphonenumber="handleGetPhoneNumber"
 					:disabled="!isAgreed"
 				>
-					<uv-icon name="weixin" size="20" color="#fff"></uv-icon>
+					<uv-icon name="weixin-circle-fill" size="20" color="#fff"></uv-icon>
 					<text class="btn-text">微信一键登录</text>
 				</button>
 
 				<!-- 手机号已绑定提示 -->
-		<view v-if="userStore.isLoggedIn && userStore.userInfo?.phone" class="phone-status">
-			<uv-icon name="checkmark" size="16" color="#52c41a"></uv-icon>
-			<text class="phone-text">手机号已绑定：{{ userStore.userInfo.phone }}</text>
-		</view>				<!-- 安全提示 -->
+                <view v-if="userStore.isLoggedIn && userStore.userInfo?.phone" class="phone-status">
+                    <uv-icon name="checkmark" size="16" color="#52c41a"></uv-icon>
+                    <text class="phone-text">手机号已绑定：{{ userStore.userInfo.phone }}</text>
+                </view>
+                <!-- 安全提示 -->
 				<view class="security-tips">
 					<uni-icons type="info" size="14" color="#999"></uni-icons>
 					<text class="tips-text">我们会保护您的隐私信息安全</text>
@@ -261,22 +262,16 @@ const handleGetPhoneNumber = async (e) => {
 
 // 显示用户协议
 const showUserAgreement = () => {
-	uni.showModal({
-		title: '用户协议',
-		content: '这里是用户协议内容，实际使用时应该跳转到完整的协议页面或显示详细内容。',
-		confirmText: '我知道了',
-		showCancel: false
-	})
+	uni.navigateTo({
+        url: '/pages/agreement/agreement'
+    })
 }
 
 // 显示隐私政策
 const showPrivacyPolicy = () => {
-	uni.showModal({
-		title: '隐私政策',
-		content: '这里是隐私政策内容，实际使用时应该跳转到完整的隐私政策页面或显示详细内容。',
-		confirmText: '我知道了',
-		showCancel: false
-	})
+	uni.navigateTo({
+        url: '/pages/privacy/privacy'
+    })
 }
 
 // 进入调试页面
