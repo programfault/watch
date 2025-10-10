@@ -5,7 +5,7 @@
 
 // API 配置
 const API_CONFIG = {
-  baseURL: 'http://116.198.203.44:8000/api/mini',
+  baseURL: 'https://roc.tailtweak.com/api/mini',
   timeout: 10000
 }
 

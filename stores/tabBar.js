@@ -135,10 +135,10 @@ export const useTabBarStore = defineStore('tabbar', {
 					url: tab.path,
 					success: () => {
 						console.log('✅ 标签切换成功')
-						// 延迟隐藏loading，让用户看到切换效果
+						// 进一步缩短延迟时间，几乎立即隐藏
 						setTimeout(() => {
 							uni.$emit('hideTabSwitchLoading')
-						}, 600)
+						}, 100)
 					},
 					fail: (err) => {
 						console.error('❌ 标签切换失败:', err)

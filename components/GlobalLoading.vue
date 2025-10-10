@@ -23,7 +23,7 @@ onMounted(() => {
 
 		const tabText = tabTextMap[tabName] || '页面'
 		uni.showLoading({
-			title: `切换到${tabText}`,
+			title: `${tabText}`,
 			mask: false // 不需要遮罩，用户可以继续操作
 		})
 	})

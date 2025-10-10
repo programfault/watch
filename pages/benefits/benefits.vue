@@ -1,9 +1,36 @@
 <template>
   <view class="container">
-    <!-- 加载状态 -->
-    <view v-if="userInfoLoading" class="loading">
-      <ui-icon name="loading" size="30" color="#999"></ui-icon>
-      <text class="loading-text">加载中...</text>
+    <!-- 加载状态 - 骨架屏 -->
+    <view v-if="initialLoading || userInfoLoading" class="benefits-skeleton">
+      <!-- 优惠券骨架屏 -->
+      <view class="section-skeleton">
+        <view class="section-title-skeleton"></view>
+        <view class="card-skeleton" v-for="i in 3" :key="'coupon-' + i">
+          <view class="card-header-skeleton">
+            <view class="card-title-skeleton"></view>
+            <view class="card-badge-skeleton"></view>
+          </view>
+          <view class="card-content-skeleton">
+            <view class="skeleton-line"></view>
+            <view class="skeleton-line skeleton-line-short"></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 特权骨架屏 -->
+      <view class="section-skeleton">
+        <view class="section-title-skeleton"></view>
+        <view class="card-skeleton" v-for="i in 2" :key="'privilege-' + i">
+          <view class="card-header-skeleton">
+            <view class="card-title-skeleton"></view>
+            <view class="card-badge-skeleton"></view>
+          </view>
+          <view class="card-content-skeleton">
+            <view class="skeleton-line"></view>
+            <view class="skeleton-line skeleton-line-short"></view>
+          </view>
+        </view>
+      </view>
     </view>
 
     <!-- 内容区域（支持下拉刷新） -->
@@ -38,7 +65,7 @@
         </view>
       </view>
 
-      <view class="benefits-content">
+      <view class="benefits-content" v-if="!initialLoading && !userInfoLoading">
 
         <!-- 优惠券列表 -->
         <CouponList :coupons="coupons" />
@@ -59,7 +86,7 @@ import CustomTabBar from '@/components/CustomTabBar.vue'
 import PrivilegeList from '@/components/PrivilegeList.vue'
 import { useTabBarStore, useUserStore } from '@/stores'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 
 // 定义组件名称
 defineOptions({
@@ -72,6 +99,7 @@ const tabBarStore = useTabBarStore()
 
 // 响应式数据
 const userInfoLoading = ref(false)
+const initialLoading = ref(true) // 初始加载状态，防止白屏
 const isRefreshing = ref(false)
 const pullDistance = ref(0)
 const externalUserId = ref('')
@@ -105,17 +133,30 @@ const checkLoginAndRedirect = () => {
 }
 
 // 页面生命周期 - onLoad
-onLoad(async (options) => {
+onLoad((options) => {
   console.log('Benefits页面 onLoad', options)
-  userInfoLoading.value = true
 
+  // 立即显示页面结构，不等待数据加载
+  nextTick(() => {
+    // 在下一个渲染周期开始数据加载
+    initPageDataAsync(options)
+  })
+})
+
+// 异步初始化页面数据 - 不阻塞页面渲染
+const initPageDataAsync = async (options) => {
   try {
+    console.log('开始异步初始化Benefits页面数据')
+    userInfoLoading.value = true
+
+    // 短暂延迟，确保页面骨架屏先显示
+    await new Promise(resolve => setTimeout(resolve, 50))
+
     // 初始化用户状态
     await userStore.initUserState()
 
     // 检查登录状态
     if (!checkLoginAndRedirect()) {
-      userInfoLoading.value = false
       return
     }
 
@@ -127,12 +168,21 @@ onLoad(async (options) => {
       // 通过用户ID获取完整用户对象
       await fetchUserById(options.userId)
     }
+
+    console.log('✅ Benefits页面数据初始化完成')
+
   } catch (error) {
-    console.error('Benefits页面 - 初始化失败:', error)
+    console.error('Benefits页面 - 异步初始化失败:', error)
+    uni.showToast({
+      title: "页面初始化失败",
+      icon: "none",
+      duration: 2000
+    })
   } finally {
     userInfoLoading.value = false
+    initialLoading.value = false // 关闭初始loading状态
   }
-})
+}
 
 // 通过用户ID获取完整用户对象
 const fetchUserById = async (userId) => {
@@ -475,5 +525,88 @@ const onRefreshRestore = () => {
   font-size: 28rpx;
   padding: 20rpx 40rpx;
   line-height: 1.4;
+}
+
+// 福利页面骨架屏样式
+.benefits-skeleton {
+  padding: 20rpx;
+
+  .section-skeleton {
+    margin-bottom: 40rpx;
+
+    .section-title-skeleton {
+      height: 40rpx;
+      width: 200rpx;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: 4rpx;
+      margin-bottom: 20rpx;
+    }
+
+    .card-skeleton {
+      background-color: #fff;
+      border-radius: 12rpx;
+      padding: 30rpx;
+      margin-bottom: 20rpx;
+      box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+
+      .card-header-skeleton {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20rpx;
+
+        .card-title-skeleton {
+          height: 32rpx;
+          width: 40%;
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: skeleton-loading 1.5s infinite;
+          border-radius: 4rpx;
+        }
+
+        .card-badge-skeleton {
+          height: 28rpx;
+          width: 80rpx;
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: skeleton-loading 1.5s infinite;
+          border-radius: 14rpx;
+          animation-delay: 0.2s;
+        }
+      }
+
+      .card-content-skeleton {
+        .skeleton-line {
+          height: 24rpx;
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: skeleton-loading 1.5s infinite;
+          border-radius: 4rpx;
+          margin-bottom: 12rpx;
+          width: 100%;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          &.skeleton-line-short {
+            width: 60%;
+            animation-delay: 0.3s;
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 </style>

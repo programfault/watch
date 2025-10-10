@@ -50,9 +50,19 @@
         </view>
       </view>
       <view class="container">
-        <!-- 加载状态 -->
-        <view class="loading" v-if="userStore.consumersLoading">
-          <uni-load-more status="loading" />
+        <!-- 加载状态 - 骨架屏 -->
+        <view class="skeleton-wrapper" v-if="initialLoading || userStore.consumersLoading">
+          <view class="skeleton-item" v-for="i in 5" :key="i">
+            <view class="skeleton-avatar"></view>
+            <view class="skeleton-content">
+              <view class="skeleton-line skeleton-line-title"></view>
+              <view class="skeleton-line skeleton-line-subtitle"></view>
+              <view class="skeleton-line skeleton-line-small"></view>
+            </view>
+            <view class="skeleton-actions">
+              <view class="skeleton-btn" v-for="j in 3" :key="j"></view>
+            </view>
+          </view>
         </view>
 
         <!-- 消费者列表 -->
@@ -127,7 +137,7 @@
         </view>
 
         <!-- 空状态 -->
-        <view class="empty-state" v-else-if="!userStore.consumersLoading">
+        <view class="empty-state" v-else-if="!initialLoading && !userStore.consumersLoading">
           <text class="empty-text" v-if="userStore.consumersSearchKeyword">暂无匹配的消费者</text>
           <text class="empty-text" v-else>暂无消费者数据</text>
         </view>
@@ -164,7 +174,7 @@ import CustomTabBar from '@/components/CustomTabBar.vue'
 import GlobalLoading from '@/components/GlobalLoading.vue'
 import { useUserStore } from "@/stores"
 import { onLoad, onPullDownRefresh, onShow, onUnload } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 
 // 定义组件名称
 defineOptions({
@@ -186,6 +196,9 @@ const currentActionType = ref('gift') // 'gift' 或 'verify'
 const panelCoupons = ref([])
 const panelPrivileges = ref([])
 
+// 本地loading状态 - 用于消除初始白屏
+const initialLoading = ref(true)
+
 // 组件引用
 const consumerPanel = ref(null)
 
@@ -195,15 +208,15 @@ onUnload(async () => {
 })
 
 // 页面生命周期 - onLoad
-onLoad(async () => {
+onLoad(() => {
   console.log('🚀 页面onLoad开始...')
-  try {
-    // 获取消费者数据
-    await loadData()
-    console.log('✅ 页面onLoad完成')
-  } catch (error) {
-    console.error('❌ 页面onLoad失败:', error)
-  }
+
+  // 立即显示页面结构，不等待数据加载
+  // 使用 nextTick 确保页面结构先渲染
+  nextTick(() => {
+    // 在下一个渲染周期开始数据加载
+    loadDataAsync()
+  })
 })
 
 // 页面生命周期 - onShow
@@ -222,7 +235,54 @@ onPullDownRefresh(() => {
 })
 
 // 方法定义
-// 加载数据
+// 异步加载数据 - 不阻塞页面渲染
+const loadDataAsync = async () => {
+  try {
+    console.log('开始异步加载消费者数据...')
+
+    // 短暂延迟，确保页面骨架屏先显示
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    // 先加载消费者数据（主要数据），设置超时
+    const consumersPromise = Promise.race([
+      userStore.fetchConsumers(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('消费者数据加载超时')), 10000)
+      )
+    ])
+
+    // 异步加载福利数据（辅助数据），不阻塞主要数据显示
+    const benefitsPromise = userStore.fetchBenefits().catch(error => {
+      console.warn('福利数据加载失败，但不影响主要功能:', error)
+    })
+
+    // 等待主要数据加载完成（带超时）
+    await consumersPromise
+
+    console.log('✅ 主要数据加载完成')
+    // 关闭初始loading状态
+    initialLoading.value = false
+
+    // 福利数据在后台继续加载
+    benefitsPromise.then(() => {
+      console.log('✅ 辅助数据加载完成')
+    })
+
+  } catch (error) {
+    console.error("数据加载失败:", error)
+    // 即使失败也要关闭loading
+    initialLoading.value = false
+
+    // 显示错误提示
+    uni.showToast({
+      title: "数据加载失败",
+      icon: "none",
+      duration: 2000
+    })
+  }
+}
+
+// 保留原有的loadData方法供刷新使用
 const loadData = async () => {
   try {
     console.log('开始加载消费者数据...')
