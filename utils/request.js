@@ -5,7 +5,7 @@
 
 // API 配置
 const API_CONFIG = {
-  baseURL: 'http://localhost:8000/api/mini',
+  baseURL: 'http://116.198.203.44:8000/api/mini',
   timeout: 10000
 }
 

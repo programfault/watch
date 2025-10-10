@@ -501,13 +501,33 @@ const confirmAction = async () => {
 	} catch (error) {
 		console.error('消费者操作失败:', error)
 
-		// 显示错误提示
-		const errorTitle = props.actionType === 'update' ? '用户信息更新失败' :
-			`${props.actionType === 'gift' ? '赠送' : '核销'}操作失败`
-		uni.showToast({
-			title: error.message || errorTitle,
-			icon: 'none'
-		})
+		// 处理不同类型的错误响应
+		let errorMessage = ''
+
+		// 检查是否是服务器返回的结构化错误
+		if (error && typeof error === 'object') {
+			// 情况1: 直接包含 message 字段的错误对象
+			if (error.message) {
+				errorMessage = error.message
+			}
+			// 情况2: 包含 code 和 message 的响应结构
+			else if (error.code === 500 && error.message) {
+				errorMessage = error.message
+			}
+			// 情况3: 嵌套在 response 或 data 中的错误信息
+			else if (error.response && error.response.message) {
+				errorMessage = error.response.message
+			}
+			else if (error.data && error.data.message) {
+				errorMessage = error.data.message
+			}
+		}
+
+		// 如果没有找到具体错误消息，使用默认消息
+		if (!errorMessage) {
+			errorMessage = props.actionType === 'update' ? '用户信息更新失败' :
+				`${props.actionType === 'gift' ? '赠送' : '核销'}操作失败`
+		}
 	}
 }
 
@@ -927,6 +947,7 @@ defineExpose({
 		}
 	}.consumer-footer {
 	padding: 30rpx;
+	padding-bottom: calc(30rpx + 100rpx + env(safe-area-inset-bottom));
 	border-top: 1rpx solid #eee;
 
 	.confirm-btn {
