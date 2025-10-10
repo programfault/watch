@@ -220,7 +220,7 @@ const handleViewStores = () => {
     if (currentWatch.value?.available_stores?.length > 0) {
         // 启动闪烁效果
         storesBlinking.value = true
-        
+
         // 滑动到门店区域
         uni.pageScrollTo({
             selector: '#stores-section',
