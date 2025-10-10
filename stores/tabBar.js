@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 export const useTabBarStore = defineStore('tabbar', {
 	state: () => ({
 		activeTab: 'home', // 当前激活的标签
-		userType: 'normal', // 用户类型：normal(普通用户), admin(管理员), special(特殊用户)
+		userType: 'normal', // 用户类型：normal(普通用户), admin(管理员), special(特殊用户), anonymous(匿名用户)
 
 		// 完整的菜单配置
 		allTabList: [
@@ -12,14 +12,21 @@ export const useTabBarStore = defineStore('tabbar', {
 				text: '首页',
 				icon: 'home-o',
 				path: '/pages/index/index',
-				roles: ['normal', 'admin', 'special'] // 所有用户都可以看到
+				roles: ['anonymous','normal', 'admin', 'special'] // 所有用户都可以看到
+            },
+            {
+				name: 'recruitment',
+				text: '我的招聘',
+				icon: 'info-circle',
+				path: '/pages/recruitment/recruitment',
+				roles: ['anonymous'] // 只有匿名用户可以看到
 			},
 			{
 				name: 'maintenance',
 				text: '保养',
 				icon: 'service-o',
 				path: '/pages/maintenance/maintenance',
-				roles: ['normal', 'admin'] // 只有普通用户和管理员可以看到
+				roles: ['anonymous','normal', 'admin'] // 只有普通用户和管理员可以看到
             },
 			{
 				name: 'customer',
@@ -33,14 +40,15 @@ export const useTabBarStore = defineStore('tabbar', {
 				text: '劳力士',
 				icon: 'diamond-o',
 				path: '/pages/rolex/rolex',
-				roles: ['normal', 'special'] // 所有用户都可以看到，但特殊用户只看这个
+				roles: ['anonymous','normal', 'special'] // 所有用户都可以看到，但特殊用户只看这个
 			},
+
 			{
 				name: 'profile',
 				text: '我的',
 				icon: 'user-o',
 				path: '/pages/profile/profile',
-				roles: ['normal', 'admin', 'special'] // 所有用户都可以看到
+				roles: ['anonymous','normal', 'admin', 'special'] // 所有用户都可以看到
 			}
 		]
 	}),
@@ -53,7 +61,6 @@ export const useTabBarStore = defineStore('tabbar', {
 				return state.allTabList.filter(tab => ['home', 'rolex', 'profile'].includes(tab.name))
 			}
 
-			// 普通用户和管理员根据roles过滤
 			return state.allTabList.filter(tab => tab.roles.includes(state.userType))
 		},
 
@@ -72,7 +79,8 @@ export const useTabBarStore = defineStore('tabbar', {
 			const typeMap = {
 				'normal': '普通用户',
 				'admin': '管理员',
-				'special': '特殊用户'
+				'special': '特殊用户',
+				'anonymous': '匿名用户'
 			}
 			return typeMap[state.userType] || '未知用户'
 		}
@@ -81,15 +89,19 @@ export const useTabBarStore = defineStore('tabbar', {
 	actions: {
 		// 设置用户类型
 		setUserType(userType) {
-			if (['normal', 'admin', 'special'].includes(userType)) {
+			if (['normal', 'admin', 'special', 'anonymous'].includes(userType)) {
 				this.userType = userType
 				console.log('🏷️ 用户类型更新:', userType)
 
 				// 检查当前激活的标签是否在新的tabList中
 				const currentTabExists = this.tabList.find(t => t.name === this.activeTab)
 				if (!currentTabExists) {
-					// 如果当前标签不在新列表中，切换到首页
-					this.setActiveTab('home')
+					// 如果当前标签不在新列表中，切换到合适的默认页面
+					if (userType === 'anonymous') {
+						this.setActiveTab('recruitment')
+					} else {
+						this.setActiveTab('home')
+					}
 				}
 			}
 		},

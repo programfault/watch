@@ -6,10 +6,13 @@ export const PAGE_IDS = {
   // 保养手册页面
   MAINTENANCE_MANUAL: 1,
 
+  // 招聘页面
+  RECRUITMENT: 2,
+
   // 可以在这里添加其他页面的ID
-  // USER_AGREEMENT: 2,
-  // PRIVACY_POLICY: 3,
-  // ABOUT_US: 4,
+  // USER_AGREEMENT: 3,
+  // PRIVACY_POLICY: 4,
+  // ABOUT_US: 5,
 }
 
 /**
@@ -18,6 +21,7 @@ export const PAGE_IDS = {
  */
 export const PAGE_DESCRIPTIONS = {
   [PAGE_IDS.MAINTENANCE_MANUAL]: '保养手册',
+  [PAGE_IDS.RECRUITMENT]: '招聘信息',
   // [PAGE_IDS.USER_AGREEMENT]: '用户协议',
   // [PAGE_IDS.PRIVACY_POLICY]: '隐私政策',
   // [PAGE_IDS.ABOUT_US]: '关于我们',

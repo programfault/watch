@@ -393,7 +393,7 @@ export const useUserStore = defineStore("user", {
 					response: error.response,
 					config: error.config
 				});
-				
+
 				// 获取用户信息失败时，清除用户状态
 				console.log('🔍 fetchUserInfo - 失败后执行logout(false)清理状态');
 				this.logout(false); // 只清理状态，不跳转页面
@@ -441,7 +441,7 @@ export const useUserStore = defineStore("user", {
 			// 重置权限
 			this.permissions = [];
 
-            tabbarStore.setUserType("normal");
+            tabbarStore.setUserType("anonymous");
             tabbarStore.setActiveTab("home");
 
 			// 如果需要跳转到登录页
@@ -584,10 +584,10 @@ export const useUserStore = defineStore("user", {
 			const storedTokens = uni.getStorageSync('user-store')?.tokens || null;
 			const storedUserInfo = uni.getStorageSync('user-store')?.userInfo || null;
 			const storedIsLoggedIn = uni.getStorageSync('user-store')?.isLoggedIn || false;
-			
+
 			console.log('🔍 checkLoginStatus - 本地存储tokens状态:', storedTokens ? '存在' : '不存在');
 			console.log('🔍 checkLoginStatus - 本地存储用户登录状态:', storedIsLoggedIn);
-			
+
 			// 如果store中没有token，但本地存储有，则手动恢复
 			if (!this.tokens?.access_token && storedTokens?.access_token) {
 				console.log('🔍 checkLoginStatus - store中无token，从本地存储恢复');
@@ -598,7 +598,7 @@ export const useUserStore = defineStore("user", {
 					this.isLoggedIn = storedIsLoggedIn;
 				}
 			}
-			
+
 			// 当有token但isLoggedIn为false时，验证token并刷新用户信息
 			if (this.tokens?.access_token && !this.isLoggedIn) {
 				console.log('🔍 checkLoginStatus - 有token但未登录，尝试刷新用户信息');

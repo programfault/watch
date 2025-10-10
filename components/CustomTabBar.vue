@@ -55,8 +55,8 @@ const mapIcon = (storeIcon) => {
 		'service-o': 'setting',
 		'contacts-o': 'integral',
 		'diamond-o': 'star',
-        'user-o': 'account',
-
+		'account': 'account',
+		'user-o': 'account',
 	}
 	return iconMap[storeIcon] || storeIcon.replace('-o', '')
 }

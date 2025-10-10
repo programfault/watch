@@ -29,6 +29,11 @@
 			"navigationBarTitleText": "客户"
 		}
 	}, {
+		"path": "pages/recruitment/recruitment",
+		"style": {
+			"navigationBarTitleText": "我的招聘"
+		}
+	}, {
 		"path": "pages/activity/activity",
 		"style": {
 			"navigationBarTitleText": "活动详情"
@@ -104,6 +109,9 @@
 		}, {
 			"pagePath": "pages/rolex/rolex",
 			"text": "劳力士"
+		}, {
+			"pagePath": "pages/recruitment/recruitment",
+			"text": "我的招聘"
 		}, {
 			"pagePath": "pages/profile/profile",
 			"text": "我的"

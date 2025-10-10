@@ -93,9 +93,11 @@ const initData = async () => {
 	try {
 		if (userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.status === 1) {
             tabBarStore.setUserType('admin')
-		} else {
+		} else if (userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.status === 0) {
 			tabBarStore.setUserType('normal')
-		}
+        } else {
+            tabBarStore.setUserType('anonymous')
+        }
 		await appStore.initApp()
 	} catch (error) {
 		uni.showToast({
@@ -164,6 +166,15 @@ const onRefresherPulling = (e) => {
 			isPulling.value = true
 		}, 300)
 	}
+}
+
+// 角色切换方法
+const switchRole = (role) => {
+	tabBarStore.setUserType(role)
+	uni.showToast({
+		title: `已切换到${tabBarStore.userTypeText}`,
+		icon: 'success'
+	})
 }
 
 // 页面生命周期 - onLoad
