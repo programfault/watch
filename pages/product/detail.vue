@@ -60,7 +60,7 @@
             </view>
 
             <!-- 可售门店 -->
-            <view v-if="currentWatch.available_stores && currentWatch.available_stores.length > 0" class="stores-section" id="stores-section">
+            <view v-if="currentWatch.available_stores && currentWatch.available_stores.length > 0" class="stores-section" :class="{ 'blinking': storesBlinking }" id="stores-section">
                 <view class="section-header">
                     <text class="section-title">可售门店</text>
                 </view>
@@ -110,22 +110,23 @@
 </template>
 
 <script setup>
+import StoreCard from '@/components/StoreCard.vue'
 import { useFavoritesStore } from '@/stores/favorites.js'
 import { useProductStore } from '@/stores/product.js'
 import { getCurrentTimeToMinute } from '@/utils/timeUtils.js'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
-import StoreCard from '@/components/StoreCard.vue'
 // 导入位置相关工具函数
 import {
-	checkLocationPermission,
-	requestLocationPermission,
-	getUserLocation,
-	calculateDistance,
-	formatDistance,
-	openMapNavigation
+    calculateDistance,
+    checkLocationPermission,
+    formatDistance,
+    openMapNavigation,
+    requestLocationPermission
 } from '@/utils/locationUtils.js'
+// 导入客服工具函数
+import { quickContactCustomerService } from '@/utils/customerServiceUtils.js'
 
 const productStore = useProductStore()
 const favoritesStore = useFavoritesStore()
@@ -141,6 +142,9 @@ const isFavorited = computed(() => {
 // 定位相关状态
 const locationAuthorized = ref(false)
 const userLocation = ref(null)
+
+// 门店区域闪烁状态
+const storesBlinking = ref(false)
 
 const watchImages = computed(() => {
     if (!currentWatch.value || !currentWatch.value.images) return []
@@ -180,20 +184,12 @@ const loadWatchDetail = async () => {
 
 // 联系客服
 const handleContact = () => {
-    uni.showActionSheet({
-        itemList: ['在线客服', '电话咨询'],
-        success: (res) => {
-            if (res.tapIndex === 0) {
-                uni.showToast({
-                    title: '正在连接客服...',
-                    icon: 'none'
-                })
-                // 这里可以跳转到客服页面或打开客服聊天
-            } else if (res.tapIndex === 1) {
-                uni.makePhoneCall({
-                    phoneNumber: '400-888-8888'
-                })
-            }
+    quickContactCustomerService({
+        onSuccess: (result) => {
+            console.log('客服聊天打开成功:', result)
+        },
+        onFail: (error) => {
+            console.log('客服聊天打开失败:', error)
         }
     })
 }
@@ -222,10 +218,25 @@ const handleFavorite = () => {
 // 查看在售门店
 const handleViewStores = () => {
     if (currentWatch.value?.available_stores?.length > 0) {
+        // 启动闪烁效果
+        storesBlinking.value = true
+        
         // 滑动到门店区域
         uni.pageScrollTo({
             selector: '#stores-section',
-            duration: 300
+            duration: 300,
+            success: () => {
+                // 滑动完成后，延迟一点时间再停止闪烁，确保用户看到效果
+                setTimeout(() => {
+                    storesBlinking.value = false
+                }, 1500) // 闪烁1.5秒
+            },
+            fail: () => {
+                // 即使滑动失败也要停止闪烁
+                setTimeout(() => {
+                    storesBlinking.value = false
+                }, 1500)
+            }
         })
     } else {
         uni.showToast({
@@ -267,7 +278,7 @@ const navigateToStore = async (store) => {
         })
         return
     }
-    
+
     await openMapNavigation(store)
 }
 

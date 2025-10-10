@@ -44,17 +44,18 @@
         <!-- <view class="container">
             <button @click="openCustomerService">联系客服</button>
         </view> -->
-
-		<!-- 悬浮扫一扫按钮 - 仅管理员可见 -->
-		<view
-			v-if="userStore.isLoggedIn && userStore.isAdmin"
-			class="floating-scan-btn"
-			@click="handleFloatingScan"
-		>
-				<uv-icon name="scan" size="28" color="#fff"></uv-icon>
-			</view>
-		</view>
+        </view>
 	</scroll-view>
+
+    <!-- 悬浮按钮 - 简化测试版本 -->
+    <view class="simple-floating-button" @click="handleFloatingButtonClick">
+      <uv-icon
+        name="server-man"
+        size="28"
+        color="#fff"
+      />
+    </view>
+
     <CustomTabBar />
 	<!-- 全局Loading组件 -->
 	<GlobalLoading />
@@ -66,9 +67,9 @@ import CarouselComponent from '@/components/CarouselComponent.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import GlobalLoading from '@/components/GlobalLoading.vue'
 import SearchComponent from '@/components/SearchComponent.vue'
-import { useAppStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
+import { useAppStore, useConfigStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
+import { quickContactCustomerService } from '@/utils/customerServiceUtils.js'
 import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
-import ScanUtils from '@/utils/scanUtils.js'
 import { onHide, onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
@@ -80,6 +81,7 @@ defineOptions({
 // 获取 stores
 const searchStore = useSearchStore()
 const appStore = useAppStore()
+const configStore = useConfigStore()
 const userStore = useUserStore()
 const tabBarStore = useTabBarStore()
 
@@ -91,6 +93,11 @@ const isPulling = ref(false)
 // 初始化数据的方法
 const initData = async () => {
 	try {
+		// 优先加载配置信息
+		if (!configStore.isConfigLoaded) {
+			await configStore.fetchConfig()
+		}
+
 		if (userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.status === 1) {
             tabBarStore.setUserType('admin')
 		} else if (userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.status === 0) {
@@ -168,6 +175,13 @@ const onRefresherPulling = (e) => {
 	}
 }
 
+// 悬浮按钮点击处理
+const handleFloatingButtonClick = () => {
+	console.log('客服悬浮按钮被点击')
+	// 调用公共客服工具函数
+	quickContactCustomerService()
+}
+
 // 角色切换方法
 const switchRole = (role) => {
 	tabBarStore.setUserType(role)
@@ -209,40 +223,7 @@ onShow(() => {
 onHide(() => {
 })
 
-// 悬浮扫一扫按钮处理
-const handleFloatingScan = () => {
-	ScanUtils.scanCode()
-		.then(result => {
-			console.log('扫码成功:', result)
-			// 处理扫码结果
-		})
-		.catch(error => {
-			console.error('扫码失败:', error)
-		})
-}
 
-// 打开客服
-const openCustomerService = () => {
-	const customerServiceId = "ww17da4a406b6bf90b"
-	uni.openCustomerServiceChat({
-		extInfo: {
-			url: `https://work.weixin.qq.com/kfid/kfc222a4433ef7716d7`
-		},
-		corpId: customerServiceId,
-		success: (res) => {
-			console.log('客服聊天打开成功:', res)
-		},
-		fail: (err) => {
-			console.error('客服聊天打开失败:', err)
-			// 失败时提供备用方案
-			uni.showModal({
-				title: '客服提示',
-				content: '无法打开客服聊天，请联系客服微信：' + customerServiceId,
-				showCancel: false
-			})
-		}
-	})
-}
 </script>
 
 <style lang="scss">
@@ -300,25 +281,25 @@ const openCustomerService = () => {
 	}
 }
 
-// 悬浮扫一扫按钮样式
-.floating-scan-btn {
+// 客服悬浮按钮样式
+.simple-floating-button {
 	position: fixed;
-	bottom: calc(70px + env(safe-area-inset-bottom)); /* 在tabbar上方预留20px间距 */
+	bottom: 200rpx;
 	right: 30rpx;
-	width: 100rpx;
-	height: 100rpx;
-	background: linear-gradient(135deg, #007aff, #5ac8fa);
+	width: 80rpx;
+	height: 80rpx;
+	background-color: #e85a4f;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-shadow: 0 6rpx 20rpx rgba(0, 122, 255, 0.3);
-	z-index: 999;
+	z-index: 9999;
+	box-shadow: 0 6rpx 20rpx rgba(232, 90, 79, 0.3);
 	transition: all 0.3s ease;
 
 	&:active {
 		transform: scale(0.95);
-		box-shadow: 0 4rpx 15rpx rgba(0, 122, 255, 0.4);
+		box-shadow: 0 4rpx 15rpx rgba(232, 90, 79, 0.4);
 	}
 }
 </style>

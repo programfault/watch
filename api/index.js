@@ -11,3 +11,6 @@ export * from './product.js'
 
 // 用户相关接口
 export * from './user.js'
+
+// 配置相关接口
+export * from './config.js'

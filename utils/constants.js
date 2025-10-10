@@ -35,3 +35,17 @@ export const PAGE_DESCRIPTIONS = {
 export const getPageDescription = (pageId) => {
   return PAGE_DESCRIPTIONS[pageId] || `未知页面(ID: ${pageId})`
 }
+
+/**
+ * 客服相关常量
+ */
+export const CUSTOMER_SERVICE = {
+  // 企业微信客服URL基础路径
+  BASE_URL: 'https://work.weixin.qq.com/kfid/',
+
+  // 默认配置（作为回退方案）
+  DEFAULT_CONFIG: {
+    CUSTOMER_SERVICE_ID: 'ww17da4a406b6bf90b',
+    KF_ID: 'kfc222a4433ef7716d7'
+  }
+}

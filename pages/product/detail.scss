@@ -395,3 +395,24 @@
 .bottom-spacer {
     height: 105rpx;
 }
+
+/* 门店区域闪烁动画 */
+.stores-section.blinking {
+    animation: storesBlink 0.5s ease-in-out 3; /* 闪烁3次，每次0.5秒 */
+}
+
+@keyframes storesBlink {
+    0% {
+        background-color: transparent;
+        box-shadow: none;
+    }
+    50% {
+        background-color: rgba(0, 122, 255, 0.1);
+        box-shadow: 0 0 20rpx rgba(0, 122, 255, 0.3);
+        border-radius: 20rpx;
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: none;
+    }
+}
