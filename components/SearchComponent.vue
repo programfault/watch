@@ -1,22 +1,24 @@
 <template>
 	<view class="search-container">
-		<!-- 搜索框 -->
-		<view class="search-box">
-			<uv-search
-				:placeholder="searchPlaceholder"
-				v-model="keyword"
-				:showAction="true"
-				actionText="取消"
-				:animation="true"
-				shape="square"
-				@focus="onFocus"
-				@clear="onClear"
-				@search="onSearch"
-				@custom="onCancel"
-				@change="onInput"
-				@blur="onBlur"
-			></uv-search>
-		</view>
+		   <!-- 搜索框吸顶 -->
+		   <uv-sticky :offset-top="10">
+			   <view class="search-box">
+				   <uv-search
+					   :placeholder="searchPlaceholder"
+					   v-model="keyword"
+					   :showAction="true"
+					   actionText="取消"
+					   :animation="true"
+					   shape="square"
+					   @focus="onFocus"
+					   @clear="onClear"
+					   @search="onSearch"
+					   @custom="onCancel"
+					   @change="onInput"
+					   @blur="onBlur"
+				   ></uv-search>
+			   </view>
+		   </uv-sticky>
 
 		<!-- 搜索面板 (历史记录和热门搜索) -->
 		<view class="search-panel" v-if="searchStore.showSearchPanel">
@@ -59,11 +61,13 @@
 
 <script setup>
 import { useSearchStore } from "@/stores";
+import uvSticky from '@/uni_modules/uv-sticky/components/uv-sticky/uv-sticky.vue';
 import { computed, onMounted, ref, watch } from "vue";
 
 // 定义组件名称
 defineOptions({
 	name: "SearchComponent",
+	components: { uvSticky }
 });
 
 // 定义事件
@@ -244,9 +248,18 @@ const clearHistory = () => {
 </script>
 
 <style lang="scss">
+
 .search-container {
 	.search-box {
+		margin-top: 0;
 		margin-bottom: 10px;
+		max-width: 700px; /* Match main content max width, adjust as needed */
+		margin-left: auto;
+		margin-right: auto;
+		width: 100%;
+		box-sizing: border-box;
+		padding-left: 16px;
+		padding-right: 16px;
 	}
 
 	.search-panel {

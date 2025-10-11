@@ -1,51 +1,51 @@
 <template>
-	<scroll-view
-		class="container-scroll"
-		scroll-y
-		refresher-enabled
-		:refresher-threshold="80"
-		refresher-default-style="none"
-		:refresher-triggered="isRefreshing"
-		@refresherrefresh="onRefresh"
-		@refresherrestore="onRefreshRestore"
-		@refresherpulling="onRefresherPulling"
-		@refresherabort="onRefresherAbort"
-	>
-		<!-- 自定义下拉刷新内容 -->
-		<view slot="refresher" class="custom-refresher">
-			<view v-if="!isRefreshing" class="pull-tips">
-				<uv-icon
-					name="arrow-down"
-					size="20"
-					color="#999"
-					:class="{ 'icon-rotate': isPulling }"
-				/>
-				<text v-if="!isPulling" class="tip-text">下拉刷新数据</text>
-				<text v-else class="tip-text tip-release">松手立即刷新</text>
-			</view>
-			<view v-else class="refreshing-tips">
-				<uv-icon name="loading" size="20" color="#007aff" />
-				<text class="tip-text refreshing">正在刷新...</text>
-			</view>
-		</view>
-		<view class="container">
-			<!-- 搜索组件 -->
-			<SearchComponent from="index" />
+	   <!-- 搜索组件吸顶，放在scroll-view外部 -->
+	   <SearchComponent from="index" />
 
-			<!-- 轮播图组件 -->
-			<CarouselComponent v-if="!searchStore.showSearchPanel" />
+	   <scroll-view
+		   class="container-scroll"
+		   scroll-y
+		   refresher-enabled
+		   :refresher-threshold="80"
+		   refresher-default-style="none"
+		   :refresher-triggered="isRefreshing"
+		   @refresherrefresh="onRefresh"
+		   @refresherrestore="onRefreshRestore"
+		   @refresherpulling="onRefresherPulling"
+		   @refresherabort="onRefresherAbort"
+	   >
+		   <!-- 自定义下拉刷新内容 -->
+		   <view slot="refresher" class="custom-refresher">
+			   <view v-if="!isRefreshing" class="pull-tips">
+				   <uv-icon
+					   name="arrow-down"
+					   size="20"
+					   color="#999"
+					   :class="{ 'icon-rotate': isPulling }"
+				   />
+				   <text v-if="!isPulling" class="tip-text">下拉刷新数据</text>
+				   <text v-else class="tip-text tip-release">松手立即刷新</text>
+			   </view>
+			   <view v-else class="refreshing-tips">
+				   <uv-icon name="loading" size="20" color="#007aff" />
+				   <text class="tip-text refreshing">正在刷新...</text>
+			   </view>
+		   </view>
+		   <view class="container main-content-with-search">
+			   <!-- 轮播图组件 -->
+			   <CarouselComponent v-if="!searchStore.showSearchPanel" />
 
-			<!-- 品牌组件 -->
-			<BrandsComponent v-if="!searchStore.showSearchPanel" />
+			   <!-- 品牌组件 -->
+			   <BrandsComponent v-if="!searchStore.showSearchPanel" />
 
-			<!-- 底部标签栏组件 -->
+			   <!-- 底部标签栏组件 -->
 
-		<!-- 客服按钮 -->
-        <!-- <view class="container">
-            <button @click="openCustomerService">联系客服</button>
-        </view> -->
-        </view>
-	</scroll-view>
+			   <!-- 客服按钮 -->
+			   <!-- <view class="container">
+				   <button @click="openCustomerService">联系客服</button>
+			   </view> -->
+		   </view>
+	   </scroll-view>
 
     <!-- 悬浮按钮 - 简化测试版本 -->
     <view class="simple-floating-button" @click="handleFloatingButtonClick">
@@ -227,6 +227,7 @@ onHide(() => {
 </script>
 
 <style lang="scss">
+
 .container-scroll {
 	height: calc(100vh - env(safe-area-inset-top));
 	width: 100%;
@@ -234,8 +235,10 @@ onHide(() => {
 	margin-top: env(safe-area-inset-top);
 }
 
-.container {
+// 让内容区顶部为搜索框预留空间，避免被遮挡
+.main-content-with-search {
 	padding: 20px;
+	padding-top: 0;
 	padding-bottom: calc(20px + env(safe-area-inset-bottom) + 50px); /* 为tabbar预留空间 */
 	min-height: calc(100vh - 50px - env(safe-area-inset-bottom)); /* 减去tabbar和安全区域高度 */
 	background-color: #f8f8f8;
