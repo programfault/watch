@@ -45,7 +45,7 @@
 					:disabled="!isAgreed"
 				>
 					<uv-icon name="weixin-circle-fill" size="20" color="#fff"></uv-icon>
-					<text class="btn-text">微信一键登录</text>
+					<text class="btn-text">快捷登录</text>
 				</button>
 
 				<!-- 手机号已绑定提示 -->

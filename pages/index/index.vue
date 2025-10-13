@@ -356,15 +356,15 @@ const onBrandClick = async (brand) => {
 		const waitForComponent = async (retries = 5) => {
 			for (let i = 0; i < retries; i++) {
 				await new Promise(resolve => setTimeout(resolve, 100 * (i + 1))) // 递增等待时间
-				
+
 				console.log(`检查 productListRef (第${i + 1}次):`, !!productListRef.value)
-				
+
 				if (productListRef.value) {
 					console.log('组件已加载，调用 ProductListComponent.searchByBrand')
 					try {
 						await productListRef.value.searchByBrand(brand.id, brand)
 						console.log('品牌筛选完成')
-						
+
 						uni.showToast({
 							title: `已切换到${brand.name_cn}`,
 							icon: 'success',
@@ -381,7 +381,7 @@ const onBrandClick = async (brand) => {
 					}
 				}
 			}
-			
+
 			console.error('多次重试后 productListRef 仍然不存在')
 			uni.showToast({
 				title: '组件加载失败，请重试',
@@ -389,7 +389,7 @@ const onBrandClick = async (brand) => {
 			})
 			return false
 		}
-		
+
 		await waitForComponent()
 	} catch (error) {
 		console.error('品牌点击处理失败:', error)
