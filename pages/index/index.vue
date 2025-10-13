@@ -155,6 +155,9 @@ const initData = async () => {
 			await configStore.fetchConfig()
 		}
 
+		// 初始化搜索历史
+		searchStore.init()
+
 		if (userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.status === 1) {
             tabBarStore.setUserType('admin')
 		} else if (userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.status === 0) {
