@@ -11,8 +11,10 @@
         @close="onFilterClose"
     />
 
-    <view v-if="currentBrand" class="brand-info">
-        <text class="brand-name">{{ currentBrand.name_cn }}</text>
+    <!-- 品牌信息和搜索结果数量 -->
+    <view class="brand-info">
+        <text v-if="currentBrand" class="brand-name">{{ currentBrand.name_cn }}</text>
+        <text v-else class="search-result-title">搜索结果</text>
         <text class="total-count">共 {{ pagination.total || 0 }} 款手表</text>
     </view>
 
@@ -228,6 +230,12 @@ defineExpose({
     box-sizing: border-box;
 
     .brand-name {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .search-result-title {
         font-size: 18px;
         font-weight: bold;
         color: #333;

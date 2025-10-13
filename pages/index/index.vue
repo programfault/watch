@@ -234,6 +234,8 @@ const onSearch = async (value) => {
 	const productStore = useProductStore()
 	productStore.watchesList = []
 	productStore.watchesLoading = true
+	// 清空当前品牌信息，因为搜索不应该显示品牌筛选信息
+	productStore.currentBrand = null
 
 	console.log('显示搜索结果页面')
 	// 显示搜索结果
@@ -435,6 +437,8 @@ const leftClick = () => {
 		searchKeyword.value = ''
 		searchStore.setKeyword('')
 		searchStore.hidePanel()
+		// 回到主页时清空品牌信息
+		productStore.currentBrand = null
 
 		uni.showToast({
 			title: '已返回首页',
