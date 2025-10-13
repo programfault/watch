@@ -251,15 +251,12 @@ defineExpose({
         .watch-item-single {
             display: flex;
             background-color: #fff;
-            border-radius: 8px;
             padding: 15px;
             margin-bottom: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
             .watch-image {
                 width: 80px;
                 height: 80px;
-                border-radius: 6px;
                 margin-right: 15px;
             }
 
@@ -300,14 +297,11 @@ defineExpose({
 
         .watch-item-grid {
             background-color: #fff;
-            border-radius: 8px;
             padding: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
             .watch-image-grid {
                 width: 100%;
                 height: 120px;
-                border-radius: 6px;
                 margin-bottom: 8px;
             }
 
