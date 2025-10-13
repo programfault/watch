@@ -1,44 +1,14 @@
 <template>
-	   <!-- 搜索组件吸顶，放在scroll-view外部 -->
-	   <SearchComponent from="index" />
+	<!-- 搜索组件吸顶 -->
+	<SearchComponent from="index" />
 
-	   <scroll-view
-		   class="container-scroll"
-		   scroll-y
-		   refresher-enabled
-		   :refresher-threshold="80"
-		   refresher-default-style="none"
-		   :refresher-triggered="isRefreshing"
-		   @refresherrefresh="onRefresh"
-		   @refresherrestore="onRefreshRestore"
-		   @refresherpulling="onRefresherPulling"
-		   @refresherabort="onRefresherAbort"
-	   >
-		   <!-- 自定义下拉刷新内容 -->
-		   <view slot="refresher" class="custom-refresher">
-			   <view v-if="!isRefreshing" class="pull-tips">
-				   <uv-icon
-					   name="arrow-down"
-					   size="20"
-					   color="#999"
-					   :class="{ 'icon-rotate': isPulling }"
-				   />
-				   <text v-if="!isPulling" class="tip-text">下拉刷新数据</text>
-				   <text v-else class="tip-text tip-release">松手立即刷新</text>
-			   </view>
-			   <view v-else class="refreshing-tips">
-				   <uv-icon name="loading" size="20" color="#007aff" />
-				   <text class="tip-text refreshing">正在刷新...</text>
-			   </view>
-		   </view>
-		   <view class="container main-content-with-search">
-			   <!-- 轮播图组件 -->
-			   <CarouselComponent v-if="!searchStore.showSearchPanel" />
-			   <!-- 品牌组件 -->
-			   <BrandsComponent v-if="!searchStore.showSearchPanel" />
-			   <!-- 底部标签栏组件 -->
-		   </view>
-	   </scroll-view>
+	<!-- 主容器 -->
+	<view class="container">
+		<!-- 轮播图组件 -->
+		<CarouselComponent v-if="!searchStore.showSearchPanel" />
+		<!-- 品牌组件 -->
+		<BrandsComponent v-if="!searchStore.showSearchPanel" />
+	</view>
 
     <!-- 悬浮按钮 - 简化测试版本 -->
     <view class="simple-floating-button" @click="handleFloatingButtonClick">
@@ -78,10 +48,8 @@ const configStore = useConfigStore()
 const userStore = useUserStore()
 const tabBarStore = useTabBarStore()
 
-// 下拉刷新相关
+// 下拉刷新状态
 const isRefreshing = ref(false)
-const pullDistance = ref(0)
-const isPulling = ref(false)
 
 // 初始化数据的方法
 const initData = async () => {
@@ -107,64 +75,28 @@ const initData = async () => {
 	}
 }
 
-// 下拉刷新处理
-const onRefresh = async () => {
+// 下拉刷新处理函数
+const handleRefresh = async () => {
+	if (isRefreshing.value) return
+
 	isRefreshing.value = true
 	try {
 		await initData()
 
 		uni.showToast({
 			title: '刷新成功',
-			icon: 'success'
+			icon: 'success',
+			duration: 1000
 		})
 	} catch (error) {
+		console.error('刷新失败:', error)
 		uni.showToast({
-			title: '刷新失败',
+			title: '刷新失败，请重试',
 			icon: 'none'
 		})
 	} finally {
-		setTimeout(() => {
-			isRefreshing.value = false
-		}, 500)
-	}
-}
-
-// 刷新状态恢复
-const onRefreshRestore = () => {
-	console.log('🔄 刷新状态恢复')
-	isRefreshing.value = false
-	pullDistance.value = 0
-	isPulling.value = false
-}
-
-// 刷新中止事件
-const onRefresherAbort = () => {
-	console.log('❌ 刷新中止')
-	isRefreshing.value = false
-	pullDistance.value = 0
-	isPulling.value = false
-}
-
-// 下拉距离监听
-const onRefresherPulling = (e) => {
-	console.log('🖼️ 下拉事件:', e)
-	console.log('🖼️ e.detail:', e.detail)
-
-	// 设置正在下拉状态
-	isPulling.value = true
-
-	// 尝试多种可能的参数格式
-	const distance = e.detail?.deltaY || e.detail?.dy || e.detail?.distance || e.deltaY || 0
-	console.log('🖼️ 解析到的距离:', distance)
-
-	pullDistance.value = distance
-
-	// 如果获取不到距离，使用简单的状态切换
-	if (distance === 0) {
-		// 延迟一点切换状态，模拟达到阈值
-		setTimeout(() => {
-			isPulling.value = true
-		}, 300)
+		isRefreshing.value = false
+		uni.stopPullDownRefresh()
 	}
 }
 
@@ -189,26 +121,15 @@ onLoad(async () => {
 	await initData()
 })
 
-// 页面下拉刷新
-onPullDownRefresh(async () => {
-	try {
-		await initData()
-		uni.showToast({
-			title: '刷新成功',
-			icon: 'success'
-		})
-	} catch (error) {
-		uni.showToast({
-			title: '刷新失败',
-			icon: 'none'
-		})
-	} finally {
-		uni.stopPullDownRefresh()
-	}
+// 下拉刷新生命周期
+onPullDownRefresh(() => {
+	handleRefresh()
 })
 
 onShow(() => {
-    searchStore.setKeyword('');
+    searchStore.setKeyword('')
+	// 设置当前页面的tabBar状态
+	tabBarStore.setActiveTab('index')
 	// 隐藏tab切换loading
 	hideTabSwitchLoading()
 })
@@ -221,60 +142,14 @@ onHide(() => {
 
 <style lang="scss">
 
-.container-scroll {
-	height: calc(100vh - env(safe-area-inset-top));
-	width: 100%;
-	box-sizing: border-box;
-	margin-top: env(safe-area-inset-top);
-}
-
-// 让内容区顶部为搜索框预留空间，避免被遮挡
-.main-content-with-search {
+.container {
+	height: 100vh;
 	padding: 20px;
-	padding-top: 0;
-	padding-bottom: calc(20px + env(safe-area-inset-bottom) + 50px); /* 为tabbar预留空间 */
-	min-height: calc(100vh - 50px - env(safe-area-inset-bottom)); /* 减去tabbar和安全区域高度 */
+	padding-top: calc(20px + env(safe-area-inset-top));
+	padding-bottom: calc(20px + 50px + env(safe-area-inset-bottom)); /* 为tabbar预留空间 */
 	background-color: #f8f8f8;
-	position: relative;
 	box-sizing: border-box;
-}
-
-// 自定义下拉刷新样式
-.custom-refresher {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 80px;
-	width: 100%;
-	position: relative;
-
-	.pull-tips, .refreshing-tips {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 8px;
-
-		.tip-text {
-			font-size: 14px;
-			color: #999;
-			transition: color 0.3s ease;
-
-			&.tip-release {
-				color: #007aff;
-				font-weight: 600;
-			}
-
-			&.refreshing {
-				color: #007aff;
-				font-weight: 500;
-			}
-		}
-
-		.icon-rotate {
-			transform: rotate(180deg);
-			transition: transform 0.3s ease;
-		}
-	}
+	overflow-y: auto;
 }
 
 // 客服悬浮按钮样式
