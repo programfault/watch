@@ -1,9 +1,26 @@
 <template>
-	<!-- 搜索组件吸顶 -->
-	<SearchComponent from="index" />
+	<!-- 搜索框吸顶 -->
+	<uv-sticky :offset-top="0">
+		<view class="search-box">
+			<uv-search
+				placeholder="搜索品牌、手表、服务..."
+				v-model="searchKeyword"
+				:showAction="true"
+				actionText="搜索"
+				:animation="true"
+				shape="square"
+				bgColor="#ffffff"
+				@focus="onSearchFocus"
+				@clear="onSearchClear"
+				@search="onSearch"
+				@custom="onSearchAction"
+				@change="onSearchInput"
+			></uv-search>
+		</view>
+	</uv-sticky>
 
 	<!-- 主容器 -->
-	<view class="container" v-if="!searchStore.showSearchPanel">
+	<view class="container">
 		<!-- 轮播图组件 -->
 		<CarouselComponent/>
 		<!-- 品牌组件 -->
@@ -11,7 +28,7 @@
 	</view>
 
     <!-- 悬浮按钮 - 简化测试版本 -->
-    <view class="simple-floating-button" @click="handleFloatingButtonClick"  v-if="!searchStore.showSearchPanel">
+    <view class="simple-floating-button" @click="handleFloatingButtonClick">
       <uv-icon
         name="server-man"
         size="28"
@@ -29,11 +46,11 @@ import BrandsComponent from '@/components/BrandsComponent.vue'
 import CarouselComponent from '@/components/CarouselComponent.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import GlobalLoading from '@/components/GlobalLoading.vue'
-import SearchComponent from '@/components/SearchComponent.vue'
 import { useAppStore, useConfigStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
 import { quickContactCustomerService } from '@/utils/customerServiceUtils.js'
 import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
 import { onHide, onLoad, onShow } from '@dcloudio/uni-app'
+import { ref } from 'vue'
 
 // 定义组件名称
 defineOptions({
@@ -46,6 +63,9 @@ const appStore = useAppStore()
 const configStore = useConfigStore()
 const userStore = useUserStore()
 const tabBarStore = useTabBarStore()
+
+// 搜索相关响应式数据
+const searchKeyword = ref('')
 
 // 初始化数据的方法
 const initData = async () => {
@@ -87,6 +107,44 @@ const switchRole = (role) => {
 	})
 }
 
+// 搜索相关方法
+const onSearchFocus = () => {
+	console.log('搜索框获得焦点')
+}
+
+const onSearchClear = () => {
+	searchKeyword.value = ''
+	searchStore.clearResults()
+}
+
+const onSearch = (value) => {
+	const keyword = value || searchKeyword.value
+	if (!keyword || !keyword.trim()) {
+		uni.showToast({
+			title: '请输入搜索关键词',
+			icon: 'none'
+		})
+		return
+	}
+
+	// 添加到搜索历史
+	searchStore.addToHistory(keyword)
+
+	// 跳转到产品列表页面
+	uni.navigateTo({
+		url: `/pages/product/list?keyword=${encodeURIComponent(keyword)}`
+	})
+}
+
+const onSearchAction = () => {
+	onSearch(searchKeyword.value)
+}
+
+const onSearchInput = (value) => {
+	searchKeyword.value = value
+	searchStore.setKeyword(value)
+}
+
 // 页面生命周期 - onLoad
 onLoad(async () => {
 	await initData()
@@ -108,14 +166,28 @@ onHide(() => {
 
 <style lang="scss">
 
+// 搜索框样式
+.search-box {
+	margin-top: 0;
+	margin-bottom: 10px;
+	max-width: 700px;
+	margin-left: auto;
+	margin-right: auto;
+	width: 100%;
+	box-sizing: border-box;
+	padding-left: 16px;
+	padding-right: 16px;
+	background-color: #f8f8f8;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
 .container {
-	height: 100vh;
+	min-height: 100vh;
 	padding: 20px;
-	padding-top: calc(20px + env(safe-area-inset-top));
 	padding-bottom: calc(20px + 50px + env(safe-area-inset-bottom)); /* 为tabbar预留空间 */
 	background-color: #f8f8f8;
 	box-sizing: border-box;
-	overflow-y: auto;
 }
 
 // 客服悬浮按钮样式
