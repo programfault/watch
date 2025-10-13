@@ -102,13 +102,19 @@
 	</view>
 
     <!-- 悬浮按钮 - 简化测试版本 -->
-    <view class="simple-floating-button" @click="handleFloatingButtonClick">
-      <uv-icon
-        name="server-man"
-        size="28"
-        color="#fff"
-      />
-    </view>
+		   <view class="simple-floating-button">
+			   <button
+				   open-type="contact"
+				   session-from="weapp"
+				   class="custom-service-btn"
+			   >
+				   <uv-icon
+					   name="server-man"
+					   size="28"
+					   color="#fff"
+				   />
+			   </button>
+		   </view>
 
     <CustomTabBar />
 	<!-- 全局Loading组件 -->
@@ -122,7 +128,6 @@ import CustomTabBar from '@/components/CustomTabBar.vue'
 import GlobalLoading from '@/components/GlobalLoading.vue'
 import ProductListComponent from '@/components/ProductListComponent.vue'
 import { useAppStore, useConfigStore, useProductStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
-import { quickContactCustomerService } from '@/utils/customerServiceUtils.js'
 import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
 import { onHide, onLoad, onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
@@ -170,17 +175,9 @@ const initData = async () => {
 		uni.showToast({
 			title: '数据加载失败',
 			icon: 'none'
-		})
+		});
 	}
 }
-
-// 悬浮按钮点击处理
-const handleFloatingButtonClick = () => {
-	console.log('客服悬浮按钮被点击')
-	// 调用公共客服工具函数
-	quickContactCustomerService()
-}
-
 // 角色切换方法
 const switchRole = (role) => {
 	tabBarStore.setUserType(role)
@@ -356,43 +353,44 @@ const onBrandClick = async (brand) => {
 		showSearchResults.value = true
 
 		// 等待组件挂载然后调用品牌筛选方法
-		await new Promise(resolve => setTimeout(resolve, 100))
-
-		console.log('检查 productListRef:', !!productListRef.value)
-		if (productListRef.value) {
-			console.log('调用 ProductListComponent.searchByBrand')
-			try {
-				// 调用 ProductListComponent 的品牌筛选方法
-				await productListRef.value.searchByBrand(brand.id, brand)
-				console.log('品牌筛选完成')
-
-				uni.showToast({
-					title: `已切换到${brand.name_cn}`,
-					icon: 'success',
-					duration: 1500
-				})
-			} catch (error) {
-				console.error('品牌筛选调用失败:', error)
-				uni.showToast({
-					title: '品牌数据加载失败',
-					icon: 'none'
-				})
+		const waitForComponent = async (retries = 5) => {
+			for (let i = 0; i < retries; i++) {
+				await new Promise(resolve => setTimeout(resolve, 100 * (i + 1))) // 递增等待时间
+				
+				console.log(`检查 productListRef (第${i + 1}次):`, !!productListRef.value)
+				
+				if (productListRef.value) {
+					console.log('组件已加载，调用 ProductListComponent.searchByBrand')
+					try {
+						await productListRef.value.searchByBrand(brand.id, brand)
+						console.log('品牌筛选完成')
+						
+						uni.showToast({
+							title: `已切换到${brand.name_cn}`,
+							icon: 'success',
+							duration: 1500
+						})
+						return true
+					} catch (error) {
+						console.error('品牌筛选调用失败:', error)
+						uni.showToast({
+							title: '品牌数据加载失败',
+							icon: 'none'
+						})
+						return false
+					}
+				}
 			}
-		} else {
-			console.error('productListRef 不存在，使用重试机制')
-			// 使用重试机制
-			await new Promise(resolve => setTimeout(resolve, 200))
-			if (productListRef.value) {
-				console.log('重试成功，调用品牌筛选方法')
-				await productListRef.value.searchByBrand(brand.id, brand)
-			} else {
-				console.error('重试后 productListRef 仍然不存在')
-				uni.showToast({
-					title: '组件加载失败，请重试',
-					icon: 'none'
-				})
-			}
+			
+			console.error('多次重试后 productListRef 仍然不存在')
+			uni.showToast({
+				title: '组件加载失败，请重试',
+				icon: 'none'
+			})
+			return false
 		}
+		
+		await waitForComponent()
 	} catch (error) {
 		console.error('品牌点击处理失败:', error)
 		uni.showToast({
@@ -596,5 +594,28 @@ const leftClick = () => {
 		transform: scale(0.95);
 		box-shadow: 0 4rpx 15rpx rgba(232, 90, 79, 0.4);
 	}
+}
+
+.custom-service-btn {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  -webkit-tap-highlight-color: transparent;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0;
+  font-size: 0;
+  line-height: 0;
+  text-align: center;
+}
+
+.custom-service-btn::after {
+  border: none !important;
 }
 </style>

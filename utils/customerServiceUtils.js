@@ -8,6 +8,12 @@ import { useConfigStore } from '@/stores'
  * @param {Object} options 配置选项
  * @param {string} options.customerServiceId 客服ID，默认从配置获取
  * @param {string} options.url 客服聊天URL，默认从配置获取
+ * @param {Object} options.extInfo 额外信息，可传递给客服
+ * @param {boolean} options.showMessageCard 是否显示会话内消息卡片
+ * @param {string} options.sendMessageTitle 会话内消息卡片标题
+ * @param {string} options.sendMessagePath 会话内消息卡片跳转路径
+ * @param {string} options.sendMessageImg 会话内消息卡片图片
+ * @param {Object} options.userInfo 用户信息（可传递给客服）
  * @param {Function} options.onSuccess 成功回调
  * @param {Function} options.onFail 失败回调
  */
@@ -17,18 +23,49 @@ export const openCustomerService = (options = {}) => {
   const {
     customerServiceId = configStore.customerServiceId,
     url = configStore.customerServiceUrl,
+    extInfo = {},
+    showMessageCard = false,
+    sendMessageTitle,
+    sendMessagePath,
+    sendMessageImg,
+    userInfo,
     onSuccess,
     onFail
   } = options
-    console.log("=======================")
-    console.log(customerServiceId)
-    console.log(url)
-    console.log("=======================")
-  uni.openCustomerServiceChat({
-    extInfo: {
-      url: url
-    },
+
+  console.log("=======================")
+  console.log('客服ID:', customerServiceId)
+  console.log('URL:', url)
+  console.log('传递给客服的信息:', { extInfo, userInfo, showMessageCard })
+  console.log("=======================")
+
+  // 构建传递给客服的额外信息
+  const customerServiceExtInfo = {
+    url: url,
+    ...extInfo
+  }
+
+  // 如果有用户信息，添加到extInfo中
+  if (userInfo) {
+    customerServiceExtInfo.userInfo = userInfo
+  }
+
+  // 构建API参数
+  const apiParams = {
+    extInfo: customerServiceExtInfo,
     corpId: customerServiceId,
+  }
+
+  // 如果需要显示消息卡片，添加相关参数
+  if (showMessageCard) {
+    apiParams.showMessageCard = true
+    if (sendMessageTitle) apiParams.sendMessageTitle = sendMessageTitle
+    if (sendMessagePath) apiParams.sendMessagePath = sendMessagePath
+    if (sendMessageImg) apiParams.sendMessageImg = sendMessageImg
+  }
+
+  uni.openCustomerServiceChat({
+    ...apiParams,
     success: (res) => {
       console.log('客服聊天打开成功:', res)
       if (onSuccess && typeof onSuccess === 'function') {
@@ -84,6 +121,17 @@ export const showCustomerServiceInfo = (customerServiceId) => {
 /**
  * 快速联系客服（带图标按钮点击处理）
  * @param {Object} options 配置选项
+ * @param {Object} options.userInfo 用户信息（会传递给客服）
+ * @param {Object} options.extInfo 额外信息（会传递给客服）
+ * @param {string} options.sendMessageTitle 消息卡片标题
+ * @param {boolean} options.showMessageCard 是否显示消息卡片
+ * @example
+ * // 传递用户信息给客服
+ * quickContactCustomerService({
+ *   userInfo: { userId: '123', userName: '张三', phone: '138xxxx' },
+ *   extInfo: { fromPage: 'productDetail', productId: 'P001' },
+ *   sendMessageTitle: '用户咨询产品详情'
+ * })
  */
 export const quickContactCustomerService = (options = {}) => {
   // 先尝试打开客服聊天

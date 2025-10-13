@@ -83,11 +83,12 @@
             <!-- 底部操作栏 -->
             <view class="bottom-actions">
                 <view class="left-actions">
-                    <view class="icon-btn contact-btn" @click="handleContact">
-                        <uv-icon name="server-man" size="26" color="#666"></uv-icon>
+                    <view class="icon-btn contact-btn contact-wrapper">
+                        <button class="invisible-contact-btn" open-type="contact" session-from="weapp"></button>
+                        <uv-icon name="server-man" size="26" color="#e85a4f"></uv-icon>
                         <text>客服</text>
                     </view>
-                    <view class="icon-btn favorite-btn" :class="{ 'favorited': isFavorited }" @click="handleFavorite">
+                    <view class="icon-btn favorite-btn favorite-wrapper" :class="{ 'favorited': isFavorited }" @click="handleFavorite">
                         <uv-icon name="heart" size="26" :color="isFavorited ? '#ff4d4f' : '#666'"></uv-icon>
                         <text>{{ isFavorited ? '已收藏' : '收藏' }}</text>
                     </view>
@@ -125,8 +126,6 @@ import {
     openMapNavigation,
     requestLocationPermission
 } from '@/utils/locationUtils.js'
-// 导入客服工具函数
-import { quickContactCustomerService } from '@/utils/customerServiceUtils.js'
 
 const productStore = useProductStore()
 const favoritesStore = useFavoritesStore()
@@ -180,18 +179,6 @@ const loadWatchDetail = async () => {
             icon: 'none'
         })
     }
-}
-
-// 联系客服
-const handleContact = () => {
-    quickContactCustomerService({
-        onSuccess: (result) => {
-            console.log('客服聊天打开成功:', result)
-        },
-        onFail: (error) => {
-            console.log('客服聊天打开失败:', error)
-        }
-    })
 }
 
 // 收藏功能
