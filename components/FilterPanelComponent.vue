@@ -247,13 +247,20 @@ const buildFilterParams = () => {
 
 	return params;
 };
+
+// 暴露给父组件的方法
+defineExpose({
+	show: openPanel,
+	open: openPanel,
+	close: closePanel
+});
 </script>
 
 <style lang="scss" scoped>
 .filter-panel {
 	background-color: #fff;
 	border-radius: 20rpx 20rpx 0 0;
-	max-height: 80vh;
+	max-height: 75vh;
 	display: flex;
 	flex-direction: column;
 }
@@ -292,7 +299,9 @@ const buildFilterParams = () => {
 .filter-content {
 	flex: 1;
 	padding: 0 30rpx;
-	max-height: 60vh;
+	overflow-y: auto;
+	/* 确保内容区域不会挤压底部按钮 */
+	min-height: 0;
 }
 
 .filter-section {
@@ -368,7 +377,12 @@ const buildFilterParams = () => {
 
 .filter-footer {
 	padding: 30rpx;
+	/* 调整底部间距，避免被TabBar遮挡但不要太高 */
+	padding-bottom: calc(30rpx + env(safe-area-inset-bottom) + 80rpx);
 	border-top: 1rpx solid #eee;
+	/* 确保底部按钮固定显示，不被内容挤压 */
+	flex-shrink: 0;
+	background-color: #fff;
 
 	.confirm-btn {
 		width: 100%;

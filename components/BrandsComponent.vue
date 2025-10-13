@@ -50,6 +50,9 @@ defineOptions({
   name: 'BrandsComponent'
 });
 
+// 定义emits
+const emit = defineEmits(['brandClick']);
+
 // 定义props
 const props = defineProps({
   // 是否显示标题
@@ -104,24 +107,8 @@ const onBrandClick = (brand) => {
   console.log('品牌中文名:', brand.name_cn);
   console.log('品牌英文名:', brand.name_en);
 
-  // 构建跳转URL，只传递品牌ID
-  const url = `/pages/product/list?id=${brand.id}`;
-  console.log('跳转URL:', url);
-
-  // 跳转到产品列表页面，传递品牌信息
-  uni.navigateTo({
-    url: url,
-    success: (res) => {
-      console.log('页面跳转成功:', res);
-    },
-    fail: (err) => {
-      console.error('页面跳转失败:', err);
-      uni.showToast({
-        title: '页面跳转失败',
-        icon: 'none'
-      });
-    }
-  });
+  // 发出事件给父组件，让父组件处理品牌点击
+  emit('brandClick', brand);
 };
 </script>
 

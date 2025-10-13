@@ -201,6 +201,10 @@ export const useProductStore = defineStore('product', {
       if (!isLoadMore) {
         this.watchesLoading = true
         this.watchesList = []
+        // 设置搜索关键词，用于后续的加载更多
+        if (filters.keyword) {
+          this.searchKeyword = filters.keyword
+        }
       }
 
       try {
@@ -459,6 +463,34 @@ export const useProductStore = defineStore('product', {
       this.clearSearchResults()
     },
 
+    // 加载更多手表（分页加载）
+    async loadMoreWatches() {
+      console.log('开始加载更多手表数据')
+
+      // 检查是否有下一页
+      if (!this.watchesPagination.has_next || this.watchesLoading) {
+        console.log('没有更多数据或正在加载中')
+        return
+      }
+
+      try {
+        // 如果有搜索关键词，使用搜索方法
+        if (this.searchKeyword) {
+          console.log('使用搜索方法加载更多:', this.searchKeyword)
+          await this.searchWatches({ keyword: this.searchKeyword }, true)
+        } else {
+          // 否则使用普通获取方法
+          console.log('使用普通方法加载更多')
+          await this.fetchWatches({}, true)
+        }
+
+        console.log('加载更多完成，当前总数:', this.watchesList.length)
+      } catch (error) {
+        console.error('加载更多手表失败:', error)
+        throw error
+      }
+    },
+
     // 获取指定手表详情
     getWatchById(watchId) {
       // 考虑ID可能是字符串或数字的情况
@@ -472,6 +504,56 @@ export const useProductStore = defineStore('product', {
     // 设置当前手表详情
     setCurrentWatch(watch) {
       this.currentWatch = watch
+    },
+
+    // 价格排序
+    async sortByPrice(direction) {
+      console.log('开始价格排序:', direction)
+
+      try {
+        // 准备排序参数
+        const sortParams = {
+          sort_by: 'price',
+          sort_order: direction
+        }
+
+        // 合并当前筛选条件和排序参数
+        const requestParams = {
+          ...this.watchesFilters,
+          ...sortParams
+        }
+
+        // 如果有搜索关键词，加入到参数中
+        if (this.searchKeyword) {
+          requestParams.keyword = this.searchKeyword
+        }
+
+        console.log('价格排序请求参数:', requestParams)
+
+        // 检查是否有复杂筛选条件，决定使用哪个API
+        const hasFilterPanelConditions =
+          this.watchesFilters.min_price ||
+          this.watchesFilters.max_price ||
+          this.watchesFilters.attribute_filters ||
+          Object.keys(this.watchesFilters).some(key =>
+            !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)
+          )
+
+        let data
+        if (hasFilterPanelConditions) {
+          // 使用复杂搜索API
+          data = await this.searchWatches(requestParams)
+        } else {
+          // 使用简单查询API
+          data = await this.fetchWatches(requestParams)
+        }
+
+        console.log('价格排序完成，数据量:', this.watchesList.length)
+        return data
+      } catch (error) {
+        console.error('价格排序失败:', error)
+        throw error
+      }
     },
 
     // 获取手表详情
