@@ -2,7 +2,7 @@
 	"pages": [{
 		"path": "pages/index/index",
 		"style": {
-			"navigationBarTitleText": "首页",
+			"navigationStyle": "custom",
 			"enablePullDownRefresh": false,
 			"backgroundTextStyle": "dark"
 		}
