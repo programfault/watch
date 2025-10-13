@@ -27,7 +27,38 @@
 	</uv-sticky>
 
 	<!-- 搜索面板 -->
-	<view class="search-panel" v-if="searchStore.showSearchPanel">
+	<view class="search-panel" v-if="searchStore.showSearchPanel && !showSearchResults">
+		<!-- 搜索历史 -->
+		<view class="search-history">
+			<view class="history-header">
+				<text class="history-title">搜索历史</text>
+				<text
+					class="clear-btn"
+					v-if="searchStore.validSearchHistory.length > 0"
+					@click="clearHistory"
+				>清空</text>
+			</view>
+			<view
+				class="history-list"
+				v-if="searchStore.validSearchHistory.length > 0"
+			>
+				<view
+					class="history-item"
+					v-for="(item, index) in searchStore.validSearchHistory"
+					:key="index"
+					@click="selectHistory(item)"
+				>
+					<text class="history-text">{{ item }}</text>
+				</view>
+			</view>
+			<view class="empty-history" v-else>
+				<text class="empty-text">暂无搜索历史</text>
+			</view>
+		</view>
+	</view>
+
+	<!-- 搜索结果页面的搜索面板 -->
+	<view class="search-panel" v-if="searchStore.showSearchPanel && showSearchResults">
 		<!-- 搜索历史 -->
 		<view class="search-history">
 			<view class="history-header">
@@ -58,7 +89,7 @@
 	</view>
 
 	<!-- 搜索结果 -->
-	<view class="search-results" v-if="showSearchResults">
+	<view class="search-results" v-if="showSearchResults && !searchStore.showSearchPanel">
 		<ProductListComponent ref="productListRef" :keyword="currentSearchKeyword" />
 	</view>
 
@@ -158,7 +189,15 @@ const switchRole = (role) => {
 
 // 搜索相关方法
 const onSearchFocus = () => {
-	console.log('搜索框被点击，显示搜索面板')
+	console.log('搜索框被点击')
+
+	// 如果当前在搜索结果页面，不要切换到搜索面板，而是清空搜索框让用户重新搜索
+	if (showSearchResults.value) {
+		console.log('当前在搜索结果页面，清空搜索框供用户重新搜索')
+		// 可以选择清空搜索框或者直接显示搜索面板
+		// 这里我们选择显示搜索面板，但保持在搜索模式
+	}
+
 	// 显示搜索面板，实现无感体验
 	searchStore.showPanel()
 }
@@ -189,6 +228,12 @@ const onSearch = async (value) => {
 	console.log('隐藏搜索面板')
 	// 隐藏搜索面板
 	searchStore.hidePanel()
+
+	console.log('清空之前的搜索结果')
+	// 先清空之前的搜索结果，避免显示过期数据
+	const productStore = useProductStore()
+	productStore.watchesList = []
+	productStore.watchesLoading = true
 
 	console.log('显示搜索结果页面')
 	// 显示搜索结果
@@ -238,11 +283,25 @@ const onSearchInput = (value) => {
 // 取消搜索
 const onSearchCancel = () => {
 	console.log('取消搜索，隐藏搜索面板')
+
+	// 清空搜索框输入
 	searchKeyword.value = ''
 	searchStore.setKeyword('')
+
+	// 隐藏搜索面板
 	searchStore.hidePanel()
-	showSearchResults.value = false
-	currentSearchKeyword.value = ''
+
+	// 如果当前有搜索结果，保持在搜索结果页面，否则回到首页
+	if (showSearchResults.value) {
+		console.log('保持在搜索结果页面')
+		// 保持 showSearchResults.value = true 和 currentSearchKeyword.value 不变
+		// 只隐藏搜索面板，让用户回到搜索结果查看
+	} else {
+		console.log('回到首页')
+		// 如果本来就在首页，清空所有搜索相关状态
+		showSearchResults.value = false
+		currentSearchKeyword.value = ''
+	}
 }
 
 // 选择历史记录
@@ -279,6 +338,12 @@ const onBrandClick = async (brand) => {
 	}
 
 	try {
+		console.log('清空之前的品牌筛选结果')
+		// 先清空之前的数据，避免显示过期数据
+		const productStore = useProductStore()
+		productStore.watchesList = []
+		productStore.watchesLoading = true
+
 		// 设置当前搜索关键词为品牌名称（用于显示）
 		currentSearchKeyword.value = brand.name_cn || brand.name_en
 
@@ -338,7 +403,18 @@ onLoad(async () => {
 })
 
 onShow(() => {
+    // 重置搜索状态，回到默认首页
     searchStore.setKeyword('')
+    searchStore.hidePanel()
+
+    // 重置页面状态到默认首页
+    searchKeyword.value = ''
+    showSearchResults.value = false
+    currentSearchKeyword.value = ''
+
+    // 清除产品搜索结果
+    productStore.clearSearchResults()
+
 	// 设置当前页面的tabBar状态
 	tabBarStore.setActiveTab('index')
 	// 隐藏tab切换loading
@@ -399,17 +475,16 @@ const leftClick = () => {
 // 搜索框样式
 .search-box {
 	margin-top: 0;
-	margin-bottom: 10px;
-	max-width: 700px;
+	margin-bottom: 5px; /* 减小底部间距 */
+	width: 100%;
 	margin-left: auto;
 	margin-right: auto;
-	width: 100%;
 	box-sizing: border-box;
 	padding-left: 16px;
 	padding-right: 16px;
 	background-color: #f8f8f8;
-	padding-top: 10px;
-	padding-bottom: 10px;
+	padding-top: 8px; /* 减小顶部内边距 */
+	padding-bottom: 8px; /* 减小底部内边距 */
 	/* 确保在模态弹窗时被遮罩覆盖 */
 	position: relative;
 	z-index: 1;
@@ -418,10 +493,10 @@ const leftClick = () => {
 // 搜索面板样式
 .search-panel {
 	padding: 15px;
-	margin-top: 104px; /* navbar(44) + 搜索框区域(60) 的高度 */
+	margin-top: 96px; /* navbar(44) + 搜索框区域(52) 的高度 */
 	padding-top: 10px;
 	background-color: #f8f8f8;
-	min-height: calc(100vh - 104px - 70px); /* navbar(44) + 搜索框区域(60) + tabbar(70) */
+	min-height: calc(100vh - 96px - 70px); /* navbar(44) + 搜索框区域(52) + tabbar(70) */
 
 	.search-history {
 		margin-bottom: 20px;
@@ -479,16 +554,16 @@ const leftClick = () => {
 // 搜索结果样式
 .search-results {
 	background-color: #f8f8f8;
-	margin-top: 104px; /* navbar(44) + 搜索框区域(60) 的高度 */
-	min-height: calc(100vh - 104px - 70px); /* navbar(44) + 搜索框区域(60) + tabbar(70) */
+	margin-top: 96px; /* navbar(44) + 搜索框区域(52) 的高度 */
+	min-height: calc(100vh - 96px - 70px); /* navbar(44) + 搜索框区域(52) + tabbar(70) */
 	padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* 为tabbar预留空间 */
 }
 
 .container {
-	min-height: calc(100vh - 104px - 70px); /* navbar(44) + 搜索框区域(60) + tabbar(70) */
+	min-height: calc(100vh - 96px - 70px); /* navbar(44) + 搜索框区域(52) + tabbar(70) */
 	padding: 20px;
-	margin-top: 104px; /* navbar(44) + 搜索框区域(60) 的高度 */
-	padding-top: 10px; /* 额外的间距 */
+	margin-top: 96px; /* navbar(44) + 搜索框区域(52) 的高度 */
+	padding-top: 5px; /* 减小顶部间距，让轮播图更靠近搜索框 */
 	padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* 为tabbar预留空间 */
 	background-color: #f8f8f8;
 	box-sizing: border-box;

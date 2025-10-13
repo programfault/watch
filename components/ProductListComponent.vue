@@ -208,16 +208,24 @@ defineExpose({
 <style lang="scss" scoped>
 .product-list-container {
     padding: 0;
+    padding-top: 0; /* 移除顶部间距，让工具栏更贴近搜索框 */
     background-color: #f8f8f8;
+    /* 使用100%宽度，由父容器控制边距 */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .brand-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px;
+    padding: 12px 15px; /* 减小垂直内边距 */
     background-color: #fff;
-    margin-bottom: 10px;
+    margin-bottom: 8px; /* 减小底部间距 */
+    margin-left: 10px; /* 和产品列表保持一致的边距 */
+    margin-right: 10px; /* 和产品列表保持一致的边距 */
+    width: calc(100% - 20px); /* 减去左右边距 */
+    box-sizing: border-box;
 
     .brand-name {
         font-size: 18px;
@@ -233,7 +241,7 @@ defineExpose({
 
 .watches-scroll {
     flex: 1;
-    height: calc(100vh - 104px - 70px - 70px); /* 减去 navbar+搜索框(104) + 工具栏(70) + tabbar(70) */
+    height: calc(100vh - 96px - 70px - 70px); /* 减去 navbar+搜索框(96) + 工具栏(70) + tabbar(70) */
 }
 
 .watches-list {

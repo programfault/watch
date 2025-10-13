@@ -96,7 +96,10 @@ const toggleDisplayMode = () => {
   align-items: center;
   background-color: #fff;
   border-bottom: 1rpx solid #eee;
-    padding: 0 20rpx;
+  padding: 0 20rpx;
+  margin: 0 10px; /* 和产品列表保持一致的边距 */
+  width: calc(100% - 20px); /* 减去左右边距 */
+  box-sizing: border-box;
   .toolbar-left {
     display: flex;
     align-items: center;
