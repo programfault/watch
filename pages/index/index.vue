@@ -3,15 +3,15 @@
 	<SearchComponent from="index" />
 
 	<!-- 主容器 -->
-	<view class="container">
+	<view class="container" v-if="!searchStore.showSearchPanel">
 		<!-- 轮播图组件 -->
-		<CarouselComponent v-if="!searchStore.showSearchPanel" />
+		<CarouselComponent/>
 		<!-- 品牌组件 -->
-		<BrandsComponent v-if="!searchStore.showSearchPanel" />
+		<BrandsComponent />
 	</view>
 
     <!-- 悬浮按钮 - 简化测试版本 -->
-    <view class="simple-floating-button" @click="handleFloatingButtonClick">
+    <view class="simple-floating-button" @click="handleFloatingButtonClick"  v-if="!searchStore.showSearchPanel">
       <uv-icon
         name="server-man"
         size="28"
@@ -33,8 +33,7 @@ import SearchComponent from '@/components/SearchComponent.vue'
 import { useAppStore, useConfigStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
 import { quickContactCustomerService } from '@/utils/customerServiceUtils.js'
 import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
-import { onHide, onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { onHide, onLoad, onShow } from '@dcloudio/uni-app'
 
 // 定义组件名称
 defineOptions({
@@ -47,9 +46,6 @@ const appStore = useAppStore()
 const configStore = useConfigStore()
 const userStore = useUserStore()
 const tabBarStore = useTabBarStore()
-
-// 下拉刷新状态
-const isRefreshing = ref(false)
 
 // 初始化数据的方法
 const initData = async () => {
@@ -75,31 +71,6 @@ const initData = async () => {
 	}
 }
 
-// 下拉刷新处理函数
-const handleRefresh = async () => {
-	if (isRefreshing.value) return
-
-	isRefreshing.value = true
-	try {
-		await initData()
-
-		uni.showToast({
-			title: '刷新成功',
-			icon: 'success',
-			duration: 1000
-		})
-	} catch (error) {
-		console.error('刷新失败:', error)
-		uni.showToast({
-			title: '刷新失败，请重试',
-			icon: 'none'
-		})
-	} finally {
-		isRefreshing.value = false
-		uni.stopPullDownRefresh()
-	}
-}
-
 // 悬浮按钮点击处理
 const handleFloatingButtonClick = () => {
 	console.log('客服悬浮按钮被点击')
@@ -119,11 +90,6 @@ const switchRole = (role) => {
 // 页面生命周期 - onLoad
 onLoad(async () => {
 	await initData()
-})
-
-// 下拉刷新生命周期
-onPullDownRefresh(() => {
-	handleRefresh()
 })
 
 onShow(() => {
