@@ -34,16 +34,9 @@
 		   <view class="container main-content-with-search">
 			   <!-- 轮播图组件 -->
 			   <CarouselComponent v-if="!searchStore.showSearchPanel" />
-
 			   <!-- 品牌组件 -->
 			   <BrandsComponent v-if="!searchStore.showSearchPanel" />
-
 			   <!-- 底部标签栏组件 -->
-
-			   <!-- 客服按钮 -->
-			   <!-- <view class="container">
-				   <button @click="openCustomerService">联系客服</button>
-			   </view> -->
 		   </view>
 	   </scroll-view>
 
