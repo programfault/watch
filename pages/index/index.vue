@@ -527,17 +527,30 @@ onLoad(async () => {
 onShow(() => {
 	console.log('📱 主页 onShow')
 
-    // 重置搜索状态，回到默认首页
-    searchStore.setKeyword('')
-    searchStore.hidePanel()
+    // 检查是否有保存的搜索状态，如果有则保持，否则重置到默认首页
+    const hasActiveSearch = showSearchResults.value || currentSearchKeyword.value
 
-    // 重置页面状态到默认首页
-    searchKeyword.value = ''
-    showSearchResults.value = false
-    currentSearchKeyword.value = ''
+    if (!hasActiveSearch) {
+        console.log('没有活跃搜索状态，重置到默认首页')
+        // 重置搜索状态，回到默认首页
+        searchStore.setKeyword('')
+        searchStore.hidePanel()
 
-    // 清除产品搜索结果
-    productStore.clearSearchResults()
+        // 重置页面状态到默认首页
+        searchKeyword.value = ''
+        showSearchResults.value = false
+        currentSearchKeyword.value = ''
+
+        // 清除产品搜索结果
+        productStore.clearSearchResults()
+    } else {
+        console.log('保持当前搜索状态:', {
+            showSearchResults: showSearchResults.value,
+            currentSearchKeyword: currentSearchKeyword.value
+        })
+        // 保持搜索状态，只重置搜索面板
+        searchStore.hidePanel()
+    }
 
 	// 设置当前页面的tabBar状态
 	tabBarStore.setActiveTab('index')

@@ -57,3 +57,17 @@ export function searchProducts(searchData) {
     showError: true
   })
 }
+
+/**
+ * 记录手表浏览行为
+ * @param {number|string} watchId 手表ID
+ * @returns {Promise}
+ */
+export function recordWatchView(watchId) {
+  return post('/watch/view', {
+    watch_id: watchId
+  }, {
+    showLoading: false,  // 不显示加载状态
+    showError: false     // 不显示错误信息，浏览记录失败不影响用户体验
+  })
+}

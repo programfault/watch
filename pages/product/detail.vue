@@ -112,8 +112,10 @@
 
 <script setup>
 import StoreCard from '@/components/StoreCard.vue'
+import { recordWatchView } from '@/api/product.js'
 import { useFavoritesStore } from '@/stores/favorites.js'
 import { useProductStore } from '@/stores/product.js'
+import { useUserStore } from '@/stores/user.js'
 import { getCurrentTimeToMinute } from '@/utils/timeUtils.js'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
@@ -129,7 +131,9 @@ import {
 
 const productStore = useProductStore()
 const favoritesStore = useFavoritesStore()
+const userStore = useUserStore()
 const { currentWatch, watchDetailLoading } = storeToRefs(productStore)
+const { isLoggedIn } = storeToRefs(userStore)
 
 const watchId = ref(null)
 
@@ -159,18 +163,40 @@ const formatPrice = (price) => {
     })
 }
 
+// 记录用户浏览行为
+const recordUserViewBehavior = async (watchId) => {
+    // 只有登录用户才记录浏览行为
+    if (!isLoggedIn.value || !watchId) {
+        console.log('用户未登录或手表ID无效，跳过浏览记录')
+        return
+    }
+
+    try {
+        console.log(`记录用户浏览行为: watchId=${watchId}`)
+        await recordWatchView(watchId)
+        console.log('浏览记录成功')
+    } catch (error) {
+        // 浏览记录失败不影响用户体验，只在控制台输出日志
+        console.warn('记录浏览行为失败:', error)
+    }
+}
+
 const loadWatchDetail = async () => {
     try {
         await productStore.fetchWatchDetail(watchId.value)
 
-        // 如果加载成功且有产品信息，添加到浏览记录
+        // 如果加载成功且有产品信息，添加到浏览记录和用户行为记录
         if (currentWatch.value && currentWatch.value.id) {
+            // 本地浏览历史记录（原有功能）
             favoritesStore.addToBrowsingHistory({
                 id: currentWatch.value.id,
                 title: currentWatch.value.name_cn || currentWatch.value.name,
                 price: currentWatch.value.price,
                 visitedAt: getCurrentTimeToMinute()
             })
+
+            // 记录用户浏览行为到服务器（新功能）
+            await recordUserViewBehavior(currentWatch.value.id)
         }
     } catch (error) {
         console.error('加载手表详情失败:', error)
