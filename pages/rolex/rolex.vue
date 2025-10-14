@@ -18,14 +18,6 @@
 				<view class="brand-subtitle">劳力士专区</view>
 				<view class="coming-soon">即将为您呈现</view>
 				<view class="description">传奇制表工艺与卓越品质</view>
-
-				<!-- 装饰性进度指示 -->
-				<view class="progress-dots">
-					<view class="dot active"></view>
-					<view class="dot"></view>
-					<view class="dot"></view>
-					<view class="dot"></view>
-				</view>
 			</view>
 		</view>
 

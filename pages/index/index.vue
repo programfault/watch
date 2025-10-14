@@ -207,15 +207,6 @@ const initData = async () => {
 		// 立即初始化不需要网络请求的数据
 		searchStore.init()
 
-		// 设置用户类型
-		if (userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.status === 1) {
-            tabBarStore.setUserType('admin')
-		} else if (userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.status === 0) {
-			tabBarStore.setUserType('normal')
-        } else {
-            tabBarStore.setUserType('anonymous')
-        }
-
 		console.log('🚀 开始并行加载核心数据')
 
 		// 第一阶段：并行加载核心数据（用户立即需要看到的）

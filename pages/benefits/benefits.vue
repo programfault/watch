@@ -289,11 +289,6 @@ const onRefresh = async () => {
     console.log('已登录状态，刷新用户信息')
     // 已登录状态，刷新用户信息（包含优惠券和特权）
     await userStore.fetchUserInfo()
-    if(userStore.userInfo.status === 1){
-      tabBarStore.setUserType('admin')
-    } else {
-      tabBarStore.setUserType('normal')
-    }
     uni.showToast({
       title: '刷新成功',
       icon: 'success'

@@ -65,7 +65,7 @@ export const useUserStore = defineStore("user", {
 	// 配置持久化
 	persist: {
 		key: 'user-store',
-		paths: ['userInfo', 'isLoggedIn', 'tokens', 'settings'],
+		paths: ['userInfo', 'isLoggedIn', 'tokens', 'settings', 'permissions'],
 	},
 
 	getters: {
@@ -81,8 +81,8 @@ export const useUserStore = defineStore("user", {
 
 		// 是否是管理员
 		isAdmin: (state) => {
-            console.log("==============",state.userInfo?.status)
-			return state.userInfo?.status === 0;
+            console.log("🔍 isAdmin 检查 - status:", state.userInfo?.status)
+			return state.userInfo?.status === 1; // status=1 是管理员
 		},
 
 		// 是否有特定权限
@@ -97,14 +97,14 @@ export const useUserStore = defineStore("user", {
 				userInfo: state.userInfo,
 				permissions: state.permissions,
 				userStatus: state.userInfo?.status,
-				isAdmin: state.userInfo?.status === 0,
+				isAdmin: state.userInfo?.status === 1, // status=1 是管理员
 				stack: new Error().stack
 			});
 			const result = (
 				state.isLoggedIn &&
 				(state.permissions.includes("customer_management") ||
-					state.userInfo?.status === 0 || // 假设 role_id = 1 是管理员
-					state.isAdmin)
+					state.userInfo?.status === 1 || // status=1 是管理员
+					state.userInfo?.status === 1) // 确保管理员有权限
 			);
 			console.log("🔍 hasCustomerPermission 计算结果:", result);
 			return result;
@@ -285,6 +285,9 @@ export const useUserStore = defineStore("user", {
 						privileges: privileges || []
 					};
 
+					// 根据用户状态设置权限
+					this.setUserPermissions(user);
+
 					this.isLoggedIn = true;
 
 					// 确保tokens是纯净的对象
@@ -321,13 +324,14 @@ export const useUserStore = defineStore("user", {
 		},
 
 		// 获取用户信息
-		async fetchUserInfo() {
-			if (this.userInfoLoading) {
+		async fetchUserInfo(forceRefresh = false) {
+			if (this.userInfoLoading && !forceRefresh) {
 				console.log('🔍 fetchUserInfo - 正在加载中，跳过重复请求');
 				return;
 			}
 
 			console.log('🔍 fetchUserInfo - 开始执行，当前登录状态:', this.isLoggedIn);
+			console.log('🔍 fetchUserInfo - 强制刷新模式:', forceRefresh);
 			console.log('🔍 fetchUserInfo - 当前tokens状态:', this.tokens ? '存在' : '不存在');
 			if (this.tokens) {
 				console.log('🔍 fetchUserInfo - access_token预览:', this.tokens.access_token?.substring(0, 10) + '...');
@@ -352,6 +356,9 @@ export const useUserStore = defineStore("user", {
 							privileges: response.data.privileges || this.userInfo?.privileges || []
 						};
 
+						// 根据用户状态设置权限
+						this.setUserPermissions(response.data.user);
+
 						// 更新登录状态
 						this.isLoggedIn = true;
 
@@ -375,6 +382,9 @@ export const useUserStore = defineStore("user", {
 						coupons: response.coupons || this.userInfo?.coupons || [],
 						privileges: response.privileges || this.userInfo?.privileges || []
 					};
+
+					// 根据用户状态设置权限
+					this.setUserPermissions(response.user);
 
 					// 更新登录状态
 					this.isLoggedIn = true;
@@ -441,8 +451,8 @@ export const useUserStore = defineStore("user", {
 			// 重置权限
 			this.permissions = [];
 
-            tabbarStore.setUserType("anonymous");
-            tabbarStore.setActiveTab("home");
+			// 自动更新tabBar用户类型（登出时会设置为anonymous）
+			this.updateTabBarUserType();
 
 			// 如果需要跳转到登录页
 			if (redirect) {
@@ -596,6 +606,10 @@ export const useUserStore = defineStore("user", {
 				if (storedUserInfo && storedIsLoggedIn) {
 					this.userInfo = storedUserInfo;
 					this.isLoggedIn = storedIsLoggedIn;
+					// 恢复权限设置
+					if (storedUserInfo) {
+						this.setUserPermissions(storedUserInfo);
+					}
 				}
 			}
 
@@ -614,6 +628,9 @@ export const useUserStore = defineStore("user", {
 			} else {
 				console.log('🔍 checkLoginStatus - 已登录且token有效');
 			}
+
+			// 确保tabBar用户类型与当前状态同步
+			this.updateTabBarUserType();
 			console.log('🔍 checkLoginStatus - 执行完成，最终登录状态:', this.isLoggedIn);
 		},
 
@@ -809,6 +826,67 @@ export const useUserStore = defineStore("user", {
 			if (newInfo.phone !== undefined) {
 				console.log('🔍 updateUserInfo - 手机号已更新:', newInfo.phone);
 			}
+
+			// 如果状态发生变化，重新设置权限
+			if (newInfo.status !== undefined) {
+				this.setUserPermissions(this.userInfo);
+			}
+		},
+
+		// 根据用户状态设置权限
+		setUserPermissions(userInfo) {
+			console.log('🔍 setUserPermissions - 设置用户权限，用户状态:', userInfo?.status);
+
+			// 清空现有权限
+			this.permissions = [];
+
+			// 根据用户状态设置权限
+			if (userInfo?.status === 1) {
+				// status=1 是管理员，拥有所有权限
+				this.permissions = [
+					'customer_management',
+					'user_management',
+					'product_management',
+					'order_management',
+					'admin'
+				];
+				console.log('🔍 setUserPermissions - 设置管理员权限:', this.permissions);
+			} else if (userInfo?.status === 0) {
+				// status=0 是普通用户
+				this.permissions = [];
+				console.log('🔍 setUserPermissions - 设置普通用户权限:', this.permissions);
+			} else {
+				// 其他状态或未定义状态
+				this.permissions = [];
+				console.log('🔍 setUserPermissions - 未知状态，清空权限:', userInfo?.status);
+			}
+
+			// 自动更新tabBar用户类型
+			this.updateTabBarUserType();
+		},
+
+		// 根据登录状态和用户status自动更新tabBar的用户类型
+		updateTabBarUserType() {
+			const tabBarStore = useTabBarStore();
+			let userType = 'anonymous'; // 默认匿名用户
+
+			if (this.isLoggedIn && this.userInfo) {
+				if (this.userInfo.status === 1) {
+					userType = 'admin'; // 管理员
+				} else if (this.userInfo.status === 0) {
+					userType = 'normal'; // 普通用户
+				}
+				// 其他status保持anonymous
+			}
+
+			console.log('🔍 updateTabBarUserType - 自动设置用户类型:', {
+				isLoggedIn: this.isLoggedIn,
+				status: this.userInfo?.status,
+				newUserType: userType,
+				oldUserType: tabBarStore.userType
+			});
+
+			tabBarStore.setUserType(userType);
 		},
 	},
 });

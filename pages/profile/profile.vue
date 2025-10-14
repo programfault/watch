@@ -5,7 +5,7 @@
 			<view class="user-info">
 				<view class="user-content">
                     <view class="user-name">
-                        <text class="name-text shimmer" v-if="userStore.isLoggedIn">天辰表友</text>
+                        <text class="name-text shimmer clickable" v-if="userStore.isLoggedIn" @click="handleNameClick">天辰表友</text>
                         <text class="name-text" v-else>匿名用户</text>
                         <!-- 如果用户已登录 -->
                         <template v-if="userStore.isLoggedIn">
@@ -481,6 +481,66 @@ const goToFavorites = () => {
 		url: '/pages/favorites/favorites'
 	})
 }
+
+// 点击"天辰表友"时刷新用户信息
+const handleNameClick = async () => {
+	console.log('=== 点击天辰表友调试开始 ===')
+	console.log('1. 登录状态检查:', userStore.isLoggedIn)
+	console.log('2. 用户信息状态:', {
+		userInfo: userStore.userInfo,
+		isLoggedIn: userStore.isLoggedIn,
+		userInfoLoading: userStore.userInfoLoading,
+		tokens: userStore.tokens ? '存在' : '不存在'
+	})
+
+	if (!userStore.isLoggedIn) {
+		console.log('❌ 用户未登录，无需刷新')
+		return
+	}
+
+	console.log('✅ 用户已登录，开始刷新用户信息...')
+
+	try {
+		// 显示加载提示
+		uni.showLoading({
+			title: '刷新中...'
+		})
+
+		console.log('3. 准备调用 userStore.fetchUserInfo(true) - 强制刷新模式')
+
+		// 刷新用户信息 - 使用强制刷新参数绕过防重复检查
+		const result = await userStore.fetchUserInfo(true)
+
+		console.log('4. userStore.fetchUserInfo(true) 调用完成，返回结果:', result)
+		console.log('5. 刷新后的用户信息:', userStore.userInfo)
+
+		// 显示成功提示
+		uni.showToast({
+			title: '信息已刷新',
+			icon: 'success',
+			duration: 1500
+		})
+
+		console.log('✅ 用户信息刷新成功')
+
+	} catch (error) {
+		console.error('❌ 刷新用户信息失败，错误详情:')
+		console.error('- 错误消息:', error.message)
+		console.error('- 错误对象:', error)
+		console.error('- 错误堆栈:', error.stack)
+
+		// 显示错误提示
+		uni.showToast({
+			title: `刷新失败: ${error.message || '未知错误'}`,
+			icon: 'error',
+			duration: 3000
+		})
+	} finally {
+		// 隐藏加载提示
+		uni.hideLoading()
+		console.log('=== 点击天辰表友调试结束 ===')
+	}
+}
 </script>
 
 <style lang="scss" src="./profile.scss"></style>
@@ -492,6 +552,19 @@ const goToFavorites = () => {
 
 	&:active {
 		opacity: 0.7;
+	}
+}
+
+.name-text.clickable {
+	cursor: pointer;
+	transition: opacity 0.2s ease;
+
+	&:active {
+		opacity: 0.7;
+	}
+
+	&:hover {
+		opacity: 0.8;
 	}
 }
 
