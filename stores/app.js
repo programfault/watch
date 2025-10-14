@@ -351,10 +351,43 @@ export const useAppStore = defineStore('app', {
       return this.filterOptions.find(option => option.attribute_name === attributeName)
     },
 
-    // 初始化应用数据
-    async initApp() {
+    // 获取核心页面数据（轮播图和品牌）
+    async fetchCoreData() {
+      console.log('🏪 AppStore fetchCoreData 开始')
 
-      this.setGlobalLoading(true)
+      try {
+        await Promise.all([
+          this.fetchPages(),
+          this.fetchBrands()
+        ])
+        console.log('🏪 AppStore fetchCoreData 完成')
+      } catch (error) {
+        console.error('🏪 AppStore 核心数据获取失败:', error)
+        throw error
+      }
+    },
+
+    // 获取次要数据（筛选选项和店铺）
+    async fetchSecondaryData() {
+      console.log('🏪 AppStore fetchSecondaryData 开始')
+
+      try {
+        await Promise.all([
+          this.fetchFilterOptions(),
+          this.fetchStores()
+        ])
+        console.log('🏪 AppStore fetchSecondaryData 完成')
+        this.initialized = true
+      } catch (error) {
+        console.error('🏪 AppStore 次要数据获取失败:', error)
+        // 次要数据失败不影响主要功能
+      }
+    },
+
+    // 初始化应用数据 - 优化版本，不设置全局Loading
+    async initApp() {
+      console.log('🏪 AppStore initApp 开始')
+
       try {
         // 并行获取初始数据
         await Promise.all([
@@ -365,11 +398,10 @@ export const useAppStore = defineStore('app', {
         ])
 
         this.initialized = true
+        console.log('🏪 AppStore initApp 完成')
       } catch (error) {
-        console.error('应用初始化失败:', error)
+        console.error('🏪 AppStore 应用初始化失败:', error)
         throw error
-      } finally {
-        this.setGlobalLoading(false)
       }
     },
 

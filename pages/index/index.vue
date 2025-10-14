@@ -151,18 +151,63 @@ const showSearchResults = ref(false)
 const currentSearchKeyword = ref('')
 const productListRef = ref(null)
 
+// 等待 ProductListComponent 组件渲染完成的工具函数
+const waitForProductListComponent = async (maxRetries = 10) => {
+	// 检查渲染条件
+	console.log('🔍 检查组件渲染条件:')
+	console.log('  showSearchResults:', showSearchResults.value)
+	console.log('  searchStore.showSearchPanel:', searchStore.showSearchPanel)
+	console.log('  渲染条件结果:', showSearchResults.value && !searchStore.showSearchPanel)
 
-// 初始化数据的方法
-const initData = async () => {
-	try {
-		// 优先加载配置信息
-		if (!configStore.isConfigLoaded) {
-			await configStore.fetchConfig()
+	// 首先确保搜索结果页面已显示且搜索面板已隐藏，这样组件才会被渲染
+	if (!showSearchResults.value || searchStore.showSearchPanel) {
+		console.log('⚠️  组件渲染条件不满足，组件不会被渲染')
+		console.log('  需要: showSearchResults=true 且 searchStore.showSearchPanel=false')
+		return false
+	}
+
+	for (let i = 0; i < maxRetries; i++) {
+		console.log(`等待 ProductListComponent 渲染 (第${i + 1}/${maxRetries}次)`)
+
+		// 先等待DOM更新
+		await new Promise(resolve => {
+			if (uni.$nextTick) {
+				uni.$nextTick(resolve)
+			} else {
+				setTimeout(resolve, 50)
+			}
+		})
+
+		// 检查组件是否已经渲染
+		if (productListRef.value) {
+			console.log('✅ ProductListComponent 组件已准备就绪')
+			return true
 		}
 
-		// 初始化搜索历史
+		// 如果还没有，再等待一小段时间
+		if (i < maxRetries - 1) {
+			await new Promise(resolve => setTimeout(resolve, 100))
+		}
+	}
+
+	console.error('❌ ProductListComponent 组件等待超时')
+	console.log('最终状态检查:')
+	console.log('  showSearchResults:', showSearchResults.value)
+	console.log('  searchStore.showSearchPanel:', searchStore.showSearchPanel)
+	console.log('  productListRef.value:', !!productListRef.value)
+	return false
+}
+
+
+// 初始化数据的方法 - 优化版本
+const initData = async () => {
+	console.log('🚀 开始主页数据初始化')
+
+	try {
+		// 立即初始化不需要网络请求的数据
 		searchStore.init()
 
+		// 设置用户类型
 		if (userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.status === 1) {
             tabBarStore.setUserType('admin')
 		} else if (userStore.isLoggedIn && userStore.userInfo && userStore.userInfo.status === 0) {
@@ -170,12 +215,77 @@ const initData = async () => {
         } else {
             tabBarStore.setUserType('anonymous')
         }
-		await appStore.initApp()
+
+		console.log('🚀 开始并行加载核心数据')
+
+		// 第一阶段：并行加载核心数据（用户立即需要看到的）
+		const coreDataPromises = []
+
+		// 配置数据
+		if (!configStore.isConfigLoaded) {
+			coreDataPromises.push(
+				configStore.fetchConfig().catch(error => {
+					console.warn('配置加载失败，使用默认配置:', error)
+				})
+			)
+		}
+
+		// 核心页面数据（轮播图和品牌）
+		coreDataPromises.push(
+			appStore.fetchPages().catch(error => {
+				console.warn('页面数据加载失败:', error)
+			})
+		)
+
+		coreDataPromises.push(
+			appStore.fetchBrands().catch(error => {
+				console.warn('品牌数据加载失败:', error)
+			})
+		)
+
+		// 等待核心数据加载完成
+		await Promise.allSettled(coreDataPromises)
+		console.log('🚀 核心数据加载完成')
+
+		// 第二阶段：后台加载次要数据（不阻塞页面显示）
+		console.log('🚀 开始后台加载次要数据')
+		Promise.allSettled([
+			appStore.fetchFilterOptions().catch(error => {
+				console.warn('筛选选项加载失败:', error)
+			}),
+			appStore.fetchStores().catch(error => {
+				console.warn('店铺数据加载失败:', error)
+			})
+		]).then((results) => {
+			console.log('🚀 所有后台数据加载完成')
+			appStore.initialized = true
+
+			// 检查是否有关键数据加载失败
+			const failedCount = results.filter(r => r.status === 'rejected').length
+			if (failedCount > 0) {
+				console.warn(`🚀 ${failedCount} 个次要数据源加载失败`)
+			}
+		})
+
 	} catch (error) {
+		console.error('🚀 主页数据初始化失败:', error)
+
+		// 根据错误类型给出不同提示
+		let errorMessage = '数据加载失败'
+		if (error.message && error.message.includes('网络')) {
+			errorMessage = '网络连接失败，请检查网络'
+		} else if (error.message && error.message.includes('超时')) {
+			errorMessage = '加载超时，请重试'
+		}
+
 		uni.showToast({
-			title: '数据加载失败',
-			icon: 'none'
-		});
+			title: errorMessage,
+			icon: 'none',
+			duration: 3000
+		})
+
+		// 即使失败也要确保基本功能可用
+		searchStore.init()
 	}
 }
 // 角色切换方法
@@ -242,28 +352,27 @@ const onSearch = async (value) => {
 	currentSearchKeyword.value = keyword
 	showSearchResults.value = true
 
-	// 等待组件挂载然后调用搜索方法
-	await new Promise(resolve => setTimeout(resolve, 100)) // 等待 100ms 确保组件完全渲染
+	// 等待组件渲染完成
+	const componentReady = await waitForProductListComponent()
 
-	console.log('检查 productListRef:', !!productListRef.value)
-	if (productListRef.value) {
+	if (componentReady && productListRef.value) {
 		console.log('调用 ProductListComponent.searchWithKeyword')
 		try {
 			await productListRef.value.searchWithKeyword(keyword)
 			console.log('搜索完成')
 		} catch (error) {
 			console.error('搜索调用失败:', error)
+			uni.showToast({
+				title: '搜索失败，请重试',
+				icon: 'none'
+			})
 		}
 	} else {
-		console.error('productListRef 不存在，使用 nextTick 重试')
-		// 使用 nextTick 重试
-		await new Promise(resolve => setTimeout(resolve, 200))
-		if (productListRef.value) {
-			console.log('重试成功，调用搜索方法')
-			await productListRef.value.searchWithKeyword(keyword)
-		} else {
-			console.error('重试后 productListRef 仍然不存在')
-		}
+		console.error('productListRef 不存在或等待超时')
+		uni.showToast({
+			title: '组件加载失败，请重试',
+			icon: 'none'
+		})
 	}
 }
 
@@ -349,48 +458,40 @@ const onBrandClick = async (brand) => {
 		// 设置当前搜索关键词为品牌名称（用于显示）
 		currentSearchKeyword.value = brand.name_cn || brand.name_en
 
+		// 确保搜索面板被隐藏
+		searchStore.hidePanel()
+
 		// 显示搜索结果页面
 		showSearchResults.value = true
 
-		// 等待组件挂载然后调用品牌筛选方法
-		const waitForComponent = async (retries = 5) => {
-			for (let i = 0; i < retries; i++) {
-				await new Promise(resolve => setTimeout(resolve, 100 * (i + 1))) // 递增等待时间
+		// 等待组件渲染完成
+		const componentReady = await waitForProductListComponent()
 
-				console.log(`检查 productListRef (第${i + 1}次):`, !!productListRef.value)
+		if (componentReady && productListRef.value) {
+			console.log('组件已加载，调用 ProductListComponent.searchByBrand')
+			try {
+				await productListRef.value.searchByBrand(brand.id, brand)
+				console.log('品牌筛选完成')
 
-				if (productListRef.value) {
-					console.log('组件已加载，调用 ProductListComponent.searchByBrand')
-					try {
-						await productListRef.value.searchByBrand(brand.id, brand)
-						console.log('品牌筛选完成')
-
-						uni.showToast({
-							title: `已切换到${brand.name_cn}`,
-							icon: 'success',
-							duration: 1500
-						})
-						return true
-					} catch (error) {
-						console.error('品牌筛选调用失败:', error)
-						uni.showToast({
-							title: '品牌数据加载失败',
-							icon: 'none'
-						})
-						return false
-					}
-				}
+				uni.showToast({
+					title: `已切换到${brand.name_cn}`,
+					icon: 'success',
+					duration: 1500
+				})
+			} catch (error) {
+				console.error('品牌筛选调用失败:', error)
+				uni.showToast({
+					title: '品牌数据加载失败',
+					icon: 'none'
+				})
 			}
-
-			console.error('多次重试后 productListRef 仍然不存在')
+		} else {
+			console.error('productListRef 组件不存在或等待超时')
 			uni.showToast({
 				title: '组件加载失败，请重试',
 				icon: 'none'
 			})
-			return false
 		}
-
-		await waitForComponent()
 	} catch (error) {
 		console.error('品牌点击处理失败:', error)
 		uni.showToast({
@@ -402,10 +503,30 @@ const onBrandClick = async (brand) => {
 
 // 页面生命周期 - onLoad
 onLoad(async () => {
-	await initData()
+	console.log('📱 主页 onLoad 开始')
+
+	// 显示统一的加载状态
+	uni.showLoading({
+		title: '加载中...',
+		mask: false // 不阻塞用户操作
+	})
+
+	try {
+		await initData()
+		console.log('📱 主页数据初始化完成')
+	} catch (error) {
+		console.error('📱 主页 onLoad 失败:', error)
+	} finally {
+		// 确保隐藏所有loading状态
+		setTimeout(() => {
+			uni.hideLoading()
+		}, 100)
+	}
 })
 
 onShow(() => {
+	console.log('📱 主页 onShow')
+
     // 重置搜索状态，回到默认首页
     searchStore.setKeyword('')
     searchStore.hidePanel()
@@ -420,8 +541,12 @@ onShow(() => {
 
 	// 设置当前页面的tabBar状态
 	tabBarStore.setActiveTab('index')
-	// 隐藏tab切换loading
-	hideTabSwitchLoading()
+
+	// 统一隐藏所有loading状态
+	setTimeout(() => {
+		hideTabSwitchLoading()
+		uni.hideLoading() // 确保没有残留的loading
+	}, 50)
 })
 
 onHide(() => {
@@ -500,6 +625,7 @@ const leftClick = () => {
 	padding: 15px;
 	margin-top: 96px; /* navbar(44) + 搜索框区域(52) 的高度 */
 	padding-top: 10px;
+	padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* 确保搜索历史完整显示，增加足够空间 */
 	background-color: #f8f8f8;
 	min-height: calc(100vh - 96px - 70px); /* navbar(44) + 搜索框区域(52) + tabbar(70) */
 
@@ -561,7 +687,7 @@ const leftClick = () => {
 	background-color: #f8f8f8;
 	margin-top: 96px; /* navbar(44) + 搜索框区域(52) 的高度 */
 	min-height: calc(100vh - 96px - 70px); /* navbar(44) + 搜索框区域(52) + tabbar(70) */
-	padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* 为tabbar预留空间 */
+	padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* 确保品牌卡片完整显示，增加足够空间 */
 }
 
 .container {
@@ -569,7 +695,7 @@ const leftClick = () => {
 	padding: 20px;
 	margin-top: 96px; /* navbar(44) + 搜索框区域(52) 的高度 */
 	padding-top: 5px; /* 减小顶部间距，让轮播图更靠近搜索框 */
-	padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* 为tabbar预留空间 */
+	padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* 确保品牌卡片完整显示，增加足够空间 */
 	background-color: #f8f8f8;
 	box-sizing: border-box;
 }
