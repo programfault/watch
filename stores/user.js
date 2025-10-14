@@ -791,5 +791,24 @@ export const useUserStore = defineStore("user", {
 				},
 			};
 		},
+
+		// 手动更新用户信息
+		updateUserInfo(newInfo) {
+			console.log('🔍 updateUserInfo - 更新用户信息:', newInfo);
+			console.log('🔍 updateUserInfo - 当前用户信息:', this.userInfo);
+
+			// 合并用户信息
+			this.userInfo = {
+				...this.userInfo,
+				...newInfo
+			};
+
+			console.log('🔍 updateUserInfo - 更新后的用户信息:', this.userInfo);
+
+			// 如果传入的信息包含手机号，则更新缓存
+			if (newInfo.phone !== undefined) {
+				console.log('🔍 updateUserInfo - 手机号已更新:', newInfo.phone);
+			}
+		},
 	},
 });

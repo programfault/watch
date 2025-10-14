@@ -38,11 +38,12 @@
 			</view>
 
 			<!-- 退出登录 -->
-			<view class="logout-section">
-				<button class="logout-btn" @click="handleLogout">
-					<uv-icon name="logout" size="16" color="#999"></uv-icon>
-					<text class="logout-text">退出登录</text>
-				</button>
+			<view class="settings-section" v-if="userStore.isLoggedIn">
+				<view class="settings-group">
+					<view class="setting-item logout-center" @click="handleLogout">
+						<text class="item-text">退出登录</text>
+					</view>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -194,36 +195,12 @@ const handleLogout = () => {
 	}
 }
 
-.logout-section {
-	margin-top: 24px;
+// 退出登录居中样式
+.logout-center {
+	justify-content: center;
 
-	.logout-btn {
-		width: 100%;
-		background-color: #f5f5f5;
-		color: #999;
-		border: 1px solid #e0e0e0;
-		border-radius: 12px;
-		padding: 12px;
-		font-size: 15px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 6px;
-		transition: all 0.3s ease;
-
-		&:active {
-			background-color: #eeeeee;
-			transform: translateY(1px);
-		}
-
-		&::after {
-			border: none;
-		}
-
-		.logout-text {
-			color: #999;
-			font-size: 16px;
-		}
+	.item-text {
+		margin-left: 0;
 	}
 }
 

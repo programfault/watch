@@ -65,6 +65,26 @@ export function decryptPhoneNumber(phoneData) {
 }
 
 /**
+ * 更新用户手机号
+ * @param {Object} phoneData 手机号数据
+ * @param {string} phoneData.phone 新手机号，格式：13812345678
+ * @returns {Promise} 返回更新结果
+ */
+export function updateUserPhone(phoneData) {
+  console.log('🔍 调用updateUserPhone API: /phone, 数据:', phoneData)
+  return put('/phone', phoneData, {
+    showLoading: true,
+    showError: false // 手动处理错误信息
+  }).then(response => {
+    console.log('🔍 updateUserPhone API 成功响应:', response)
+    return response
+  }).catch(error => {
+    console.log('🔍 updateUserPhone API 失败:', error)
+    throw error
+  })
+}
+
+/**
  * 获取客户列表
  * @param {Object} params 查询参数
  * @returns {Promise}

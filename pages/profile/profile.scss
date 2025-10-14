@@ -44,26 +44,9 @@
 	}
 }
 
-.profile-scroll {
-	flex: 1;
-	height: calc(100vh - env(safe-area-inset-top) - 50px - env(safe-area-inset-bottom));
-	margin-top: env(safe-area-inset-top);
-	box-sizing: border-box;
-}
 
-.loading {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	min-height: 50vh;
 
-	.loading-text {
-		margin-top: 10px;
-		font-size: 14px;
-		color: #999;
-	}
-}
+
 
 .not-login {
 	display: flex;
@@ -80,7 +63,12 @@
 }
 
 .profile-content {
+	flex: 1;
 	padding: 20px;
+	padding-top: calc(20px + env(safe-area-inset-top));
+	padding-bottom: calc(70px + env(safe-area-inset-bottom));
+	box-sizing: border-box;
+	overflow-y: auto;
 
 	.user-info {
 		background: white;
@@ -170,6 +158,18 @@
 					text-transform: uppercase;
 					letter-spacing: 0.5px;
 				}
+
+				.unbind-badge {
+					background: linear-gradient(135deg, #f87171, #ef4444);
+					color: white;
+					font-size: 10px;
+					font-weight: 600;
+					padding: 4px 8px;
+					border-radius: 6px;
+					letter-spacing: 0.5px;
+				}
+
+
 			}
 
 			.user-stats {
@@ -197,6 +197,11 @@
 						font-size: 12px;
 						color: #64748b;
 						font-weight: 500;
+
+						&.placeholder {
+							color: #c0c4cc;
+							font-style: italic;
+						}
 					}
 				}
 
@@ -292,6 +297,38 @@
 
 			&:active {
 				background: linear-gradient(90deg, #34bfa3 0%, #4fc08d 100%);
+			}
+		}
+	}
+
+	.login-section {
+		margin: 20px 20px 0;
+
+		.wechat-login-btn {
+			width: 100%;
+			background: #07c160;
+			color: white;
+			font-size: 16px;
+			font-weight: 500;
+			padding: 14px 0;
+			border: none;
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 2px 8px rgba(7, 193, 96, 0.2);
+			transition: all 0.2s ease;
+
+			&:active:not(:disabled) {
+				background: #06ad56;
+				transform: translateY(1px);
+				box-shadow: 0 1px 4px rgba(7, 193, 96, 0.3);
+			}
+
+			&:disabled {
+				background: #9dd2b4;
+				opacity: 0.8;
+				cursor: not-allowed;
 			}
 		}
 	}

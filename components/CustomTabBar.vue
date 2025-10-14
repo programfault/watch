@@ -1,5 +1,16 @@
 <template>
 	<view class="custom-tabbar">
+        <!-- Tab切换Loading组件 -->
+        <uv-loading-page
+            :loading="tabSwitchLoading"
+            :loading-text="tabSwitchText"
+            font-size="32rpx"
+            icon-size="60rpx"
+            bg-color="rgba(255, 255, 255, 0.95)"
+            color="#333"
+            loading-color="#007aff"
+            loading-mode="circle"
+        />
 		<view class="tabbar-content">
 			<view
 				v-for="tab in tabBarStore.tabList"
@@ -28,7 +39,7 @@
 
 <script setup>
 import { useTabBarStore } from '@/stores'
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 // 定义组件名称（可选）
 defineOptions({
@@ -40,6 +51,10 @@ const tabBarStore = useTabBarStore()
 
 // 安全区域高度
 const safeBottom = ref(0)
+
+// Tab切换Loading状态
+const tabSwitchLoading = ref(false)
+const tabSwitchText = ref('页面加载中...')
 
 // 计算当前激活标签的索引
 // const activeTabIndex = computed(() => {
@@ -139,6 +154,24 @@ const getSafeAreaHeight = () => {
 onMounted(() => {
 	getSafeAreaHeight()
 	initTabBar()
+
+	// 监听Tab切换Loading事件
+	uni.$on('showTabSwitchLoading', (data) => {
+		console.log('🔄 [CustomTabBar] 显示Tab切换Loading:', data)
+		tabSwitchLoading.value = true
+		tabSwitchText.value = data?.text || '页面加载中...'
+	})
+
+	uni.$on('hideTabSwitchLoading', () => {
+		console.log('✅ [CustomTabBar] 隐藏Tab切换Loading')
+		tabSwitchLoading.value = false
+	})
+})
+
+// 组件销毁时清理事件监听
+onUnmounted(() => {
+	uni.$off('showTabSwitchLoading')
+	uni.$off('hideTabSwitchLoading')
 })
 </script>
 
