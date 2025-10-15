@@ -22,12 +22,17 @@ function getTokens() {
     // 1. 首先尝试从 Pinia persist 的 'user-store' 获取 tokens
     const userStore = uni.getStorageSync('user-store')
     if (userStore) {
-      const parsedUserStore = JSON.parse(userStore)
+      const parsedUserStore = typeof userStore === 'string' ? JSON.parse(userStore) : userStore
       if (parsedUserStore.tokens && parsedUserStore.tokens.access_token) {
         console.log('🔍 getTokens - 从user-store获取到有效token:', parsedUserStore.tokens.access_token.substring(0, 10) + '...')
+        console.log('🔍 getTokens - 完整tokens信息:', {
+          access_token: parsedUserStore.tokens.access_token.substring(0, 10) + '...',
+          refresh_token: parsedUserStore.tokens.refresh_token ? parsedUserStore.tokens.refresh_token.substring(0, 10) + '...' : '无',
+          expires_in: parsedUserStore.tokens.expires_in
+        })
         return parsedUserStore.tokens
       } else {
-        console.log('🔍 getTokens - user-store中无有效token:', parsedUserStore)
+        console.log('🔍 getTokens - user-store中无有效token:', parsedUserStore.tokens || 'tokens字段不存在')
       }
     } else {
       console.log('🔍 getTokens - user-store不存在')
@@ -57,7 +62,17 @@ function getTokens() {
 
 function saveTokens(tokens) {
   try {
+    // 1. 保存到传统的 tokens 键
     uni.setStorageSync('tokens', JSON.stringify(tokens))
+
+    // 2. 同步到 user-store（如果存在）
+    const userStoreData = uni.getStorageSync('user-store')
+    if (userStoreData) {
+      const parsedUserStore = typeof userStoreData === 'string' ? JSON.parse(userStoreData) : userStoreData
+      parsedUserStore.tokens = tokens
+      uni.setStorageSync('user-store', JSON.stringify(parsedUserStore))
+      console.log('🔄 saveTokens - 已同步更新 user-store 中的 tokens')
+    }
   } catch (error) {
     console.error('保存 tokens 失败:', error)
   }
@@ -123,10 +138,7 @@ function requestInterceptor(config) {
  * 响应处理函数 - 处理响应数据和错误
  */
 async function responseHandler(res, config) {
-  // 隐藏 loading
-  if (config.showLoading) {
-    uni.hideLoading()
-  }
+  // 这里不处理loading，统一在doRequest的finally中处理
 
   // 检查是否有响应数据
   if (!res.data) {
@@ -168,18 +180,16 @@ async function responseHandler(res, config) {
  * 错误处理函数 - 处理请求错误和401刷新token
  */
 async function errorHandler(err, config) {
-  // 隐藏 loading
-  if (config.showLoading) {
-    uni.hideLoading()
-  }
-
   // 记录请求错误
   console.error('请求失败:', err.errMsg || err.message || '未知错误')
 
   // 处理 401 错误（token 过期）
   if (err.status === 401 && config.needAuth !== false) {
+    console.log('🔄 检测到401错误，开始处理token刷新流程')
+
     if (!isRefreshing) {
       isRefreshing = true
+      console.log('🔄 开始刷新token流程，保持loading状态')
 
       try {
         // 刷新 token
@@ -188,6 +198,8 @@ async function errorHandler(err, config) {
         if (!tokens?.refresh_token) {
           throw new Error('没有 refresh_token')
         }
+
+        console.log('🔄 开始刷新 token，refresh_token:', tokens.refresh_token.substring(0, 10) + '...')
 
         // 使用uni.request刷新token
         const refreshResult = await new Promise((resolve, reject) => {
@@ -205,9 +217,25 @@ async function errorHandler(err, config) {
           })
         })
 
+        console.log('🔄 刷新 token 响应:', refreshResult)
+
         if (refreshResult.data?.success) {
           const newTokens = refreshResult.data.data.tokens
-          saveTokens(newTokens)
+          console.log('🔄 获取到新 tokens:', {
+            access_token: newTokens.access_token.substring(0, 10) + '...',
+            refresh_token: newTokens.refresh_token.substring(0, 10) + '...',
+            expires_in: newTokens.expires_in
+          })
+
+          // 保存新的 tokens（会自动同步到 user-store）
+          const completeTokens = {
+            access_token: newTokens.access_token,
+            refresh_token: newTokens.refresh_token,
+            token_type: newTokens.token_type || 'bearer',
+            expires_in: newTokens.expires_in,
+            refresh_expires_in: newTokens.refresh_expires_in
+          }
+          saveTokens(completeTokens)
 
           // 更新原请求的 Authorization 头
           config.headers = {
@@ -215,20 +243,39 @@ async function errorHandler(err, config) {
             'Authorization': `Bearer ${newTokens.access_token}`
           }
 
+          console.log('🔄 原请求头已更新，新 access_token:', newTokens.access_token.substring(0, 10) + '...')
+
           // 处理队列中的请求
-          requestQueue.forEach(({ resolve, reject, config: queuedConfig }) => {
+          console.log('🔄 处理队列中的请求，队列长度:', requestQueue.length)
+          requestQueue.forEach(({ resolve, reject, config: queuedConfig }, index) => {
             queuedConfig.headers = {
               ...queuedConfig.headers,
               'Authorization': `Bearer ${newTokens.access_token}`
             }
+            console.log(`🔄 队列请求 ${index + 1} 已更新 Authorization 头:`, newTokens.access_token.substring(0, 10) + '...')
+
+            // 队列中的请求不应该再显示loading，因为用户已经在等待了
+            const queueRetryConfig = {
+              ...queuedConfig,
+              showLoading: false
+            }
+
             // 重新发起队列中的请求
-            doRequest(queuedConfig).then(resolve).catch(reject)
+            doRequest(queueRetryConfig).then(resolve).catch(reject)
           })
           requestQueue.length = 0
           isRefreshing = false
 
-          // 重新发起原请求
-          return doRequest(config)
+          // 重新发起原请求，保持原有的loading配置
+          console.log('🔄 重新发起原请求，使用新 access_token:', newTokens.access_token.substring(0, 10) + '...')
+
+          // 确保重新发起的请求保持原有的showLoading配置，但不重复显示loading
+          const retryConfig = {
+            ...config,
+            showLoading: false // 避免重复显示loading
+          }
+
+          return doRequest(retryConfig)
         } else {
           throw new Error('刷新 token 失败')
         }
@@ -236,6 +283,11 @@ async function errorHandler(err, config) {
         console.error('刷新 token 失败:', refreshError)
         isRefreshing = false
         requestQueue.length = 0
+
+        // 刷新失败时确保隐藏loading
+        if (config.showLoading) {
+          uni.hideLoading()
+        }
 
         // 清除认证信息并跳转到登录页
         clearAuth()
@@ -245,13 +297,15 @@ async function errorHandler(err, config) {
       }
     } else {
       // 正在刷新，将请求加入队列
+      console.log('🔄 正在刷新token中，将请求加入队列，队列长度:', requestQueue.length + 1)
       return new Promise((resolve, reject) => {
         requestQueue.push({ resolve, reject, config })
       })
     }
   }
 
-  // 其他错误处理
+  // 其他错误处理 - loading在doRequest的finally中统一处理
+
   if (config.showError !== false) {
     const message = err.data?.message ||
                    err.errMsg ||
@@ -323,14 +377,20 @@ function doRequest(options) {
             data: res.data,
             errMsg: `HTTP Error: ${res.statusCode}`
           }
-          errorHandler(error, processedConfig).catch(reject)
+          errorHandler(error, processedConfig).then(resolve).catch(reject)
         }
       },
       fail: (err) => {
         console.error('📥 请求失败:', err)
-        errorHandler(err, processedConfig).catch(reject)
+        errorHandler(err, processedConfig).then(resolve).catch(reject)
       }
     })
+  }).finally(() => {
+    // 统一在这里处理loading隐藏
+    if (processedConfig.showLoading) {
+      uni.hideLoading()
+      console.log('🔄 请求结束，隐藏loading')
+    }
   })
 }
 
@@ -377,34 +437,6 @@ export function del(url, options = {}) {
     url,
     method: 'DELETE',
     ...options
-  })
-}
-
-// 测试用原生uni.request发送带token的请求
-export function testNativeRequest() {
-  const tokens = getTokens()
-  if (!tokens?.access_token) {
-    console.warn('无有效token，无法发送测试请求')
-    return
-  }
-
-  const headers = {
-    'Authorization': `Bearer ${tokens.access_token}`,
-    'content-type': 'application/json'
-  }
-
-  console.log('🧪 发送测试请求，headers:', headers)
-
-  uni.request({
-    url: `${API_CONFIG.baseURL}/user`,
-    method: 'GET',
-    header: headers,
-    success: (res) => {
-      console.log('✅ 测试请求成功响应:', res)
-    },
-    fail: (err) => {
-      console.error('❌ 测试请求失败:', err)
-    }
   })
 }
 
