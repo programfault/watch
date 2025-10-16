@@ -2,11 +2,8 @@
 	<view class="container">
 		<!-- 设置内容 -->
 		<view class="settings-content">
-
 			<!-- 其他设置 -->
 			<view class="settings-section">
-				<text class="section-title">其他</text>
-
 				<view class="settings-group">
 					<view class="setting-item">
 						<view class="item-content">
@@ -36,14 +33,12 @@
 					</view>
 				</view>
 			</view>
+		</view>
 
-			<!-- 退出登录 -->
-			<view class="settings-section" v-if="userStore.isLoggedIn">
-				<view class="settings-group">
-					<view class="setting-item logout-center" @click="handleLogout">
-						<text class="item-text">退出登录</text>
-					</view>
-				</view>
+		<!-- 退出登录 - 固定在底部 -->
+		<view class="logout-section" v-if="userStore.isLoggedIn">
+			<view class="logout-button" @click="handleLogout">
+				<text class="logout-text">退出登录</text>
 			</view>
 		</view>
 	</view>
@@ -151,9 +146,9 @@ const handleLogout = () => {
 
 .settings-group {
 	background: white;
-	border-radius: 12px;
+	border-radius: 4px;
 	overflow: hidden;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	border: 1px solid #e5e5e5;
 }
 
 .setting-item {
@@ -195,13 +190,40 @@ const handleLogout = () => {
 	}
 }
 
-// 退出登录居中样式
-.logout-center {
-	justify-content: center;
+// 退出登录固定在底部
+.logout-section {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding: 20px;
+	background-color: #f5f5f5;
+	border-top: 1px solid #e5e5e5;
 
-	.item-text {
-		margin-left: 0;
+	.logout-button {
+		background: white;
+		border-radius: 4px;
+		border: 1px solid #e5e5e5;
+		padding: 16px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		&:active {
+			background-color: #f8f8f8;
+		}
+
+		.logout-text {
+			font-size: 16px;
+			color: #d32f2f;
+			font-weight: 500;
+		}
 	}
+}
+
+// 为底部退出按钮留出空间
+.container {
+	padding-bottom: 100px;
 }
 
 // 样式结束
