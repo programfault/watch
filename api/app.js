@@ -5,49 +5,7 @@
 
 import { get, post } from '@/utils/request'
 
-/**
- * 获取页面数据（包括轮播图和其他页面）
- * @returns {Promise}
- */
-export function getPages() {
-  return get('/pages', {}, {
-    showLoading: false,
-    showError: true
-  })
-}
-
-/**
- * 获取品牌列表
- * @returns {Promise}
- */
-export function getBrands() {
-  return get('/brands', {}, {
-    showLoading: false,
-    showError: true
-  })
-}
-
-/**
- * 获取表的属性筛选选项
- * @returns {Promise}
- */
-export function getFilterOptions() {
-  return get('/filter-options', {}, {
-    showLoading: false,
-    showError: true
-  })
-}
-
-/**
- * 获取店铺列表
- * @returns {Promise}
- */
-export function getStores() {
-  return get('/stores', {}, {
-    showLoading: false,
-    showError: true
-  })
-}
+// ==================== 业务API ====================
 
 /**
  * 简单查询手表列表 (GET方式)

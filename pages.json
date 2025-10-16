@@ -40,11 +40,6 @@
 			"navigationBarTitleText": "活动详情"
 		}
 	}, {
-		"path": "pages/product/list",
-		"style": {
-			"navigationBarTitleText": "产品列表"
-		}
-	}, {
 		"path": "pages/product/detail",
 		"style": {
 			"navigationBarTitleText": "产品详情"

@@ -11,7 +11,7 @@
             v-model="searchKeyword"
             :show-action="true"
             action-text="搜索"
-            @search="onSearchConfirm"
+            @clear="onSearchClear"
             :auto-search="false"
             :clear-trigger="'click'"
           />
@@ -23,35 +23,19 @@
     <scroll-view
       class="scroll-content"
       scroll-y="true"
-      @scrolltoupper="onPullDownRefresh"
-      refresher-enabled="true"
-      :refresher-threshold="80"
-      refresher-default-style="none"
-      :refresher-triggered="isRefreshing"
-      @refresherrefresh="onRefresh"
-      @refresherpulling="onRefresherPulling"
-      @refresherrestore="onRefreshRestore"
     >
-      <!-- 自定义下拉刷新内容 -->
-      <view slot="refresher" class="custom-refresher">
-        <view v-if="!isRefreshing" class="pull-tips">
-          <uv-icon
-            name="arrow-down"
-            size="20"
-            color="#999"
-            :class="{ 'icon-rotate': pullDistance >= 80 }"
-          />
-          <text v-if="pullDistance < 80" class="tip-text">下拉刷新客户</text>
-          <text v-else class="tip-text tip-release">松手立即刷新</text>
-        </view>
-        <view v-else class="refreshing-tips">
-          <ui-icon name="loading" size="20" />
-          <text class="tip-text refreshing">正在刷新...</text>
-        </view>
-      </view>
       <view class="container">
+        <!-- 搜索提示状态 -->
+        <view class="search-hint" v-if="!hasSearched && !userStore.consumersLoading">
+          <view class="hint-icon">
+            <uv-icon name="search" size="48" color="#ccc"/>
+          </view>
+          <text class="hint-text">请输入手机号进行搜索</text>
+          <text class="hint-subtext">支持精确匹配手机号码</text>
+        </view>
+
         <!-- 加载状态 - 骨架屏 -->
-        <view class="skeleton-wrapper" v-if="initialLoading || userStore.consumersLoading">
+        <view class="skeleton-wrapper" v-else-if="userStore.consumersLoading">
           <view class="skeleton-item" v-for="i in 5" :key="i">
             <view class="skeleton-avatar"></view>
             <view class="skeleton-content">
@@ -136,10 +120,13 @@
             </view>
         </view>
 
-        <!-- 空状态 -->
-        <view class="empty-state" v-else-if="!initialLoading && !userStore.consumersLoading">
-          <text class="empty-text" v-if="userStore.consumersSearchKeyword">暂无匹配的消费者</text>
-          <text class="empty-text" v-else>暂无消费者数据</text>
+        <!-- 搜索无结果状态 -->
+        <view class="empty-state" v-else-if="hasSearched && !userStore.consumersLoading">
+          <view class="empty-icon">
+            <uv-icon name="inbox" size="48" color="#ccc"/>
+          </view>
+          <text class="empty-text">未找到匹配的消费者</text>
+          <text class="empty-subtext">请尝试其他手机号码</text>
         </view>
 
         <!-- 由于不支持分页，移除加载更多功能 -->
@@ -173,7 +160,7 @@ import ConsumerPanel from "@/components/ConsumerPanel.vue"
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import GlobalLoading from '@/components/GlobalLoading.vue'
 import { useUserStore } from "@/stores"
-import { onLoad, onPullDownRefresh, onShow, onUnload } from '@dcloudio/uni-app'
+import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import { nextTick, ref } from 'vue'
 
 // 定义组件名称
@@ -186,8 +173,7 @@ const userStore = useUserStore()
 
 // 响应式数据
 const searchKeyword = ref("")
-const isRefreshing = ref(false)
-const pullDistance = ref(0)
+const hasSearched = ref(false) // 是否已经进行过搜索
 const selectedConsumer = ref(null)
 const currentActionType = ref('gift') // 'gift' 或 'verify'
 // 面板显示的动态数据，根据操作类型设置不同来源的数据
@@ -195,9 +181,6 @@ const currentActionType = ref('gift') // 'gift' 或 'verify'
 // 核销时：使用 consumer.coupons/privileges (消费者已有的福利)
 const panelCoupons = ref([])
 const panelPrivileges = ref([])
-
-// 本地loading状态 - 用于消除初始白屏
-const initialLoading = ref(true)
 
 // 组件引用
 const consumerPanel = ref(null)
@@ -209,14 +192,14 @@ onUnload(async () => {
 
 // 页面生命周期 - onLoad
 onLoad(() => {
-  console.log('🚀 页面onLoad开始...')
+  console.log('🚀 Customer页面 onLoad')
 
-  // 立即显示页面结构，不等待数据加载
-  // 使用 nextTick 确保页面结构先渲染
-  nextTick(() => {
-    // 在下一个渲染周期开始数据加载
-    loadDataAsync()
-  })
+  // 重置消费者列表和搜索状态
+  userStore.resetConsumers()
+  hasSearched.value = false
+
+  // 异步加载福利数据（用于后续的赠送操作）
+  loadBenefitsAsync()
 })
 
 // 页面生命周期 - onShow
@@ -228,152 +211,31 @@ onShow(() => {
   })
 })
 
-// 页面生命周期 - onPullDownRefresh
-onPullDownRefresh(() => {
-  // 下拉刷新
-  refreshData()
-})
+
 
 // 方法定义
-// 异步加载数据 - 不阻塞页面渲染
-const loadDataAsync = async () => {
+// 异步加载福利数据 - 用于后续的赠送操作
+const loadBenefitsAsync = async () => {
   try {
-    console.log('开始异步加载消费者数据...')
-
-    // 短暂延迟，确保页面骨架屏先显示
-    await new Promise(resolve => setTimeout(resolve, 50))
-
-    // 先加载消费者数据（主要数据），设置超时
-    const consumersPromise = Promise.race([
-      userStore.fetchConsumers(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('消费者数据加载超时')), 10000)
-      )
-    ])
-
-    // 异步加载福利数据（辅助数据），不阻塞主要数据显示
-    const benefitsPromise = userStore.fetchBenefits().catch(error => {
-      console.warn('福利数据加载失败，但不影响主要功能:', error)
-    })
-
-    // 等待主要数据加载完成（带超时）
-    await consumersPromise
-
-    console.log('✅ 主要数据加载完成')
-    // 关闭初始loading状态
-    initialLoading.value = false
-
-    // 福利数据在后台继续加载
-    benefitsPromise.then(() => {
-      console.log('✅ 辅助数据加载完成')
-    })
-
+    console.log('开始异步加载福利数据...')
+    await userStore.fetchBenefits()
+    console.log('✅ 福利数据加载完成')
   } catch (error) {
-    console.error("数据加载失败:", error)
-    // 即使失败也要关闭loading
-    initialLoading.value = false
-
-    // 显示错误提示
-    uni.showToast({
-      title: "数据加载失败",
-      icon: "none",
-      duration: 2000
-    })
+    console.warn('福利数据加载失败，但不影响搜索功能:', error)
   }
 }
 
-// 保留原有的loadData方法供刷新使用
-const loadData = async () => {
-  try {
-    console.log('开始加载消费者数据...')
-
-    // 并行加载消费者数据和福利数据
-    await Promise.all([
-      userStore.fetchConsumers(),
-      userStore.fetchBenefits()
-    ])
-
-    console.log('🔍 数据加载完成，当前状态:')
-    console.log('- consumers数量:', userStore.consumers.length)
-    console.log('- filteredConsumers数量:', userStore.filteredConsumers.length)
-    console.log('- hasFilteredConsumers:', userStore.hasFilteredConsumers)
-    console.log('- consumersLoading:', userStore.consumersLoading)
-    console.log('- searchKeyword:', userStore.consumersSearchKeyword)
-    console.log('- consumersCardNumber:', userStore.consumersCardNumber)
-
-  } catch (error) {
-    console.error("加载数据失败:", error)
-    uni.showModal({
-      title: "加载失败",
-      content: `错误信息: ${error.message || error}`,
-      showCancel: false,
-    })
+// 重新搜索当前关键词（用于操作完成后刷新数据）
+const refreshCurrentSearch = async () => {
+  if (!searchKeyword.value.trim() || !hasSearched.value) {
+    return
   }
+
+  console.log('刷新当前搜索结果:', searchKeyword.value)
+  await performSearch(searchKeyword.value.trim())
 }
 
-// 处理下拉刷新
-const onRefresh = async () => {
-  isRefreshing.value = true
-  try {
-    // 重置并刷新所有数据
-    userStore.resetConsumers()
-    userStore.resetBenefits()
-    await Promise.all([
-      userStore.fetchConsumers(),
-      userStore.fetchBenefits()
-    ])
-    uni.showToast({
-      title: "刷新成功",
-      icon: "success",
-    })
-  } catch (error) {
-    console.error("刷新数据失败:", error)
-    uni.showToast({
-      title: "刷新失败",
-      icon: "none",
-    })
-  } finally {
-    isRefreshing.value = false
-    pullDistance.value = 0
-  }
-}
 
-// 下拉距离监听
-const onRefresherPulling = (e) => {
-  pullDistance.value = e.detail.deltaY || 0
-}
-
-// 刷新状态恢复
-const onRefreshRestore = () => {
-  isRefreshing.value = false
-  pullDistance.value = 0
-}
-
-// 刷新数据
-const refreshData = async () => {
-  try {
-    // 重置并刷新所有数据
-    userStore.resetConsumers()
-    userStore.resetBenefits()
-    await Promise.all([
-      userStore.fetchConsumers(),
-      userStore.fetchBenefits()
-    ])
-    uni.showToast({
-      title: "刷新成功",
-      icon: "success",
-    })
-  } catch (error) {
-    console.error("刷新数据失败:", error)
-    uni.showToast({
-      title: "刷新失败",
-      icon: "none",
-    })
-  } finally {
-    // 停止下拉刷新动画
-    uni.stopPullDownRefresh()
-  }
-}
 
 // 赠送操作
 const handleGift = (consumer) => {
@@ -413,11 +275,11 @@ const handleUpdate = (consumer) => {
 const handlePanelSuccess = async (data) => {
   console.log('操作成功:', data)
 
-  // 刷新数据以获取最新状态
+  // 刷新当前搜索结果以获取最新状态
   try {
-    await loadData()
+    await refreshCurrentSearch()
   } catch (error) {
-    console.error('刷新数据失败:', error)
+    console.error('刷新搜索结果失败:', error)
   }
 
   // 重置选中的消费者（关闭面板）
@@ -437,98 +299,57 @@ const handlePanelClose = () => {
   panelPrivileges.value = []
 }
 
-// 搜索清除事件
-const onSearchClear = async () => {
-  console.log("搜索清除")
-  searchKeyword.value = ""
-
-  // 清除搜索后重新加载全部数据
-  try {
-    userStore.consumersLoading = true
-    await userStore.fetchConsumers()
-  } catch (error) {
-    console.error("重新加载数据失败:", error)
-  } finally {
-    userStore.consumersLoading = false
-  }
-}
-
-// 搜索确认事件
-const onSearchConfirm = async (e) => {
-  const keyword = e.detail?.value || e
-  console.log("搜索确认:", keyword)
-  searchKeyword.value = keyword
-
+// 执行搜索的核心方法
+const performSearch = async (keyword) => {
   if (!keyword.trim()) {
-    // 如果关键词为空，加载全部数据
-    try {
-      userStore.consumersLoading = true
-      await userStore.fetchConsumers()
-    } catch (error) {
-      console.error("加载数据失败:", error)
-    } finally {
-      userStore.consumersLoading = false
-    }
     return
   }
 
-  // 调用新的搜索API
+  console.log("执行搜索:", keyword)
+
   try {
     userStore.consumersLoading = true
+    hasSearched.value = true
+
     const response = await searchConsumers({ keyword: keyword.trim() })
 
     // 处理搜索结果
-    try {
-      // 优先检查是否直接包含users和total字段（API直接返回的数据格式）
-      if (response && 'users' in response && 'total' in response) {
-        userStore.consumers = response.users || []
-        userStore.consumersTotal = response.total || 0
+    if (response && 'users' in response && 'total' in response) {
+      userStore.consumers = response.users || []
+      userStore.consumersTotal = response.total || 0
 
-        // 如果搜索结果为空，显示提示
-        if ((response.users || []).length === 0) {
-          uni.showToast({
-            title: "未找到相关消费者",
-            icon: "none"
-          })
-        }
-      }
-      // 检查标准响应格式
-      else if (response?.code === 200 || response?.success) {
-        // 根据响应格式设置消费者数据
-        let consumersData = []
-
-        if (response?.data?.users) {
-          consumersData = response.data.users || []
-          userStore.consumersTotal = response.data.total || consumersData.length
-        } else if (response?.data) {
-          consumersData = response.data || []
-          userStore.consumersTotal = consumersData.length
-        } else if (Array.isArray(response)) {
-          consumersData = response
-          userStore.consumersTotal = consumersData.length
-        }
-
-        // 直接设置搜索结果到消费者列表
-        userStore.consumers = consumersData
-
-        // 如果搜索结果为空，显示提示
-        if (consumersData.length === 0) {
-          uni.showToast({
-            title: "未找到相关消费者",
-            icon: "none"
-          })
-        }
-      } else {
-        console.error("搜索失败:", response?.message || "未知错误")
+      if ((response.users || []).length === 0) {
         uni.showToast({
-          title: response?.message || "搜索失败",
+          title: "未找到相关消费者",
           icon: "none"
         })
       }
-    } catch (error) {
-      console.error("处理搜索结果时出错:", error)
+    } else if (response?.code === 200 || response?.success) {
+      let consumersData = []
+
+      if (response?.data?.users) {
+        consumersData = response.data.users || []
+        userStore.consumersTotal = response.data.total || consumersData.length
+      } else if (response?.data) {
+        consumersData = response.data || []
+        userStore.consumersTotal = consumersData.length
+      } else if (Array.isArray(response)) {
+        consumersData = response
+        userStore.consumersTotal = consumersData.length
+      }
+
+      userStore.consumers = consumersData
+
+      if (consumersData.length === 0) {
+        uni.showToast({
+          title: "未找到相关消费者",
+          icon: "none"
+        })
+      }
+    } else {
+      console.error("搜索失败:", response?.message || "未知错误")
       uni.showToast({
-        title: "处理搜索结果时出错",
+        title: response?.message || "搜索失败",
         icon: "none"
       })
     }
@@ -541,6 +362,36 @@ const onSearchConfirm = async (e) => {
   } finally {
     userStore.consumersLoading = false
   }
+}
+
+// 搜索清除事件
+const onSearchClear = () => {
+  console.log("搜索清除")
+  searchKeyword.value = ""
+  hasSearched.value = false
+
+  // 重置消费者列表
+  userStore.resetConsumers()
+}
+
+// 搜索确认事件（只在点击搜索按钮时触发）
+const onSearchConfirm = async (e) => {
+  // 使用当前输入框的值，确保是最新的搜索关键词
+  const keyword = searchKeyword.value?.trim() || ''
+  console.log("点击搜索按钮，搜索关键词:", keyword)
+
+  if (!keyword) {
+    // 如果关键词为空，提示用户输入搜索内容
+    uni.showToast({
+      title: '请输入搜索内容',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
+  // 执行搜索
+  await performSearch(keyword)
 }
 
 

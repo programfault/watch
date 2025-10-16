@@ -54,7 +54,7 @@ import CustomTabBar from '@/components/CustomTabBar.vue'
 import GlobalLoading from '@/components/GlobalLoading.vue'
 import StoreCard from '@/components/StoreCard.vue'
 import { useAppStore, useTabBarStore } from '@/stores'
-import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 // 导入工具函数
 import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
@@ -75,7 +75,6 @@ const tabBarStore = useTabBarStore()
 // 响应式数据
 const locationAuthorized = ref(false)
 const userLocation = ref(null)
-const isRefreshing = ref(false)
 
 // 计算属性 - 根据用户位置排序的门店列表
 const sortedStores = computed(() => {
@@ -172,57 +171,15 @@ const goToManual = () => {
 	})
 }
 
-// 下拉刷新处理函数
-const handleRefresh = async () => {
-	if (isRefreshing.value) return
 
-	isRefreshing.value = true
-	try {
-		// 重新获取店铺数据
-		await appStore.fetchStores()
-
-		// 如果有位置权限，重新获取位置信息
-		if (locationAuthorized.value) {
-			const location = await getUserLocation()
-			if (location) {
-				userLocation.value = location
-			}
-		}
-
-		uni.showToast({
-			title: '刷新成功',
-			icon: 'success',
-			duration: 1000
-		})
-	} catch (error) {
-		console.error('刷新失败:', error)
-		uni.showToast({
-			title: '刷新失败，请重试',
-			icon: 'none'
-		})
-	} finally {
-		isRefreshing.value = false
-		uni.stopPullDownRefresh()
-	}
-}
 
 // 初始化函数
 const initPage = async () => {
-	// 确保店铺数据已加载
-	if (!appStore.hasStores && !appStore.storesLoading) {
-		await appStore.fetchStores()
-	}
-
+	// 店铺数据已通过 init 接口获取，无需额外请求
 	// 仅静默检查权限状态，不主动请求，也不自动获取位置信息
 	const hasPermission = await checkLocationPermission()
 	locationAuthorized.value = hasPermission
-	// 移除自动获取位置信息的逻辑，只有在用户明确需要时才获取
 }
-
-// 下拉刷新生命周期
-onPullDownRefresh(() => {
-	handleRefresh()
-})
 
 // uniapp 生命周期 - 页面显示时
 onShow(async () => {
@@ -305,9 +262,7 @@ onShow(async () => {
 	padding: 40px 0;
 }
 
-.stores-list {
-	/* 店铺卡片样式已封装到StoreCard组件中 */
-}
+/* 店铺卡片样式已封装到StoreCard组件中，无需额外样式 */
 
 .empty-state {
 	text-align: center;

@@ -127,7 +127,7 @@ import CarouselComponent from '@/components/CarouselComponent.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import GlobalLoading from '@/components/GlobalLoading.vue'
 import ProductListComponent from '@/components/ProductListComponent.vue'
-import { useAppStore, useConfigStore, useProductStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
+import { useAppStore, useProductStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
 import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
 import { onHide, onLoad, onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
@@ -140,7 +140,6 @@ defineOptions({
 // 获取 stores
 const searchStore = useSearchStore()
 const appStore = useAppStore()
-const configStore = useConfigStore()
 const userStore = useUserStore()
 const tabBarStore = useTabBarStore()
 const productStore = useProductStore()
@@ -199,84 +198,22 @@ const waitForProductListComponent = async (maxRetries = 10) => {
 }
 
 
-// 初始化数据的方法 - 优化版本
+// 初始化数据的方法 - 简化版本
 const initData = async () => {
 	console.log('🚀 开始主页数据初始化')
 
+	// 立即初始化不需要网络请求的数据
+	searchStore.init()
+
 	try {
-		// 立即初始化不需要网络请求的数据
-		searchStore.init()
-
-		console.log('🚀 开始并行加载核心数据')
-
-		// 第一阶段：并行加载核心数据（用户立即需要看到的）
-		const coreDataPromises = []
-
-		// 配置数据
-		if (!configStore.isConfigLoaded) {
-			coreDataPromises.push(
-				configStore.fetchConfig().catch(error => {
-					console.warn('配置加载失败，使用默认配置:', error)
-				})
-			)
-		}
-
-		// 核心页面数据（轮播图和品牌）
-		coreDataPromises.push(
-			appStore.fetchPages().catch(error => {
-				console.warn('页面数据加载失败:', error)
-			})
-		)
-
-		coreDataPromises.push(
-			appStore.fetchBrands().catch(error => {
-				console.warn('品牌数据加载失败:', error)
-			})
-		)
-
-		// 等待核心数据加载完成
-		await Promise.allSettled(coreDataPromises)
-		console.log('🚀 核心数据加载完成')
-
-		// 第二阶段：后台加载次要数据（不阻塞页面显示）
-		console.log('🚀 开始后台加载次要数据')
-		Promise.allSettled([
-			appStore.fetchFilterOptions().catch(error => {
-				console.warn('筛选选项加载失败:', error)
-			}),
-			appStore.fetchStores().catch(error => {
-				console.warn('店铺数据加载失败:', error)
-			})
-		]).then((results) => {
-			console.log('🚀 所有后台数据加载完成')
-			appStore.initialized = true
-
-			// 检查是否有关键数据加载失败
-			const failedCount = results.filter(r => r.status === 'rejected').length
-			if (failedCount > 0) {
-				console.warn(`🚀 ${failedCount} 个次要数据源加载失败`)
-			}
-		})
-
+		// 调用一体化初始化API
+		console.log('🚀 调用应用初始化')
+		await appStore.fetchInitData()
+		console.log('✅ 应用初始化成功，数据加载完成')
 	} catch (error) {
-		console.error('🚀 主页数据初始化失败:', error)
-
-		// 根据错误类型给出不同提示
-		let errorMessage = '数据加载失败'
-		if (error.message && error.message.includes('网络')) {
-			errorMessage = '网络连接失败，请检查网络'
-		} else if (error.message && error.message.includes('超时')) {
-			errorMessage = '加载超时，请重试'
-		}
-
-		uni.showToast({
-			title: errorMessage,
-			icon: 'none',
-			duration: 3000
-		})
-
-		// 即使失败也要确保基本功能可用
-		searchStore.init()
+		console.error('❌ 应用初始化失败:', error)
+		// 失败时不做特殊处理，让 state 保持空数组状态
+		// 页面会自然显示"暂无数据"的状态
 	}
 }
 // 角色切换方法
