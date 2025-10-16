@@ -1,66 +1,49 @@
 <template>
-    <up-navbar
-        title="天辰手表"
-        :fixed="true"
-        :safe-area-inset-top="true"
-        :placeholder="true"
-        bg-color="#ffffff"
-        title-color="#333333"
-        height="44"
-        @leftClick="leftClick"
-    >
-        <template #left v-if="showSearchResults">
-            <view class="navbar-home-icon">
-                <up-icon name="home" size="20" color="#666666"></up-icon>
-            </view>
-        </template>
-    </up-navbar>
+	<up-navbar title="天辰手表" :fixed="true" :safe-area-inset-top="true" :placeholder="true" bg-color="#ffffff"
+		title-color="#333333" height="44" @leftClick="leftClick">
+		<template #left v-if="showSearchResults">
+			<view class="navbar-home-icon">
+				<up-icon name="home" size="20" color="#666666"></up-icon>
+			</view>
+		</template>
+	</up-navbar>
+	<view class="container">
 
-	<!-- 固定搜索框容器 -->
-	<view class="search-container">
-		<view class="search-wrapper">
-            <up-search
-                placeholder="搜索品牌、手表、服务..."
-                v-model="searchKeyword"
-                :show-action="searchStore.showSearchPanel"
-                :action-text='取消'
-                :animation="true"
-                shape="square"
-                bg-color="#ffffff"
-                border-color="#e5e5e5"
-                @focus="onSearchFocus"
-                @search="onSearch"
-                @custom="onSearchAction"
-                @clear="onSearchClear"
-                @change="onSearchInput"
-            ></up-search>
-        </view>
-	</view>
+		<view class="search_container" :style="searchContainerStyle">
+			<up-search placeholder="搜索品牌、手表、服务..." v-model="searchKeyword" :show-action="searchStore.showSearchPanel"
+				:actionText="searchStore.showSearchPanel ? '取消' : '搜索'" :animation="false" shape="square"
+				bg-color="#ffffff" border-color="#e5e5e5" @focus="onSearchFocus" @search="onSearch"
+				@custom="onSearchAction" @clear="onSearchClear" @change="onSearchInput"></up-search>
+		</view>
+		<SearchHistoryPanel :visible="searchStore.showSearchPanel" @select-history="selectHistory"
+			@clear-history="clearHistory" />
+		<view class="content">
+			<!-- 搜索结果 -->
+			<view class="search-results" v-if="showSearchResults && !searchStore.showSearchPanel">
+				<ProductListComponent ref="productListRef" :keyword="currentSearchKeyword" />
+			</view>
+
+			<!-- 主容器 -->
+			<view class="container__history" v-if="!searchStore.showSearchPanel && !showSearchResults">
+				<!-- 轮播图组件 -->
+				<CarouselComponent />
+				<!-- 品牌组件 -->
+				<BrandsComponent @brandClick="onBrandClick" />
+			</view>
+
+			<!-- 悬浮客服按钮 -->
+			<FloatingServiceButton />
+
+			<CustomTabBar />
+		</view>
+
+		<!-- 固定搜索框容器 -->
+		<!-- 
 
 	<!-- 搜索历史面板 -->
-	<SearchHistoryPanel
-		:visible="searchStore.showSearchPanel"
-		@select-history="selectHistory"
-		@clear-history="clearHistory"
-	/>
-
-	<!-- 搜索结果 -->
-	<view class="search-results" v-if="showSearchResults && !searchStore.showSearchPanel">
-		<ProductListComponent ref="productListRef" :keyword="currentSearchKeyword" />
+		<!--  -->
 	</view>
 
-	<!-- 主容器 -->
-	<view class="container" v-if="!searchStore.showSearchPanel && !showSearchResults">
-		<!-- 轮播图组件 -->
-		<CarouselComponent/>
-		<!-- 品牌组件 -->
-		<BrandsComponent @brandClick="onBrandClick" />
-	</view>
-
-    <!-- 悬浮客服按钮 -->
-    <FloatingServiceButton />
-
-    <CustomTabBar />
 </template>
 
 <script setup>
@@ -72,8 +55,46 @@ import ProductListComponent from '@/components/ProductListComponent.vue'
 import SearchHistoryPanel from '@/components/SearchHistoryPanel.vue'
 import { useAppStore, useProductStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
 import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
-import { onHide, onLoad, onShow } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { onHide, onLoad, onShow, onReady } from '@dcloudio/uni-app'
+import { ref, nextTick } from 'vue'
+
+// 定义响应式变量用于动态设置搜索框的top值
+const searchContainerStyle = ref({});
+
+// 页面加载时获取状态栏高度并动态设置样式
+onReady(async () => {
+  try {
+    // 使用更现代的API获取窗口信息
+    let windowInfo;
+    try {
+      // 优先尝试使用uni.getWindowInfo() (更现代的API，避免过时警告)
+      windowInfo = uni.getWindowInfo();
+    } catch (err) {
+      // 降级方案使用uni.getSystemInfoSync()
+      console.log('uni.getWindowInfo()不可用，降级使用uni.getSystemInfoSync()');
+      windowInfo = uni.getSystemInfoSync();
+    }
+    
+    const statusBarHeight = windowInfo.statusBarHeight || 0;
+    console.log('页面获取状态栏高度:', statusBarHeight, 'px');
+    
+    // 确保DOM已渲染
+    await nextTick();
+    
+    // 计算搜索框的top值并设置到响应式样式对象中
+    const totalTop = 44 + statusBarHeight;
+    searchContainerStyle.value = {
+      top: `${totalTop}px`
+    };
+    console.log('已动态设置搜索框top值:', totalTop + 'px');
+  } catch (e) {
+    console.error('设置搜索框样式失败:', e);
+    // 失败时使用默认值
+    searchContainerStyle.value = {
+      top: '98px' // 44px + 默认54px
+    };
+  }
+});
 
 // 定义组件名称
 defineOptions({
@@ -398,30 +419,30 @@ onLoad(async () => {
 onShow(() => {
 	console.log('📱 主页 onShow')
 
-    // 检查是否有保存的搜索状态，如果有则保持，否则重置到默认首页
-    const hasActiveSearch = showSearchResults.value || currentSearchKeyword.value
+	// 检查是否有保存的搜索状态，如果有则保持，否则重置到默认首页
+	const hasActiveSearch = showSearchResults.value || currentSearchKeyword.value
 
-    if (!hasActiveSearch) {
-        console.log('没有活跃搜索状态，重置到默认首页')
-        // 重置搜索状态，回到默认首页
-        searchStore.setKeyword('')
-        searchStore.hidePanel()
+	if (!hasActiveSearch) {
+		console.log('没有活跃搜索状态，重置到默认首页')
+		// 重置搜索状态，回到默认首页
+		searchStore.setKeyword('')
+		searchStore.hidePanel()
 
-        // 重置页面状态到默认首页
-        searchKeyword.value = ''
-        showSearchResults.value = false
-        currentSearchKeyword.value = ''
+		// 重置页面状态到默认首页
+		searchKeyword.value = ''
+		showSearchResults.value = false
+		currentSearchKeyword.value = ''
 
-        // 清除产品搜索结果
-        productStore.clearSearchResults()
-    } else {
-        console.log('保持当前搜索状态:', {
-            showSearchResults: showSearchResults.value,
-            currentSearchKeyword: currentSearchKeyword.value
-        })
-        // 保持搜索状态，只重置搜索面板
-        searchStore.hidePanel()
-    }
+		// 清除产品搜索结果
+		productStore.clearSearchResults()
+	} else {
+		console.log('保持当前搜索状态:', {
+			showSearchResults: showSearchResults.value,
+			currentSearchKeyword: currentSearchKeyword.value
+		})
+		// 保持搜索状态，只重置搜索面板
+		searchStore.hidePanel()
+	}
 
 	// 设置当前页面的tabBar状态
 	tabBarStore.setActiveTab('index')
@@ -461,169 +482,126 @@ const leftClick = () => {
 </script>
 
 <style lang="scss" scoped>
+.container{
+	background-color: #f8f8f8;
+}
 // 固定搜索框容器样式
 .search-container {
-    position: fixed;
-    top: calc(44px + var(--status-bar-height, 44px));
-    left: 0;
-    right: 0;
-    height: 44px;
-    background-color: #f8f8f8;
-    z-index: 10;
-    padding: 0 4%; /* 使用百分比实现响应式左右边距 */
-    box-sizing: border-box;
+	position: fixed;
+	top: calc(44px + var(--status-bar-height, 44px));
+	left: 0;
+	right: 0;
+	height: 44px;
+	background-color: #f8f8f8;
+	z-index: 10;
+	padding: 0 4%;
+	/* 使用百分比实现响应式左右边距 */
+	box-sizing: border-box;
 
-    /* 小屏幕适配 */
-    @media screen and (max-width: 375px) {
-        padding: 0 3%;
-    }
+	/* 小屏幕适配 */
+	@media screen and (max-width: 375px) {
+		padding: 0 3%;
+	}
 
-    /* 大屏幕适配 */
-    @media screen and (min-width: 768px) {
-        padding: 0 8%;
-    }
+	/* 大屏幕适配 */
+	@media screen and (min-width: 768px) {
+		padding: 0 8%;
+	}
 }
 
 // 搜索框包装器
 .search-wrapper {
-    padding: 0;
-    height: 100%;
-    width: 100%; /* 确保占满容器宽度 */
-    @include flex;
-    align-items: center;
+	padding: 0;
+	height: 100%;
+	width: 100%;
+	/* 确保占满容器宽度 */
 }
 
-/* up-search组件样式调整 */
-:deep(.u-search) {
-    width: 100%; /* 确保搜索框占满包装器宽度 */
-    border-radius: 12px;
-    height: 40px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    flex: 1; /* 让搜索框占据所有可用空间 */
 
-    .u-search__content {
-        background-color: #ffffff;
-        border: 1px solid #e8e8e8;
-        border-radius: 12px;
-        height: 38px;
-        width: 100%; /* 确保内容区域占满宽度 */
-        display: flex;
-        align-items: center;
 
-        &--round {
-            border-radius: 12px;
-        }
-    }
-
-    .u-search__input-wrapper {
-        padding: 0 16px;
-        height: 36px;
-        flex: 1; /* 让输入区域占据剩余空间 */
-        min-width: 0; /* 允许收缩 */
-    }
-
-    .u-search__input {
-        font-size: 15px;
-        color: #333333;
-        height: 36px;
-        line-height: 36px;
-        width: 100%; /* 确保输入框占满可用宽度 */
-        border: none;
-        outline: none;
-        background: transparent;
-
-        &::placeholder {
-            color: #999999;
-            font-size: 14px;
-        }
-    }
-
-    .u-search__action {
-        padding: 0 12px;
-        font-size: 14px;
-        color: #007aff;
-        white-space: nowrap; /* 防止按钮文字换行 */
-        flex-shrink: 0; /* 防止按钮被压缩 */
-    }
-
-    .u-search__icon {
-        padding: 0 8px;
-        flex-shrink: 0; /* 防止图标被压缩 */
-    }
-
-    .u-icon {
-        color: #666666 !important;
-    }
+// 搜索容器样式
+.search_container {
+		position: fixed;
+		left: 0;
+		width: 100%;
+	height: 44px;
+	background-color: #ffffff;
+	z-index: 11;
+	border-bottom: 1px solid #f0f0f0;
+	box-sizing: border-box;
+	padding: 0 16px;
+	display: flex;
+	align-items: center;
 }
 
 // navbar相关样式
 .navbar-home-icon {
-    @include flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 16px;
-    background-color: rgba(255, 255, 255, 0.9);
-    border: 1px solid #e8e8e8;
+	@include flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 16px;
+	background-color: rgba(255, 255, 255, 0.9);
+	border: 1px solid #e8e8e8;
 
-    &:active {
-        background-color: rgba(255, 255, 255, 0.7);
-    }
+	&:active {
+		background-color: rgba(255, 255, 255, 0.7);
+	}
 }
 
 :deep(.u-navbar) {
-    z-index: 12 !important;
+	z-index: 12 !important;
 
-    &.u-navbar--fixed {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-    }
+	&.u-navbar--fixed {
+		position: fixed !important;
+		top: 0 !important;
+		left: 0 !important;
+		right: 0 !important;
+	}
 
-    .u-navbar__content {
-        background-color: #ffffff !important;
-        border-bottom: 1px solid #f0f0f0;
-        height: 44px !important;
-        display: flex !important;
-        align-items: center !important;
-    }
+	.u-navbar__content {
+		background-color: #ffffff !important;
+		border-bottom: 1px solid #f0f0f0;
+		height: 44px !important;
+		display: flex !important;
+		align-items: center !important;
+	}
 
-    .u-navbar__placeholder {
-        height: calc(44px + var(--status-bar-height, 44px)) !important;
-    }
+	.u-navbar__placeholder {
+		height: calc(44px + var(--status-bar-height, 44px)) !important;
+	}
 }
 
 // 搜索结果页面样式 - 简化计算
 .search-results {
-    background-color: #f8f8f8;
-    margin-top: calc(44px + var(--status-bar-height, 44px) + 44px + 8px);
-    min-height: calc(100vh - 44px - var(--status-bar-height, 44px) - 44px - 8px - 70px);
-    padding-bottom: calc(100px + env(safe-area-inset-bottom));
+	background-color: #f8f8f8;
+	margin-top: calc(44px + var(--status-bar-height, 44px) + 44px + 8px);
+	min-height: calc(100vh - 44px - var(--status-bar-height, 44px) - 44px - 8px - 70px);
+	padding-bottom: calc(100px + env(safe-area-inset-bottom));
 }
 
 // 主容器样式 - 简化计算
-.container {
-    min-height: calc(100vh - 44px - var(--status-bar-height, 44px) - 44px - 8px - 70px);
-    padding: 4%; /* 使用百分比实现响应式内边距 */
-    margin-top: calc(44px + var(--status-bar-height, 44px) + 44px + 8px);
-    padding-top: 20px;
-    padding-bottom: calc(100px + env(safe-area-inset-bottom));
-    background-color: #f8f8f8;
-    box-sizing: border-box;
+.container__history {
+	min-height: calc(100vh - 44px - var(--status-bar-height, 44px) - 44px - 8px - 70px);
+	padding: 4%;
+	/* 使用百分比实现响应式内边距 */
+	margin-top: calc(44px + var(--status-bar-height, 44px) + 44px + 8px);
+	padding-top: 20px;
+	padding-bottom: calc(100px + env(safe-area-inset-bottom));
+	background-color: #f8f8f8;
+	box-sizing: border-box;
 
-    /* 小屏幕适配 */
-    @media screen and (max-width: 375px) {
-        padding-left: 3%;
-        padding-right: 3%;
-    }
+	/* 小屏幕适配 */
+	@media screen and (max-width: 375px) {
+		padding-left: 3%;
+		padding-right: 3%;
+	}
 
-    /* 大屏幕适配 */
-    @media screen and (min-width: 768px) {
-        padding-left: 8%;
-        padding-right: 8%;
-    }
+	/* 大屏幕适配 */
+	@media screen and (min-width: 768px) {
+		padding-left: 8%;
+		padding-right: 8%;
+	}
 }
-
 </style>
