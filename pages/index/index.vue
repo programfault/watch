@@ -26,67 +26,12 @@
 		</view>
 	</uv-sticky>
 
-	<!-- 搜索面板 -->
-	<view class="search-panel" v-if="searchStore.showSearchPanel && !showSearchResults">
-		<!-- 搜索历史 -->
-		<view class="search-history">
-			<view class="history-header">
-				<text class="history-title">搜索历史</text>
-				<text
-					class="clear-btn"
-					v-if="searchStore.validSearchHistory.length > 0"
-					@click="clearHistory"
-				>清空</text>
-			</view>
-			<view
-				class="history-list"
-				v-if="searchStore.validSearchHistory.length > 0"
-			>
-				<view
-					class="history-item"
-					v-for="(item, index) in searchStore.validSearchHistory"
-					:key="index"
-					@click="selectHistory(item)"
-				>
-					<text class="history-text">{{ item }}</text>
-				</view>
-			</view>
-			<view class="empty-history" v-else>
-				<text class="empty-text">暂无搜索历史</text>
-			</view>
-		</view>
-	</view>
-
-	<!-- 搜索结果页面的搜索面板 -->
-	<view class="search-panel" v-if="searchStore.showSearchPanel && showSearchResults">
-		<!-- 搜索历史 -->
-		<view class="search-history">
-			<view class="history-header">
-				<text class="history-title">搜索历史</text>
-				<text
-					class="clear-btn"
-					v-if="searchStore.validSearchHistory.length > 0"
-					@click="clearHistory"
-				>清空</text>
-			</view>
-			<view
-				class="history-list"
-				v-if="searchStore.validSearchHistory.length > 0"
-			>
-				<view
-					class="history-item"
-					v-for="(item, index) in searchStore.validSearchHistory"
-					:key="index"
-					@click="selectHistory(item)"
-				>
-					<text class="history-text">{{ item }}</text>
-				</view>
-			</view>
-			<view class="empty-history" v-else>
-				<text class="empty-text">暂无搜索历史</text>
-			</view>
-		</view>
-	</view>
+	<!-- 搜索历史面板 -->
+	<SearchHistoryPanel
+		:visible="searchStore.showSearchPanel"
+		@select-history="selectHistory"
+		@clear-history="clearHistory"
+	/>
 
 	<!-- 搜索结果 -->
 	<view class="search-results" v-if="showSearchResults && !searchStore.showSearchPanel">
@@ -101,20 +46,8 @@
 		<BrandsComponent @brandClick="onBrandClick" />
 	</view>
 
-    <!-- 悬浮按钮 - 简化测试版本 -->
-		   <view class="simple-floating-button">
-			   <button
-				   open-type="contact"
-				   session-from="weapp"
-				   class="custom-service-btn"
-			   >
-				   <uv-icon
-					   name="server-man"
-					   size="28"
-					   color="#fff"
-				   />
-			   </button>
-		   </view>
+    <!-- 悬浮客服按钮 -->
+    <FloatingServiceButton />
 
     <CustomTabBar />
 	<!-- 全局Loading组件 -->
@@ -125,8 +58,10 @@
 import BrandsComponent from '@/components/BrandsComponent.vue'
 import CarouselComponent from '@/components/CarouselComponent.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import FloatingServiceButton from '@/components/FloatingServiceButton.vue'
 import GlobalLoading from '@/components/GlobalLoading.vue'
 import ProductListComponent from '@/components/ProductListComponent.vue'
+import SearchHistoryPanel from '@/components/SearchHistoryPanel.vue'
 import { useAppStore, useProductStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
 import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
 import { onHide, onLoad, onShow } from '@dcloudio/uni-app'
@@ -561,67 +496,7 @@ const leftClick = () => {
 	z-index: 1;
 }
 
-// 搜索面板样式
-.search-panel {
-	padding: 15px;
-	margin-top: 96px; /* navbar(44) + 搜索框区域(52) 的高度 */
-	padding-top: 10px;
-	padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* 确保搜索历史完整显示，增加足够空间 */
-	background-color: #f8f8f8;
-	min-height: calc(100vh - 96px - 70px); /* navbar(44) + 搜索框区域(52) + tabbar(70) */
 
-	.search-history {
-		margin-bottom: 20px;
-
-		.history-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 10px;
-
-			.history-title {
-				font-size: 16px;
-				font-weight: bold;
-				color: #333;
-			}
-
-			.clear-btn {
-				font-size: 14px;
-				color: #007aff;
-			}
-		}
-
-		.history-list {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 8px;
-
-			.history-item {
-				display: inline-flex;
-				align-items: center;
-				padding: 6px 12px;
-				background: #fff;
-				border-radius: 16px;
-				border: 1px solid #e0e0e0;
-
-				.history-text {
-					font-size: 14px;
-					color: #666;
-				}
-			}
-		}
-
-		.empty-history {
-			text-align: center;
-			padding: 40px 0;
-
-			.empty-text {
-				color: #999;
-				font-size: 14px;
-			}
-		}
-	}
-}
 
 // 搜索结果样式
 .search-results {
@@ -641,48 +516,5 @@ const leftClick = () => {
 	box-sizing: border-box;
 }
 
-// 客服悬浮按钮样式
-.simple-floating-button {
-	position: fixed;
-	bottom: 200rpx;
-	right: 30rpx;
-	width: 80rpx;
-	height: 80rpx;
-	background-color: #e85a4f;
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	z-index: 9999;
-	box-shadow: 0 6rpx 20rpx rgba(232, 90, 79, 0.3);
-	transition: all 0.3s ease;
 
-	&:active {
-		transform: scale(0.95);
-		box-shadow: 0 4rpx 15rpx rgba(232, 90, 79, 0.4);
-	}
-}
-
-.custom-service-btn {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  -webkit-tap-highlight-color: transparent;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 !important;
-  margin: 0 !important;
-  border-radius: 0;
-  font-size: 0;
-  line-height: 0;
-  text-align: center;
-}
-
-.custom-service-btn::after {
-  border: none !important;
-}
 </style>
