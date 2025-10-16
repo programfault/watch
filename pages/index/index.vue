@@ -1,30 +1,40 @@
 <template>
-    <uv-navbar title="天辰手表" :fixed="true" @leftClick="leftClick">
-        <template v-slot:left>
-        <view class="uv-nav-slot" v-if="showSearchResults">
-            <uv-icon name="home" size="20"></uv-icon>
-        </view>
-    </template>
-    </uv-navbar>
+    <up-navbar
+        title="天辰手表"
+        :fixed="true"
+        :safe-area-inset-top="true"
+        :placeholder="true"
+        bg-color="#ffffff"
+        title-color="#333333"
+        height="44"
+        @leftClick="leftClick"
+    >
+        <template #left v-if="showSearchResults">
+            <view class="navbar-home-icon">
+                <up-icon name="home" size="20" color="#666666"></up-icon>
+            </view>
+        </template>
+    </up-navbar>
 
 	<!-- 固定搜索框容器 -->
 	<view class="search-container">
-		<view class="search-box">
-			<uv-search
-				placeholder="搜索品牌、手表、服务..."
-				v-model="searchKeyword"
-				:showAction="searchStore.showSearchPanel"
-				:actionText="searchStore.showSearchPanel ? '取消' : '搜索'"
-				:animation="false"
-				shape="square"
-				bgColor="#ffffff"
-				@focus="onSearchFocus"
-				@search="onSearch"
-				@custom="onSearchAction"
-				@clear="onSearchClear"
-				@change="onSearchInput"
-			></uv-search>
-		</view>
+		<view class="search-wrapper">
+            <up-search
+                placeholder="搜索品牌、手表、服务..."
+                v-model="searchKeyword"
+                :show-action="searchStore.showSearchPanel"
+                :action-text='取消'
+                :animation="true"
+                shape="square"
+                bg-color="#ffffff"
+                border-color="#e5e5e5"
+                @focus="onSearchFocus"
+                @search="onSearch"
+                @custom="onSearchAction"
+                @clear="onSearchClear"
+                @change="onSearchInput"
+            ></up-search>
+        </view>
 	</view>
 
 	<!-- 搜索历史面板 -->
@@ -51,8 +61,6 @@
     <FloatingServiceButton />
 
     <CustomTabBar />
-	<!-- 全局Loading组件 -->
-	<GlobalLoading />
 </template>
 
 <script setup>
@@ -60,7 +68,6 @@ import BrandsComponent from '@/components/BrandsComponent.vue'
 import CarouselComponent from '@/components/CarouselComponent.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import FloatingServiceButton from '@/components/FloatingServiceButton.vue'
-import GlobalLoading from '@/components/GlobalLoading.vue'
 import ProductListComponent from '@/components/ProductListComponent.vue'
 import SearchHistoryPanel from '@/components/SearchHistoryPanel.vue'
 import { useAppStore, useProductStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
@@ -453,74 +460,170 @@ const leftClick = () => {
 
 </script>
 
-<style lang="scss">
-@mixin flex($direction: row) {
-		/* #ifndef APP-NVUE */
-		display: flex;
-		/* #endif */
-		flex-direction: $direction;
-	}
-	.uv-nav-slot {
-		@include flex;
-		align-items: center;
-		justify-content: space-between;
-		border-width: 0.5px;
-		border-radius: 100px;
-		border-color: #dadbde;
-		padding: 3px 7px;
-		opacity: 0.8;
-	}
-
-	/* 确保层级正确 */
-	:deep(.uv-navbar) {
-		z-index: 12 !important;
-	}
-
+<style lang="scss" scoped>
 // 固定搜索框容器样式
 .search-container {
-	position: fixed;
-	/* 完全贴合navbar，向上重叠1px确保无缝 */
-	top: 65px;
-	left: 0;
-	right: 0;
-	height: 61px; /* 增加高度，为视觉分离留出空间 */
-	background-color: #f8f8f8; /* 与页面背景色一致 */
-	z-index: 11; /* 搜索框在navbar之下，但在内容之上 */
+    position: fixed;
+    top: calc(44px + var(--status-bar-height, 44px));
+    left: 0;
+    right: 0;
+    height: 44px;
+    background-color: #f8f8f8;
+    z-index: 10;
+    padding: 0 4%; /* 使用百分比实现响应式左右边距 */
+    box-sizing: border-box;
+
+    /* 小屏幕适配 */
+    @media screen and (max-width: 375px) {
+        padding: 0 3%;
+    }
+
+    /* 大屏幕适配 */
+    @media screen and (min-width: 768px) {
+        padding: 0 8%;
+    }
 }
 
-// 搜索框样式
-.search-box {
-	padding: 12px 10px 8px 10px; /* 调整左右padding与首页内容保持一致 */
-	height: 100%;
-	@include flex;
-	align-items: center;
-
-	/* 让搜索组件本身有圆角，简洁设计 */
-	:deep(.uv-search) {
-		border-radius: 4px;
-		border: 1px solid #e5e5e5;
-	}
+// 搜索框包装器
+.search-wrapper {
+    padding: 0;
+    height: 100%;
+    width: 100%; /* 确保占满容器宽度 */
+    @include flex;
+    align-items: center;
 }
 
+/* up-search组件样式调整 */
+:deep(.u-search) {
+    width: 100%; /* 确保搜索框占满包装器宽度 */
+    border-radius: 12px;
+    height: 40px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    flex: 1; /* 让搜索框占据所有可用空间 */
 
+    .u-search__content {
+        background-color: #ffffff;
+        border: 1px solid #e8e8e8;
+        border-radius: 12px;
+        height: 38px;
+        width: 100%; /* 确保内容区域占满宽度 */
+        display: flex;
+        align-items: center;
 
-// 搜索结果样式
+        &--round {
+            border-radius: 12px;
+        }
+    }
+
+    .u-search__input-wrapper {
+        padding: 0 16px;
+        height: 36px;
+        flex: 1; /* 让输入区域占据剩余空间 */
+        min-width: 0; /* 允许收缩 */
+    }
+
+    .u-search__input {
+        font-size: 15px;
+        color: #333333;
+        height: 36px;
+        line-height: 36px;
+        width: 100%; /* 确保输入框占满可用宽度 */
+        border: none;
+        outline: none;
+        background: transparent;
+
+        &::placeholder {
+            color: #999999;
+            font-size: 14px;
+        }
+    }
+
+    .u-search__action {
+        padding: 0 12px;
+        font-size: 14px;
+        color: #007aff;
+        white-space: nowrap; /* 防止按钮文字换行 */
+        flex-shrink: 0; /* 防止按钮被压缩 */
+    }
+
+    .u-search__icon {
+        padding: 0 8px;
+        flex-shrink: 0; /* 防止图标被压缩 */
+    }
+
+    .u-icon {
+        color: #666666 !important;
+    }
+}
+
+// navbar相关样式
+.navbar-home-icon {
+    @include flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e8e8e8;
+
+    &:active {
+        background-color: rgba(255, 255, 255, 0.7);
+    }
+}
+
+:deep(.u-navbar) {
+    z-index: 12 !important;
+
+    &.u-navbar--fixed {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+    }
+
+    .u-navbar__content {
+        background-color: #ffffff !important;
+        border-bottom: 1px solid #f0f0f0;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .u-navbar__placeholder {
+        height: calc(44px + var(--status-bar-height, 44px)) !important;
+    }
+}
+
+// 搜索结果页面样式 - 简化计算
 .search-results {
-	background-color: #f8f8f8;
-	margin-top: 126px; /* navbar(65) + 搜索框区域(61) 的高度 */
-	min-height: calc(100vh - 126px - 70px); /* navbar(65) + 搜索框区域(61) + tabbar(70) */
-	padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* 确保品牌卡片完整显示，增加足够空间 */
+    background-color: #f8f8f8;
+    margin-top: calc(44px + var(--status-bar-height, 44px) + 44px + 8px);
+    min-height: calc(100vh - 44px - var(--status-bar-height, 44px) - 44px - 8px - 70px);
+    padding-bottom: calc(100px + env(safe-area-inset-bottom));
 }
 
+// 主容器样式 - 简化计算
 .container {
-	min-height: calc(100vh - 126px - 70px); /* navbar(65) + 搜索框区域(61) + tabbar(70) */
-	padding: 10px; /* 与ProductListComponent保持一致 */
-	margin-top: 126px; /* navbar(65) + 搜索框区域(61) 的高度 */
-	padding-top: 20px; /* 增加顶部间距，与搜索框保持合适距离 */
-	padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* 确保品牌卡片完整显示，增加足够空间 */
-	background-color: #f8f8f8;
-	box-sizing: border-box;
-}
+    min-height: calc(100vh - 44px - var(--status-bar-height, 44px) - 44px - 8px - 70px);
+    padding: 4%; /* 使用百分比实现响应式内边距 */
+    margin-top: calc(44px + var(--status-bar-height, 44px) + 44px + 8px);
+    padding-top: 20px;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom));
+    background-color: #f8f8f8;
+    box-sizing: border-box;
 
+    /* 小屏幕适配 */
+    @media screen and (max-width: 375px) {
+        padding-left: 3%;
+        padding-right: 3%;
+    }
+
+    /* 大屏幕适配 */
+    @media screen and (min-width: 768px) {
+        padding-left: 8%;
+        padding-right: 8%;
+    }
+}
 
 </style>

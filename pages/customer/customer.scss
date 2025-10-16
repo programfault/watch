@@ -69,7 +69,7 @@
   padding: 0 12px;
 
   // 移除uni-list-item的默认样式
-  ::v-deep .custom-list-item {
+  :deep(.custom-list-item) {
     .uni-list-item {
       background: transparent !important;
       padding: 0 !important;

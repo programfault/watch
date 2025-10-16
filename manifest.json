@@ -65,7 +65,8 @@
         },
         "requiredPrivateInfos" : [ "getLocation" ],
         "lazyCodeLoading" : "requiredComponents",
-        "debug" : true
+        "debug" : true,
+        "mergeVirtualHostAttributes" : true
     },
     "vueVersion" : "3",
     "fallbackLocale" : "zh-Hans"

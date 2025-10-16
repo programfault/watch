@@ -26,21 +26,17 @@
 
 		<!-- 底部标签栏组件 -->
 		<CustomTabBar />
-		<!-- 全局Loading组件 -->
-		<GlobalLoading />
 	</view>
 </template>
 
 <script>
 import CustomTabBar from '@/components/CustomTabBar.vue';
-import GlobalLoading from '@/components/GlobalLoading.vue';
 import { useAppStore } from '@/stores';
 import { PAGE_IDS } from '@/utils/constants';
 
 export default {
 	components: {
-		CustomTabBar,
-		GlobalLoading
+		CustomTabBar
 	},
 	setup() {
 		const appStore = useAppStore()

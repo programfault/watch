@@ -44,14 +44,11 @@
 
 		<!-- 底部标签栏组件 -->
 		<CustomTabBar />
-		<!-- 全局Loading组件 -->
-		<GlobalLoading />
 	</view>
 </template>
 
 <script setup>
 import CustomTabBar from '@/components/CustomTabBar.vue'
-import GlobalLoading from '@/components/GlobalLoading.vue'
 import StoreCard from '@/components/StoreCard.vue'
 import { useAppStore, useTabBarStore } from '@/stores'
 import { onShow } from '@dcloudio/uni-app'

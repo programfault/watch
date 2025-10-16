@@ -86,15 +86,15 @@
                     <view class="icon-btn contact-btn contact-wrapper">
                         <button class="invisible-contact-btn" open-type="contact" session-from="weapp"></button>
                         <uv-icon name="server-man" size="26" color="#e85a4f"></uv-icon>
-                        <text>客服</text>
+                        <text class="action-text">客服</text>
                     </view>
                     <view class="icon-btn favorite-btn favorite-wrapper" :class="{ 'favorited': isFavorited }" @click="handleFavorite">
                         <uv-icon name="heart" size="26" :color="isFavorited ? '#ff4d4f' : '#666'"></uv-icon>
-                        <text>{{ isFavorited ? '已收藏' : '收藏' }}</text>
+                        <text class="action-text">{{ isFavorited ? '已收藏' : '收藏' }}</text>
                     </view>
                 </view>
                 <button class="main-btn store-btn" @click="handleViewStores">
-                    <text>在售门店</text>
+                    <text class="button-text">在售门店</text>
                 </button>
             </view>
         </view>

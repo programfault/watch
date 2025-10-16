@@ -1,15 +1,14 @@
 <template>
 	<view class="custom-tabbar">
         <!-- Tab切换Loading组件 -->
-        <uv-loading-page
+        <TabSwitchLoading
             :loading="tabSwitchLoading"
             :loading-text="tabSwitchText"
             font-size="32rpx"
             icon-size="60rpx"
             bg-color="rgba(255, 255, 255, 0.95)"
-            color="#333"
+            text-color="#333"
             loading-color="#007aff"
-            loading-mode="circle"
         />
 		<view class="tabbar-content">
 			<view
@@ -38,6 +37,7 @@
 </template>
 
 <script setup>
+import TabSwitchLoading from '@/components/TabSwitchLoading.vue'
 import { useTabBarStore } from '@/stores'
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 

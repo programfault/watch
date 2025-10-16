@@ -88,8 +88,6 @@
 
 		<!-- 底部标签栏组件 -->
 		<CustomTabBar />
-		<!-- 全局Loading组件 -->
-		<GlobalLoading />
 
 		<!-- 绑定手机号弹窗 -->
 		<uni-popup
@@ -135,7 +133,6 @@
 
 <script setup>
 import CustomTabBar from '@/components/CustomTabBar.vue'
-import GlobalLoading from '@/components/GlobalLoading.vue'
 import { useTabBarStore, useUserStore } from '@/stores'
 import {
     getFormattedBrowsingHistory
