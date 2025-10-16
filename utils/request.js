@@ -3,6 +3,8 @@
  * 支持 token 拦截、自动刷新、错误处理等
  */
 
+import { useUserStore } from '@/stores/user.js'
+
 // API 配置
 const API_CONFIG = {
   baseURL: 'https://roc.tailtweak.com/api/mini',
@@ -17,74 +19,49 @@ const requestQueue = []
 /**
  * 工具函数
  */
+
 function getTokens() {
   try {
-    // 1. 首先尝试从 Pinia persist 的 'user-store' 获取 tokens
-    const userStore = uni.getStorageSync('user-store')
-    if (userStore) {
-      const parsedUserStore = typeof userStore === 'string' ? JSON.parse(userStore) : userStore
-      if (parsedUserStore.tokens && parsedUserStore.tokens.access_token) {
-        console.log('🔍 getTokens - 从user-store获取到有效token:', parsedUserStore.tokens.access_token.substring(0, 10) + '...')
-        console.log('🔍 getTokens - 完整tokens信息:', {
-          access_token: parsedUserStore.tokens.access_token.substring(0, 10) + '...',
-          refresh_token: parsedUserStore.tokens.refresh_token ? parsedUserStore.tokens.refresh_token.substring(0, 10) + '...' : '无',
-          expires_in: parsedUserStore.tokens.expires_in
-        })
-        return parsedUserStore.tokens
-      } else {
-        console.log('🔍 getTokens - user-store中无有效token:', parsedUserStore.tokens || 'tokens字段不存在')
-      }
-    } else {
-      console.log('🔍 getTokens - user-store不存在')
+    // 直接从Pinia store获取tokens
+    const userStore = useUserStore()
+    if (userStore && userStore.tokens && userStore.tokens.access_token) {
+      console.log('🔍 getTokens - 从Pinia store获取到有效token:', userStore.tokens.access_token.substring(0, 10) + '...')
+      console.log('🔍 getTokens - 完整tokens信息:', {
+        access_token: userStore.tokens.access_token.substring(0, 10) + '...',
+        refresh_token: userStore.tokens.refresh_token ? userStore.tokens.refresh_token.substring(0, 10) + '...' : '无',
+        expires_in: userStore.tokens.expires_in
+      })
+      return userStore.tokens
     }
 
-    // 2. 尝试从传统的 'tokens' 键获取
-    const tokens = uni.getStorageSync('tokens')
-    if (tokens) {
-      const parsedTokens = JSON.parse(tokens)
-      if (parsedTokens.access_token) {
-        console.log('🔍 getTokens - 从tokens键获取到有效token:', parsedTokens.access_token.substring(0, 10) + '...')
-        return parsedTokens
-      }
-    }
-
-    // 3. 检查是否有会话信息
-    const sessionInfo = uni.getStorageSync('userInfo')
-    console.log('🔍 getTokens - 会话信息检查:', sessionInfo ? '存在' : '不存在')
-
-    console.log('🔍 getTokens - 未获取到有效token')
+    console.log('🔍 getTokens - Pinia store中无有效token')
     return null
   } catch (error) {
     console.error('🔍 getTokens - 获取失败:', error)
     return null
   }
-}
-
-function saveTokens(tokens) {
+}function saveTokens(tokens) {
   try {
-    // 1. 保存到传统的 tokens 键
-    uni.setStorageSync('tokens', JSON.stringify(tokens))
-
-    // 2. 同步到 user-store（如果存在）
-    const userStoreData = uni.getStorageSync('user-store')
-    if (userStoreData) {
-      const parsedUserStore = typeof userStoreData === 'string' ? JSON.parse(userStoreData) : userStoreData
-      parsedUserStore.tokens = tokens
-      uni.setStorageSync('user-store', JSON.stringify(parsedUserStore))
-      console.log('🔄 saveTokens - 已同步更新 user-store 中的 tokens')
-    }
+    // 通过Pinia store更新tokens（会自动触发持久化）
+    const userStore = useUserStore()
+    userStore.tokens = tokens
+    console.log('🔄 saveTokens - 已通过Pinia store更新tokens，自动持久化到storage')
   } catch (error) {
-    console.error('保存 tokens 失败:', error)
+    console.error('🔄 saveTokens - 通过Pinia store更新失败:', error)
   }
 }
 
 function clearAuth() {
-  uni.removeStorageSync('tokens')
-  uni.removeStorageSync('userInfo')
-  uni.removeStorageSync('session_key')
-}
-
-/**
+  try {
+    // 通过Pinia store清除认证信息
+    const userStore = useUserStore()
+    // 调用store的logout方法，会清理所有相关状态并触发持久化
+    userStore.logout(false) // false表示不跳转页面
+    console.log('🔄 clearAuth - 已通过Pinia store清除认证信息')
+  } catch (error) {
+    console.error('🔄 clearAuth - 通过Pinia store清除失败:', error)
+  }
+}/**
  * 请求拦截器函数 - 处理请求配置
  */
 function requestInterceptor(config) {
