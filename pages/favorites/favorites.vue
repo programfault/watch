@@ -30,7 +30,7 @@
 				</view>
 				<view class="item-actions">
 					<view class="remove-btn" @click.stop="removeFavorite(item.id)">
-						<uv-icon name="close" size="20" color="#999"></uv-icon>
+						<up-icon name="close" size="20" color="#999"></up-icon>
 					</view>
 				</view>
 			</view>
@@ -39,7 +39,7 @@
 		<!-- 空状态 -->
 		<view v-else class="empty-state">
 			<view class="empty-icon">
-				<uv-icon name="heart" size="80" color="#e0e0e0"></uv-icon>
+				<up-icon name="heart" size="80" color="#e0e0e0"></up-icon>
 			</view>
 			<text class="empty-title">暂无收藏</text>
 			<text class="empty-desc">赶快去收藏心仪的手表吧</text>

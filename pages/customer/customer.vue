@@ -4,7 +4,7 @@
     <view class="fixed-search">
       <view class="search-container">
         <view class="search-bar-wrapper">
-          <uv-search
+          <up-search
             @custom="onSearchConfirm"
             placeholder="请输入手机号搜索"
             :focus="false"
@@ -28,7 +28,7 @@
         <!-- 搜索提示状态 -->
         <view class="search-hint" v-if="!hasSearched && !userStore.consumersLoading">
           <view class="hint-icon">
-            <uv-icon name="search" size="48" color="#ccc"/>
+            <up-icon name="search" size="48" color="#ccc"/>
           </view>
           <text class="hint-text">请输入手机号进行搜索</text>
           <text class="hint-subtext">支持精确匹配手机号码</text>
@@ -92,29 +92,29 @@
                   </view>
                   <!-- 下半部分：操作按钮 -->
                   <view class="consumer-actions">
-                    <uv-button
+                    <up-button
                       type="primary"
                       size="small"
                       :custom-style="{ marginRight: '8px' }"
                       @click="handleGift(consumer)"
                     >
                       赠送
-                    </uv-button>
-                    <uv-button
+                    </up-button>
+                    <up-button
                       type="warning"
                       size="small"
                       :custom-style="{ marginRight: '8px' }"
                       @click="handleVerification(consumer)"
                     >
                       核销
-                    </uv-button>
-                    <uv-button
+                    </up-button>
+                    <up-button
                       type="success"
                       size="small"
                       @click="handleUpdate(consumer)"
                     >
                       更新
-                    </uv-button>
+                    </up-button>  
                   </view>
               </view>
             </view>
@@ -123,7 +123,7 @@
         <!-- 搜索无结果状态 -->
         <view class="empty-state" v-else-if="hasSearched && !userStore.consumersLoading">
           <view class="empty-icon">
-            <uv-icon name="inbox" size="48" color="#ccc"/>
+            <up-icon name="inbox" size="48" color="#ccc"/>
           </view>
           <text class="empty-text">未找到匹配的消费者</text>
           <text class="empty-subtext">请尝试其他手机号码</text>

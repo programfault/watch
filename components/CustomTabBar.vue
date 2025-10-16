@@ -18,7 +18,7 @@
 				:class="{ 'active': tabBarStore.activeTab === tab.name }"
 				@tap="handleTabChange(tab.name)"
 			>
-				<uv-icon
+				<up-icon
 					:name="mapIcon(tab.icon)"
 					:color="tabBarStore.activeTab === tab.name ? '#D81E06' : '#7d7e80'"
 					size="22"

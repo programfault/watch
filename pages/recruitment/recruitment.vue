@@ -13,13 +13,13 @@
 		<!-- 空状态 -->
 		<view class="empty-state" v-else>
 			<view class="empty-icon">
-				<uv-icon name="account" size="60" color="#e0e0e0" />
+				<up-icon name="account" size="60" color="#e0e0e0" />
 			</view>
 			<text class="empty-title">招聘信息暂未发布</text>
 			<text class="empty-desc">我们正在准备优质的工作机会，
 敬请期待加入我们的团队</text>
 			<view class="empty-tip">
-				<uv-icon name="info-circle" size="14" color="#999" />
+				<up-icon name="info-circle" size="14" color="#999" />
 				<text class="tip-text">您可以关注我们的最新动态</text>
 			</view>
 		</view>

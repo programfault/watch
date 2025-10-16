@@ -5,7 +5,7 @@
       session-from="weapp"
       class="service-btn"
     >
-      <uv-icon
+      <up-icon
         name="server-man"
         size="28"
         color="#fff"

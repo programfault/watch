@@ -10,9 +10,9 @@
                         <!-- 如果用户已登录 -->
                         <template v-if="userStore.isLoggedIn">
                             <!-- 有手机号显示VIP，没有手机号显示未绑定 -->
-                            <uv-badge type="warning " value="VIP" v-if="userInfo.phone"></uv-badge>
+                            <up-badge type="warning " value="VIP" v-if="userInfo.phone"></up-badge>
                             <view class="badge-clickable" v-else @click="showBindPhonePopup">
-                                <uv-badge type="error" value="未绑定"></uv-badge>
+                                <up-badge type="error" value="未绑定"></up-badge>
                             </view>
                             <!-- 调试信息 -->
                             <!-- <text style="font-size: 12px; color: #999;">DEBUG: phone={{ userInfo.phone || '无' }}</text> -->
@@ -38,26 +38,26 @@
 			<view class="menu-section">
 				<view class="menu-item" @click="goToBenefits">
 					<view class="menu-item-content">
-						<uv-icon name="gift" size="20" color="#ff6b35"></uv-icon>
+						<up-icon name="gift" size="20" color="#ff6b35"></up-icon>
 						<text class="menu-text">福利中心</text>
 					</view>
-					<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
+					<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
 				</view>
 
 				<view class="menu-item" @click="goToFavorites">
 					<view class="menu-item-content">
-						<uv-icon name="heart" size="20" color="#666"></uv-icon>
+						<up-icon name="heart" size="20" color="#666"></up-icon>
 						<text class="menu-text">我的收藏</text>
 					</view>
-					<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
+					<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
 				</view>
 
 				<view class="menu-item" @click="goToSettings">
 					<view class="menu-item-content">
-						<uv-icon name="setting" size="20" color="#666"></uv-icon>
+						<up-icon name="setting" size="20" color="#666"></up-icon>
 						<text class="menu-text">设置</text>
 					</view>
-					<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
+					<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
 				</view>
 			</view>
 
@@ -68,19 +68,19 @@
 					@click="performLogin"
 					:disabled="userInfoLoading"
 				>
-					<uv-loading-icon
+					<up-loading-icon
 						v-if="userInfoLoading"
 						color="#fff"
 						size="18"
 						style="margin-right: 12px;"
-					></uv-loading-icon>
-					<uv-icon
+					></up-loading-icon>
+					<up-icon
 						v-else
 						name="account"
 						size="18"
 						color="#fff"
 						style="margin-right: 12px;"
-					></uv-icon>
+					></up-icon>
 					<text>{{ userInfoLoading ? '登录中...' : '立即登录' }}</text>
 				</button>
 			</view>
@@ -100,11 +100,11 @@
 			<view class="bind-phone-modal">
 				<view class="modal-header">
 					<text class="modal-title">绑定手机号</text>
-					<uv-icon name="close" @click="closeBindPhonePopup" size="20" color="#999"></uv-icon>
+					<up-icon name="close" @click="closeBindPhonePopup" size="20" color="#999"></up-icon>
 				</view>
 				<view class="modal-content">
 					<text class="modal-desc">绑定手机号后可享受更多服务</text>
-					<uv-input
+					<up-input	
 						v-model="phoneNumber"
 						placeholder="请输入手机号"
 						type="number"
@@ -114,7 +114,7 @@
 						:error="phoneError"
 						:error-message="phoneErrorMsg"
 						@input="validatePhone"
-					></uv-input>
+					></up-input>
 				</view>
 				<view class="modal-footer">
 					<button class="cancel-btn" @click="closeBindPhonePopup">取消</button>

@@ -85,11 +85,11 @@
                 <view class="left-actions">
                     <view class="icon-btn contact-btn contact-wrapper">
                         <button class="invisible-contact-btn" open-type="contact" session-from="weapp"></button>
-                        <uv-icon name="server-man" size="26" color="#e85a4f"></uv-icon>
+                        <up-icon name="server-man" size="26" color="#e85a4f"></up-icon>
                         <text class="action-text">客服</text>
                     </view>
                     <view class="icon-btn favorite-btn favorite-wrapper" :class="{ 'favorited': isFavorited }" @click="handleFavorite">
-                        <uv-icon name="heart" size="26" :color="isFavorited ? '#ff4d4f' : '#666'"></uv-icon>
+                        <up-icon name="heart" size="26" :color="isFavorited ? '#ff4d4f' : '#666'"></up-icon>
                         <text class="action-text">{{ isFavorited ? '已收藏' : '收藏' }}</text>
                     </view>
                 </view>
@@ -101,7 +101,7 @@
 
         <!-- 空状态 -->
         <view v-else class="empty">
-            <uv-icon name="info-circle" size="60" color="#ccc"></uv-icon>
+            <up-icon name="info-circle" size="60" color="#ccc"></up-icon>
             <text class="empty-text">手表信息不存在</text>
         </view>
 

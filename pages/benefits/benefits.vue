@@ -50,7 +50,7 @@
       <!-- 自定义下拉刷新内容 -->
       <view slot="refresher" class="custom-refresher">
         <view v-if="!isRefreshing" class="pull-tips">
-          <uv-icon
+          <up-icon
             name="arrow-down"
             size="20"
             color="#999"

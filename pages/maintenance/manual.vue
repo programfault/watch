@@ -13,13 +13,13 @@
 		<!-- 空状态 -->
 		<view class="empty-state" v-else>
 			<view class="empty-icon">
-				<uv-icon name="file-text" size="60" color="#e0e0e0" />
+				<up-icon name="file-text" size="60" color="#e0e0e0" />
 			</view>
 			<text class="empty-title">手册暂未上传</text>
 			<text class="empty-desc">保养手册内容正在准备中，
 敬请期待专业的手表保养指南</text>
 			<view class="empty-tip">
-				<uv-icon name="info-circle" size="14" color="#999" />
+				<up-icon name="info-circle" size="14" color="#999" />
 				<text class="tip-text">您可以先浏览服务门店信息</text>
 			</view>
 		</view>

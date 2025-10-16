@@ -10,7 +10,7 @@
 			<view class="section-header">
 				<view class="section-title">服务门店</view>
 				<view class="manual-entry" @click="goToManual">
-					<uv-icon name="file-text" size="14" color="#007aff" />
+					<up-icon name="file-text" size="14" color="#007aff" />
 					<text class="manual-text">保养手册</text>
 				</view>
 			</view>

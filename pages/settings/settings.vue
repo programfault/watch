@@ -7,28 +7,28 @@
 				<view class="settings-group">
 					<view class="setting-item">
 						<view class="item-content">
-							<uv-icon name="lock" size="20" color="#666"></uv-icon>
+							<up-icon name="lock" size="20" color="#666"></up-icon>
 							<text class="item-text">隐私政策</text>
 						</view>
-						<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
+						<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
 					</view>
 
 					<view class="setting-item">
 						<view class="item-content">
-							<uv-icon name="info-circle" size="20" color="#666"></uv-icon>
+							<up-icon name="info-circle" size="20" color="#666"></up-icon>
 							<text class="item-text">关于我们</text>
 						</view>
-						<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
+						<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
 					</view>
 
 					<view class="setting-item">
 						<view class="item-content">
-							<uv-icon name="reload" size="20" color="#666"></uv-icon>
+							<up-icon name="reload" size="20" color="#666"></up-icon>
 							<text class="item-text">版本更新</text>
 						</view>
 						<view class="version-info">
 							<text class="version-text">v1.0.0</text>
-							<uv-icon name="arrow-right" size="16" color="#ccc"></uv-icon>
+							<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
 						</view>
 					</view>
 				</view>

@@ -2,40 +2,21 @@
   <view>
     <!-- 轮播图 -->
     <view class="carousel-section" v-if="appStore.hasCarousel">
-      <swiper
-        :autoplay="autoplay"
-        :interval="interval"
-        :duration="duration"
-        :circular="true"
-        :indicator-dots="showDots"
-        indicator-active-color="#fff"
-        indicator-color="rgba(255, 255, 255, 0.4)"
-        :style="{ height: height + 'px', borderRadius: '12px' }"
-        class="carousel-swiper"
-      >
-        <swiper-item
-          v-for="(item, index) in carouselList"
-          :key="index"
-          @click="onCarouselClick(index)"
-        >
-          <image
-            :src="item.image"
-            mode="aspectFill"
-            class="swiper-image"
-          />
+      <swiper :autoplay="autoplay" :interval="interval" :duration="duration" :circular="true" :indicator-dots="showDots"
+        indicator-active-color="#fff" indicator-color="rgba(255, 255, 255, 0.4)"
+        :style="{ height: height + 'px', borderRadius: '12px' }" class="carousel-swiper">
+        <swiper-item v-for="(item, index) in carouselList" :key="index" @click="onCarouselClick(index)">
+          <image :src="item.image" mode="aspectFill" class="swiper-image" />
         </swiper-item>
       </swiper>
     </view>
     <!-- 加载状态 -->
     <view class="loading-section" v-if="appStore.carouselLoading">
-      <uni-load-more status="loading" />
+      <up-loadmore status="loading" />
     </view>
 
     <!-- 空状态 -->
-    <view
-      class="empty-section"
-      v-if="!appStore.hasCarousel && !appStore.carouselLoading"
-    >
+    <view class="empty-section" v-if="!appStore.hasCarousel && !appStore.carouselLoading">
       <view class="empty-placeholder">
         <!-- 装饰性背景图案 -->
         <view class="bg-pattern">
