@@ -1,28 +1,41 @@
 <template>
-  <view class="toolbar">
-    <view class="toolbar-left">
-      <view class="price-sort" @click="handlePriceSort">
-        <text class="sort-text">价格</text>
-        <text v-if="sortOrder === 'asc'" class="icon-up"></text>
-        <text v-else-if="sortOrder === 'desc'" class="icon-down"></text>
-        <text v-else class="icon-sort"></text>
+  <view class="toolbar-container">
+    <!-- 品牌信息和工具栏一体化容器 -->
+    <view class="toolbar-unified">
+      <!-- 品牌信息栏 -->
+      <view class="brand-info">
+        <text v-if="currentBrand" class="brand-name">{{ currentBrand.name_cn }}</text>
+        <text v-else class="search-result-title">搜索结果</text>
+        <text class="total-count">共 {{ total || 0 }} 款手表</text>
       </view>
-    </view>
-    <view class="toolbar-right">
-      <view
-        class="filter-btn"
-        @click="handleFilter"
-      >
-        <view class="filter-content">
-          <view v-if="filterCount > 0" class="filter-badge">{{ filterCount }}</view>
-          <text class="filter-text">筛选</text>
-          <text class="icon-filter"></text>
+
+      <!-- 工具栏 -->
+      <view class="toolbar">
+        <view class="toolbar-left">
+          <view class="price-sort" @click="handlePriceSort">
+            <text class="sort-text">价格</text>
+            <text v-if="sortOrder === 'asc'" class="icon-up"></text>
+            <text v-else-if="sortOrder === 'desc'" class="icon-down"></text>
+            <text v-else class="icon-sort"></text>
+          </view>
         </view>
-      </view>
-      <view class="filter-btn" @click="toggleDisplayMode">
-        <text
-          :class="displayMode === 'single' ? 'icon-list' : 'icon-grid'"
-        ></text>
+        <view class="toolbar-right">
+          <view
+            class="filter-btn"
+            @click="handleFilter"
+          >
+            <view class="filter-content">
+              <view v-if="filterCount > 0" class="filter-badge">{{ filterCount }}</view>
+              <text class="filter-text">筛选</text>
+              <text class="icon-filter"></text>
+            </view>
+          </view>
+          <view class="filter-btn" @click="toggleDisplayMode">
+            <text
+              :class="displayMode === 'single' ? 'icon-list' : 'icon-grid'"
+            ></text>
+          </view>
+        </view>
       </view>
     </view>
   </view>
@@ -35,6 +48,18 @@ import { computed, nextTick } from "vue";
 // 定义组件名称和emits
 defineOptions({
   name: "ToolbarComponent"
+});
+
+// 定义props
+const props = defineProps({
+  currentBrand: {
+    type: Object,
+    default: null
+  },
+  total: {
+    type: Number,
+    default: 0
+  }
 });
 
 // 定义emits
@@ -90,26 +115,71 @@ const toggleDisplayMode = () => {
 </script>
 
 <style lang="scss" scoped>
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #fff;
-  border-bottom: 1rpx solid #eee;
-  padding: 0 20rpx;
-  margin: 0 10px; /* 和产品列表保持一致的边距 */
-  width: calc(100% - 20px); /* 减去左右边距 */
-  box-sizing: border-box;
+.toolbar-container {
+  position: fixed;
+  top: 126px; /* navbar(65) + 搜索框区域(61) 的高度 */
+  left: 0;
+  right: 0;
+  background-color: #f8f8f8; /* 与搜索框容器背景色保持一致 */
+  z-index: 10; /* 在搜索框之下，但在内容之上 */
+
+  /* 品牌信息和工具栏一体化容器 */
+  .toolbar-unified {
+    margin: 12px 10px 8px 10px; /* 与搜索框保持一致的间距 */
+    background-color: #fff;
+    border-radius: 4px; /* 与uv-search square模式的圆角保持一致 */
+    /* 移除阴影和边框效果 */
+    overflow: hidden; /* 确保内部元素不会超出圆角 */
+  }
+
+  .brand-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 25px;
+    height: 44px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #f0f0f0; /* 分隔线 */
+
+    .brand-name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .search-result-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .total-count {
+      font-size: 14px;
+      color: #666;
+    }
+  }
+
+  .toolbar {
+    height: 44px; /* 与品牌信息区域高度保持一致 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    box-sizing: border-box;
+  }
+
   .toolbar-left {
     display: flex;
     align-items: center;
+
     .icon-sort {
-        display: inline-block;
-        width: 20rpx;
-        height: 20rpx;
-        background: url("/static/icons/sort.png") no-repeat center;
-        background-size: 20rpx 20rpx;
-      }
+      display: inline-block;
+      width: 20rpx;
+      height: 20rpx;
+      background: url("/static/icons/sort.png") no-repeat center;
+      background-size: 20rpx 20rpx;
+    }
+
     .price-sort {
       display: flex;
       align-items: center;
@@ -146,6 +216,7 @@ const toggleDisplayMode = () => {
         background-size: 20rpx 20rpx;
       }
     }
+
     .display-toggle {
       display: flex;
       align-items: center;
@@ -155,6 +226,7 @@ const toggleDisplayMode = () => {
       width: 48rpx;
       cursor: pointer;
       transition: all 0.3s ease;
+
       .display-btn {
         display: flex;
         align-items: center;
@@ -206,27 +278,30 @@ const toggleDisplayMode = () => {
         margin-right: 8rpx;
       }
     }
+
     .icon-list {
-        display: inline-block;
-        width: 28rpx;
-        height: 28rpx;
-        background: url("/static/icons/list.png") no-repeat center;
-        background-size: 28rpx 28rpx;
-      }
-      .icon-grid {
-        display: inline-block;
-        width: 28rpx;
-        height: 28rpx;
-        background: url("/static/icons/grid.png") no-repeat center;
-        background-size: 28rpx 28rpx;
-      }
-      .icon-filter {
-        display: inline-block;
-        width: 28rpx;
-        height: 28rpx;
-        background: url("/static/icons/filter.png") no-repeat center;
-        background-size: 28rpx 28rpx;
-      }
+      display: inline-block;
+      width: 28rpx;
+      height: 28rpx;
+      background: url("/static/icons/list.png") no-repeat center;
+      background-size: 28rpx 28rpx;
+    }
+
+    .icon-grid {
+      display: inline-block;
+      width: 28rpx;
+      height: 28rpx;
+      background: url("/static/icons/grid.png") no-repeat center;
+      background-size: 28rpx 28rpx;
+    }
+
+    .icon-filter {
+      display: inline-block;
+      width: 28rpx;
+      height: 28rpx;
+      background: url("/static/icons/filter.png") no-repeat center;
+      background-size: 28rpx 28rpx;
+    }
   }
 }
 </style>

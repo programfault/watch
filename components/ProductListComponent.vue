@@ -1,7 +1,13 @@
 <template>
 <view class="product-list-container">
-    <!-- 工具栏 -->
-    <ToolbarComponent @priceSort="onPriceSort" @filter="onFilter" @displayModeChange="onDisplayModeChange" />
+    <!-- 工具栏（包含品牌信息） -->
+    <ToolbarComponent
+        :currentBrand="currentBrand"
+        :total="pagination.total"
+        @priceSort="onPriceSort"
+        @filter="onFilter"
+        @displayModeChange="onDisplayModeChange"
+    />
 
     <!-- 筛选面板 -->
     <FilterPanelComponent
@@ -10,13 +16,6 @@
         @filterCountChange="onFilterCountChange"
         @close="onFilterClose"
     />
-
-    <!-- 品牌信息和搜索结果数量 -->
-    <view class="brand-info">
-        <text v-if="currentBrand" class="brand-name">{{ currentBrand.name_cn }}</text>
-        <text v-else class="search-result-title">搜索结果</text>
-        <text class="total-count">共 {{ pagination.total || 0 }} 款手表</text>
-    </view>
 
     <scroll-view scroll-y class="watches-scroll" @scrolltolower="loadMore" lower-threshold="100">
         <!-- 单列模式 -->
@@ -217,39 +216,13 @@ defineExpose({
     box-sizing: border-box;
 }
 
-.brand-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px; /* 减小垂直内边距 */
-    background-color: #fff;
-    margin-bottom: 8px; /* 减小底部间距 */
-    margin-left: 10px; /* 和产品列表保持一致的边距 */
-    margin-right: 10px; /* 和产品列表保持一致的边距 */
-    width: calc(100% - 20px); /* 减去左右边距 */
-    box-sizing: border-box;
 
-    .brand-name {
-        font-size: 18px;
-        font-weight: bold;
-        color: #333;
-    }
-
-    .search-result-title {
-        font-size: 18px;
-        font-weight: bold;
-        color: #333;
-    }
-
-    .total-count {
-        font-size: 14px;
-        color: #666;
-    }
-}
 
 .watches-scroll {
     flex: 1;
-    height: calc(100vh - 96px - 70px - 70px); /* 减去 navbar+搜索框(96) + 工具栏(70) + tabbar(70) */
+    height: calc(100vh - 126px - 70px); /* 减去 navbar+搜索框(126) + tabbar(70) */
+    padding-top: 108px; /* 为固定的工具栏容器留出空间，防止内容被覆盖 */
+    box-sizing: border-box;
 }
 
 .watches-list {

@@ -1,13 +1,14 @@
 <template>
-    <uv-navbar title="天辰手表" @leftClick="leftClick" height="44px">
+    <uv-navbar title="天辰手表" :fixed="true" @leftClick="leftClick">
         <template v-slot:left>
         <view class="uv-nav-slot" v-if="showSearchResults">
             <uv-icon name="home" size="20"></uv-icon>
         </view>
     </template>
     </uv-navbar>
-	<!-- 搜索框吸顶 -->
-	<uv-sticky offset-top="44" customNavHeight="44">
+
+	<!-- 固定搜索框容器 -->
+	<view class="search-container">
 		<view class="search-box">
 			<uv-search
 				placeholder="搜索品牌、手表、服务..."
@@ -24,7 +25,7 @@
 				@change="onSearchInput"
 			></uv-search>
 		</view>
-	</uv-sticky>
+	</view>
 
 	<!-- 搜索历史面板 -->
 	<SearchHistoryPanel
@@ -470,30 +471,35 @@ const leftClick = () => {
 		opacity: 0.8;
 	}
 
-	/* 确保 navbar 和 sticky 组件在模态弹窗时被遮罩覆盖 */
+	/* 确保层级正确 */
 	:deep(.uv-navbar) {
-		z-index: 1 !important;
+		z-index: 12 !important;
 	}
 
-	:deep(.uv-sticky) {
-		z-index: 1 !important;
-	}
+// 固定搜索框容器样式
+.search-container {
+	position: fixed;
+	/* 完全贴合navbar，向上重叠1px确保无缝 */
+	top: 65px;
+	left: 0;
+	right: 0;
+	height: 61px; /* 增加高度，为视觉分离留出空间 */
+	background-color: #f8f8f8; /* 与页面背景色一致 */
+	z-index: 11; /* 搜索框在navbar之下，但在内容之上 */
+}
+
 // 搜索框样式
 .search-box {
-	margin-top: 0;
-	margin-bottom: 5px; /* 减小底部间距 */
-	width: 100%;
-	margin-left: auto;
-	margin-right: auto;
-	box-sizing: border-box;
-	padding-left: 16px;
-	padding-right: 16px;
-	background-color: #f8f8f8;
-	padding-top: 8px; /* 减小顶部内边距 */
-	padding-bottom: 8px; /* 减小底部内边距 */
-	/* 确保在模态弹窗时被遮罩覆盖 */
-	position: relative;
-	z-index: 1;
+	padding: 12px 10px 8px 10px; /* 调整左右padding与首页内容保持一致 */
+	height: 100%;
+	@include flex;
+	align-items: center;
+
+	/* 让搜索组件本身有圆角，简洁设计 */
+	:deep(.uv-search) {
+		border-radius: 4px;
+		border: 1px solid #e5e5e5;
+	}
 }
 
 
@@ -501,16 +507,16 @@ const leftClick = () => {
 // 搜索结果样式
 .search-results {
 	background-color: #f8f8f8;
-	margin-top: 96px; /* navbar(44) + 搜索框区域(52) 的高度 */
-	min-height: calc(100vh - 96px - 70px); /* navbar(44) + 搜索框区域(52) + tabbar(70) */
+	margin-top: 126px; /* navbar(65) + 搜索框区域(61) 的高度 */
+	min-height: calc(100vh - 126px - 70px); /* navbar(65) + 搜索框区域(61) + tabbar(70) */
 	padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* 确保品牌卡片完整显示，增加足够空间 */
 }
 
 .container {
-	min-height: calc(100vh - 96px - 70px); /* navbar(44) + 搜索框区域(52) + tabbar(70) */
-	padding: 20px;
-	margin-top: 96px; /* navbar(44) + 搜索框区域(52) 的高度 */
-	padding-top: 5px; /* 减小顶部间距，让轮播图更靠近搜索框 */
+	min-height: calc(100vh - 126px - 70px); /* navbar(65) + 搜索框区域(61) + tabbar(70) */
+	padding: 10px; /* 与ProductListComponent保持一致 */
+	margin-top: 126px; /* navbar(65) + 搜索框区域(61) 的高度 */
+	padding-top: 20px; /* 增加顶部间距，与搜索框保持合适距离 */
 	padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* 确保品牌卡片完整显示，增加足够空间 */
 	background-color: #f8f8f8;
 	box-sizing: border-box;
