@@ -76,7 +76,7 @@
     </scroll-view>
 
     <!-- 底部标签栏组件 -->
-    <CustomTabBar />
+    <CustomTabBar v-show="true" />
   </view>
 </template>
 

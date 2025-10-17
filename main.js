@@ -23,6 +23,7 @@ import uviewPlus from '@/uni_modules/uview-plus'
 export function createApp() {
   const app = createSSRApp(App)
   app.use(pinia)
+//   app.use(uvUI)
   app.use(uviewPlus)
   return {
     app

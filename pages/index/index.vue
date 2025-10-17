@@ -42,7 +42,7 @@
 		<FloatingServiceButton />
 
 		<!-- 底部标签栏 -->
-		<CustomTabBar />
+		<CustomTabBar v-show="true" />
 	</view>
 
 </template>

@@ -98,7 +98,7 @@
 		</view>
 
 		<!-- 底部标签栏组件 -->
-		<CustomTabBar />
+		<CustomTabBar v-show="true" />
 
 		<!-- 绑定手机号弹窗 -->
 		<uni-popup

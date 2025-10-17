@@ -114,7 +114,7 @@
                       @click="handleUpdate(consumer)"
                     >
                       更新
-                    </up-button>  
+                    </up-button>
                   </view>
               </view>
             </view>
@@ -148,7 +148,7 @@
       @close="handlePanelClose"
     />
     <!-- 底部标签栏组件 -->
-		<CustomTabBar />
+		<CustomTabBar v-show="true" />
   </view>
 </template>
 

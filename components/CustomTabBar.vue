@@ -200,10 +200,26 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-/* uview-plus u-tabbar 组件自带完整样式，无需自定义 CSS */
+.tabbar-container {
+	position: relative;
+	z-index: 9999;
 
-/* 只保留全局容器样式，适配 u-tabbar 的高度 */
-:global(.container) {
+	/* 添加transition来平滑显示/隐藏 */
+	transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+/* 全局样式：为所有页面添加底部安全区域 */
+</style>
+
+<style lang="scss">
+/* 全局样式：为所有页面容器添加 TabBar 高度适配 */
+page {
 	padding-bottom: calc(50px + env(safe-area-inset-bottom));
+}
+
+/* 减少页面切换时的闪烁 */
+.uni-tabbar, .u-tabbar {
+	transition: none !important;
+	animation: none !important;
 }
 </style>
