@@ -36,29 +36,40 @@
 
 			<!-- 功能菜单 -->
 			<view class="menu-section">
-				<view class="menu-item" @click="goToBenefits">
-					<view class="menu-item-content">
-						<up-icon name="gift" size="20" color="#ff6b35"></up-icon>
-						<text class="menu-text">福利中心</text>
-					</view>
-					<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
-				</view>
+				<up-cell-group :border="false">
+					<up-cell
+						title="福利中心"
+						isLink
+						arrow-direction="right"
+						@click="goToBenefits"
+					>
+						<template #icon>
+							<up-icon name="gift" size="20" color="#ff6b35" style="margin-right: 8px;"></up-icon>
+						</template>
+					</up-cell>
 
-				<view class="menu-item" @click="goToFavorites">
-					<view class="menu-item-content">
-						<up-icon name="heart" size="20" color="#666"></up-icon>
-						<text class="menu-text">我的收藏</text>
-					</view>
-					<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
-				</view>
+					<up-cell
+						title="我的收藏"
+						isLink
+						arrow-direction="right"
+						@click="goToFavorites"
+					>
+						<template #icon>
+							<up-icon name="heart" size="20" color="#666" style="margin-right: 8px;"></up-icon>
+						</template>
+					</up-cell>
 
-				<view class="menu-item" @click="goToSettings">
-					<view class="menu-item-content">
-						<up-icon name="setting" size="20" color="#666"></up-icon>
-						<text class="menu-text">设置</text>
-					</view>
-					<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
-				</view>
+					<up-cell
+						title="设置"
+						isLink
+						arrow-direction="right"
+						@click="goToSettings"
+					>
+						<template #icon>
+							<up-icon name="setting" size="20" color="#666" style="margin-right: 8px;"></up-icon>
+						</template>
+					</up-cell>
+				</up-cell-group>
 			</view>
 
 			<!-- 登录按钮区域 -->

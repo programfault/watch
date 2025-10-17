@@ -20,7 +20,7 @@
 		>{{icon}}</text>
 		<!-- 这里进行空字符串判断，如果仅仅是v-if="label"，可能会出现传递0的时候，结果也无法显示 -->
 		<text
-		    v-if="label !== ''" 
+		    v-if="label !== ''"
 		    class="u-icon__label"
 		    :style="{
 			color: labelColor,
@@ -165,7 +165,7 @@
 	// 2025/04/09在App/微信/支付宝/鸿蒙元服务已改用uni.loadFontFace加载字体
 	@font-face {
 		font-family: 'uicon-iconfont';
-		src: url('https://at.alicdn.com/t/font_2225171_8kdcwk4po24.ttf') format('truetype');
+		src: url('/static/fonts/uview-plus.ttf') format('truetype');
 	}
 	/* #endif */
 

@@ -38,7 +38,7 @@ export default {
         'up-light-color': '#c0c4cc'
     },
     // 字体图标地址
-    iconUrl: 'https://at.alicdn.com/t/font_2225171_8kdcwk4po24.ttf',
+    iconUrl: '/static/fonts/uview-plus.ttf',
      // 自定义图标
     customIcon: {
         family: '',
