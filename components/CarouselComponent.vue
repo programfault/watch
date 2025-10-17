@@ -1,22 +1,18 @@
 <template>
   <view>
-    <!-- 轮播图 -->
+    <!-- 轮播图 - 仅在有数据时显示 -->
     <view class="carousel-section" v-if="appStore.hasCarousel">
       <swiper :autoplay="autoplay" :interval="interval" :duration="duration" :circular="true" :indicator-dots="showDots"
         indicator-active-color="#fff" indicator-color="rgba(255, 255, 255, 0.4)"
-        :style="{ height: height + 'px', borderRadius: '12px' }" class="carousel-swiper">
+        :style="{ height: height + 'px' }" class="carousel-swiper">
         <swiper-item v-for="(item, index) in carouselList" :key="index" @click="onCarouselClick(index)">
           <image :src="item.image" mode="aspectFill" class="swiper-image" />
         </swiper-item>
       </swiper>
     </view>
-    <!-- 加载状态 -->
-    <view class="loading-section" v-if="appStore.carouselLoading">
-      <up-loadmore status="loading" />
-    </view>
 
-    <!-- 空状态 -->
-    <view class="empty-section" v-if="!appStore.hasCarousel && !appStore.carouselLoading">
+    <!-- 占位内容 - 在没有轮播图数据时显示（包括加载中状态） -->
+    <view class="empty-section" v-if="!appStore.hasCarousel">
       <view class="empty-placeholder">
         <!-- 装饰性背景图案 -->
         <view class="bg-pattern">
@@ -110,7 +106,6 @@ const onCarouselClick = (index) => {
   margin-bottom: 20px;
 
   .carousel-swiper {
-    border-radius: 12px;
     overflow: hidden;
 
     .swiper-image {
@@ -120,17 +115,11 @@ const onCarouselClick = (index) => {
   }
 }
 
-.loading-section {
-  text-align: center;
-  padding: 40px 0;
-}
-
 .empty-section {
   margin-bottom: 20px;
 
   .empty-placeholder {
     height: 200px;
-    border-radius: 12px;
     position: relative;
     overflow: hidden;
     box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);

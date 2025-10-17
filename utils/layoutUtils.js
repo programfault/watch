@@ -148,7 +148,7 @@ export function calculatePageLayout(options = {}) {
 export function generateSearchContainerStyle(layoutInfo) {
   // 搜索框需要全局固定定位，top值 = navbar底部位置 + 搜索框边距
   const searchTopGlobal = layoutInfo.navbar.navbarBottomPosition + layoutInfo.search.searchMargin;
-  
+
   return {
     position: 'fixed', // 保持全局固定定位
     top: `${searchTopGlobal}px`,
