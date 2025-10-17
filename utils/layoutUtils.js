@@ -176,6 +176,37 @@ export function generateContentStyle(layoutInfo) {
 }
 
 /**
+ * 计算安全区域底部高度
+ * 统一的安全区域计算逻辑，供 TabBar 和其他组件使用
+ * @param {Object} deviceInfo 设备信息对象，如果不传则自动获取
+ * @returns {number} 安全区域底部高度(px)
+ */
+export function getSafeAreaBottom(deviceInfo = null) {
+  try {
+    // 如果没有传入设备信息，则获取
+    const device = deviceInfo || getDeviceInfo();
+
+    // iOS 设备使用 safeAreaInsets（推荐方式）
+    if (device.platform === 'ios' && device.safeAreaInsets) {
+      return device.safeAreaInsets.bottom || 0;
+    }
+    // 兼容旧版本，使用 safeArea 计算
+    else if (device.safeArea) {
+      const screenHeight = device.screenHeight || device.windowHeight || 0;
+      const safeAreaBottom = device.safeArea.bottom || screenHeight;
+      return Math.max(0, screenHeight - safeAreaBottom);
+    }
+    // 其他情况返回0
+    else {
+      return 0;
+    }
+  } catch (error) {
+    console.warn('获取安全区域高度失败，使用默认值:', error);
+    return 0;
+  }
+}
+
+/**
  * 响应式边距计算
  * @param {number} screenWidth 屏幕宽度
  * @returns {string} 边距值
@@ -198,5 +229,6 @@ export default {
   calculatePageLayout,
   generateSearchContainerStyle,
   generateContentStyle,
-  getResponsiveMargin
+  getResponsiveMargin,
+  getSafeAreaBottom
 };

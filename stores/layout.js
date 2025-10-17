@@ -9,7 +9,8 @@ import {
   calculatePageLayout,
   generateSearchContainerStyle,
   generateContentStyle,
-  getResponsiveMargin
+  getResponsiveMargin,
+  getSafeAreaBottom
 } from '@/utils/layoutUtils'
 
 export const useLayoutStore = defineStore('layout', () => {
@@ -116,6 +117,12 @@ export const useLayoutStore = defineStore('layout', () => {
     return screenWidth.value >= 768
   })
 
+  // 计算属性 - 安全区域底部高度
+  const safeAreaBottom = computed(() => {
+    if (!deviceInfo.value) return 0
+    return getSafeAreaBottom(deviceInfo.value)
+  })
+
   /**
    * 获取页面布局样式 (用于兼容旧版本)
    * @param {Object} customOptions 自定义配置
@@ -161,6 +168,7 @@ export const useLayoutStore = defineStore('layout', () => {
     screenWidth,
     isSmallScreen,
     isLargeScreen,
+    safeAreaBottom,
 
     // 方法
     initializeLayout,

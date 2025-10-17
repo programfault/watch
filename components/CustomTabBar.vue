@@ -1,60 +1,103 @@
 <template>
-	<view class="custom-tabbar">
-        <!-- Tab切换Loading组件 -->
-        <TabSwitchLoading
-            :loading="tabSwitchLoading"
-            :loading-text="tabSwitchText"
-            font-size="32rpx"
-            icon-size="60rpx"
-            bg-color="rgba(255, 255, 255, 0.95)"
-            text-color="#333"
-            loading-color="#007aff"
-        />
-		<view class="tabbar-content">
-			<view
-				v-for="tab in tabBarStore.tabList"
-				:key="tab.name"
-				class="tabbar-item"
-				:class="{ 'active': tabBarStore.activeTab === tab.name }"
-				@tap="handleTabChange(tab.name)"
-			>
-				<up-icon
-					:name="mapIcon(tab.icon)"
-					:color="tabBarStore.activeTab === tab.name ? '#D81E06' : '#7d7e80'"
-					size="22"
-				/>
-				<text
-					class="tabbar-text"
-					:style="{ color: tabBarStore.activeTab === tab.name ? '#D81E06' : '#7d7e80' }"
-				>
-					{{ tab.text }}
-				</text>
-			</view>
-		</view>
-		<!-- 安全区域填充 -->
-		<view class="safe-area-bottom" :style="{ height: safeBottom + 'px' }"></view>
+	<view class="tabbar-container">
+		<!-- Tab切换Loading组件 -->
+		<TabSwitchLoading
+			:loading="tabSwitchLoading"
+			:loading-text="tabSwitchText"
+			font-size="32rpx"
+			icon-size="60rpx"
+			bg-color="rgba(255, 255, 255, 0.95)"
+			text-color="#333"
+			loading-color="#007aff"
+		/>
+
+		<!-- 使用 uview-plus TabBar 组件 -->
+		<u-tabbar
+			:value="tabBarStore.activeTab"
+			:placeholder="true"
+			:border="true"
+			@change="handleTabChange"
+			:fixed="true"
+			:safeAreaInsetBottom="true"
+			activeColor="#D81E06"
+			inactiveColor="#7d7e80"
+			backgroundColor="#ffffff"
+		>
+			<!-- 首页 - 所有用户都可见 -->
+			<u-tabbar-item
+				name="home"
+				text="首页"
+				icon="home"
+				v-if="['anonymous','normal', 'admin', 'special'].includes(userStore.userType || 'normal')"
+			/>
+
+			<!-- 我的招聘 - 只有匿名用户可见 -->
+			<u-tabbar-item
+				name="recruitment"
+				text="我的招聘"
+				icon="info-circle"
+				v-if="['anonymous'].includes(userStore.userType || 'normal')"
+			/>
+
+			<!-- 保养 - 匿名、普通用户、管理员可见 -->
+			<u-tabbar-item
+				name="maintenance"
+				text="保养"
+				icon="setting"
+				v-if="['anonymous','normal', 'admin'].includes(userStore.userType || 'normal')"
+			/>
+
+			<!-- 客户 - 只有管理员可见 -->
+			<u-tabbar-item
+				name="customer"
+				text="客户"
+				icon="integral"
+				v-if="['admin'].includes(userStore.userType || 'normal')"
+			/>
+
+			<!-- 劳力士 - 匿名、普通用户、特殊用户可见 -->
+			<u-tabbar-item
+				name="rolex"
+				text="劳力士"
+				icon="star"
+				v-if="['anonymous','normal', 'special'].includes(userStore.userType || 'normal')"
+			/>
+
+			<!-- 我的 - 所有用户都可见 -->
+			<u-tabbar-item
+				name="profile"
+				text="我的"
+				icon="account"
+				v-if="['anonymous','normal', 'admin', 'special'].includes(userStore.userType || 'normal')"
+			/>
+		</u-tabbar>
 	</view>
 </template>
 
 <script setup>
 import TabSwitchLoading from '@/components/TabSwitchLoading.vue'
-import { useTabBarStore } from '@/stores'
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { useTabBarStore, useUserStore } from '@/stores'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 // 定义组件名称（可选）
 defineOptions({
 	name: 'CustomTabBar'
 })
 
-// 获取 tabBar store
+// 获取 stores
 const tabBarStore = useTabBarStore()
-
-// 安全区域高度
-const safeBottom = ref(0)
+const userStore = useUserStore()
 
 // Tab切换Loading状态
 const tabSwitchLoading = ref(false)
 const tabSwitchText = ref('页面加载中...')
+
+// 添加调试信息 - 简化版
+const debugUserType = computed(() => {
+	const currentUserType = userStore.userType || 'normal'
+	console.log('🔍 TabBar 当前用户类型:', currentUserType)
+	return currentUserType
+})
 
 // 计算当前激活标签的索引
 // const activeTabIndex = computed(() => {
@@ -63,38 +106,45 @@ const tabSwitchText = ref('页面加载中...')
 // 	return index >= 0 ? index : 0
 // })
 
-const mapIcon = (storeIcon) => {
-	const iconMap = {
-		'home-o': 'home',
-		'service-o': 'setting',
-		'contacts-o': 'integral',
-		'diamond-o': 'star',
-		'account': 'account',
-		'user-o': 'account',
-	}
-	return iconMap[storeIcon] || storeIcon.replace('-o', '')
-}
+// mapIcon 函数已移除 - 直接在模板中使用 uview-plus 图标名称
 
-// 处理标签切换事件
+// 处理标签切换事件 - 简化版，直接使用路径映射
 const handleTabChange = (name) => {
 	console.log('🏷️ 标签切换到:', name)
-	const selectedTab = tabBarStore.tabList.find(tab => tab.name === name)
-	if (selectedTab && selectedTab.path) {
+
+	// 直接定义路径映射，不依赖 store
+	const pathMap = {
+		'home': '/pages/index/index',
+		'recruitment': '/pages/recruitment/recruitment',
+		'maintenance': '/pages/maintenance/maintenance',
+		'customer': '/pages/customer/customer',
+		'rolex': '/pages/rolex/rolex',
+		'profile': '/pages/profile/profile'
+	}
+
+	const path = pathMap[name]
+	if (path) {
 		// 如果切换到的不是当前激活的tab，才显示loading
 		if (tabBarStore.activeTab !== name) {
-			tabBarStore.switchTabWithLoading(selectedTab.name)
+			tabBarStore.switchTabWithLoading(name)
 		}
 	} else {
-		console.warn('🏷️ 标签没有路径:', selectedTab?.name)
+		console.warn('🏷️ 未找到标签对应的路径:', name)
 	}
 }
 
 // 初始化函数
 const initTabBar = async () => {
 	try {
+		console.log('🚀 TabBar 初始化开始...')
+		console.log('- tabBarStore:', tabBarStore)
+		console.log('- tabBarStore.tabList:', tabBarStore?.tabList)
+		console.log('- userStore.userType:', userStore?.userType)
+
 		// 确保tabBarStore已正确初始化
 		if (!tabBarStore || !tabBarStore.tabList) {
-			console.warn('🏷️ TabBar store 未正确初始化')
+			console.warn('🏷️ TabBar store 未正确初始化，尝试重新初始化...')
+			// 可以尝试手动初始化 tabBarStore
 			return
 		}
 
@@ -125,34 +175,9 @@ const initTabBar = async () => {
 	}
 }
 
-// 获取安全区域高度
-const getSafeAreaHeight = () => {
-	try {
-		// 使用新的API获取设备信息和窗口信息
-		const deviceInfo = uni.getDeviceInfo ? uni.getDeviceInfo() : {}
-		const windowInfo = uni.getWindowInfo ? uni.getWindowInfo() : {}
-
-		// 微信小程序中，安全区域底部高度
-		if (deviceInfo.platform === 'ios' && windowInfo.safeAreaInsets) {
-			safeBottom.value = windowInfo.safeAreaInsets.bottom || 0
-		} else if (windowInfo.safeArea) {
-			// 兼容旧版本，使用safeArea计算
-			const screenHeight = windowInfo.screenHeight || windowInfo.windowHeight || 0
-			const safeAreaBottom = windowInfo.safeArea ? windowInfo.safeArea.bottom : screenHeight
-			safeBottom.value = Math.max(0, screenHeight - safeAreaBottom)
-		} else {
-			safeBottom.value = 0
-		}
-	} catch (error) {
-		console.warn('获取安全区域高度失败，使用默认值:', error)
-		safeBottom.value = 0
-	}
-}
-
 // 组件挂载时的初始化
-onMounted(() => {
-	getSafeAreaHeight()
-	initTabBar()
+onMounted(async () => {
+	await initTabBar()
 
 	// 监听Tab切换Loading事件
 	uni.$on('showTabSwitchLoading', (data) => {
@@ -175,48 +200,10 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.custom-tabbar {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	z-index: 1000;
-	background-color: #fff;
-	border-top: 1rpx solid #e4e7ed;
+/* uview-plus u-tabbar 组件自带完整样式，无需自定义 CSS */
 
-	.tabbar-content {
-		display: flex;
-		flex-direction: row;
-		height: 100rpx;
-
-		.tabbar-item {
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			padding: 10rpx 0;
-			transition: all 0.3s ease;
-
-			&:active {
-				background-color: #f7f8fa;
-			}
-
-			.tabbar-text {
-				font-size: 20rpx;
-				margin-top: 6rpx;
-				line-height: 1;
-			}
-		}
-	}
-
-	.safe-area-bottom {
-		background-color: #fff;
-	}
-}
-
-/* 为页面内容添加底部padding，避免被tabbar遮挡 */
+/* 只保留全局容器样式，适配 u-tabbar 的高度 */
 :global(.container) {
-	padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
+	padding-bottom: calc(50px + env(safe-area-inset-bottom));
 }
 </style>
