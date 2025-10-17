@@ -145,7 +145,7 @@ const toggleDisplayMode = () => {
   .toolbar-unified {
     margin: 12px 10px 8px 10px; /* 与搜索框保持一致的间距 */
     background-color: #fff;
-    border-radius: 4px; /* 与uv-search square模式的圆角保持一致 */
+    border-radius: 4px;
     /* 移除阴影和边框效果 */
     overflow: hidden; /* 确保内部元素不会超出圆角 */
   }

@@ -77,7 +77,6 @@ const props = defineProps({
 // Store实例
 const appStore = useAppStore();
 
-// 转换轮播图数据格式以适配 uv-swiper
 const carouselList = computed(() => {
   return appStore.activeCarousel || [];
 });

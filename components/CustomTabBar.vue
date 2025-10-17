@@ -63,7 +63,6 @@ const tabSwitchText = ref('页面加载中...')
 // 	return index >= 0 ? index : 0
 // })
 
-// 图标映射函数 - 适配uv-ui的图标名称
 const mapIcon = (storeIcon) => {
 	const iconMap = {
 		'home-o': 'home',

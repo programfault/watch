@@ -21,17 +21,17 @@
         <!-- 按钮组在右侧 -->
         <view class="button-group">
           <view class="phone-section" @click.stop="handleCall">
-            <uv-icon name="phone" size="14" color="#007aff" />
+            <up-icon name="phone" size="14" color="#007aff" />
             <text class="store-phone">电话</text>
           </view>
           <!-- 只有有位置权限时才显示导航按钮 -->
           <view v-if="locationAuthorized" class="nav-button" @click.stop="handleNavigate">
-            <uv-icon name="map" size="16" color="#fff" />
+            <up-icon name="map" size="16" color="#fff" />
             <text class="nav-text">导航</text>
           </view>
           <!-- 没有位置权限时显示提示，点击可以开启定位 -->
           <view v-else class="nav-disabled" @click.stop="handleRequestLocation">
-            <uv-icon name="map" size="14" color="#ccc" />
+            <up-icon name="map" size="14" color="#ccc" />
             <text class="nav-disabled-text">开启定位</text>
           </view>
         </view>
