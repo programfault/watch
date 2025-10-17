@@ -1,12 +1,5 @@
 <template>
 	<view class="tabbar-container">
-		<!-- 调试信息 -->
-		<view style="position: fixed; top: 100rpx; left: 20rpx; background: rgba(0,0,0,0.8); color: white; padding: 10rpx; border-radius: 10rpx; z-index: 10000; font-size: 24rpx;">
-			用户类型: {{ tabBarStore.userType || 'undefined' }}
-			<br>登录状态: {{ userStore.isLoggedIn ? '已登录' : '未登录' }}
-			<br>Status: {{ userStore.userInfo?.status || 'null' }}
-		</view>
-
 		<!-- Tab切换Loading组件 -->
 		<TabSwitchLoading
 			:loading="tabSwitchLoading"
@@ -98,44 +91,6 @@ const userStore = useUserStore()
 // Tab切换Loading状态
 const tabSwitchLoading = ref(false)
 const tabSwitchText = ref('页面加载中...')
-
-// 添加调试信息 - 简化版
-const debugUserType = computed(() => {
-	const currentUserType = tabBarStore.userType || 'normal'
-	console.log('🔍 TabBar 当前用户类型:', currentUserType)
-	console.log('🔍 UserStore isLoggedIn:', userStore.isLoggedIn)
-	console.log('🔍 UserStore userInfo status:', userStore.userInfo?.status)
-	return currentUserType
-})
-
-// 监听用户类型变化并强制组件重新渲染
-watch(
-	() => tabBarStore.userType,
-	(newUserType, oldUserType) => {
-		console.log('🔄 TabBar 用户类型变化:', {
-			oldType: oldUserType,
-			newType: newUserType,
-			timestamp: new Date().toLocaleTimeString()
-		})
-		// 触发重新计算调试信息
-		debugUserType.value
-	},
-	{ immediate: true }
-)
-
-// 同时监听用户登录状态变化
-watch(
-	() => userStore.isLoggedIn,
-	(newLoginState, oldLoginState) => {
-		console.log('🔄 TabBar 用户登录状态变化:', {
-			oldState: oldLoginState,
-			newState: newLoginState,
-			userType: tabBarStore.userType,
-			timestamp: new Date().toLocaleTimeString()
-		})
-	},
-	{ immediate: true }
-)
 
 // 计算当前激活标签的索引
 // const activeTabIndex = computed(() => {

@@ -89,24 +89,11 @@ export const useTabBarStore = defineStore('tabbar', {
 	actions: {
 		// 设置用户类型
 		setUserType(userType) {
-			console.log('🔍 tabBarStore.setUserType - 开始执行:', {
-				newUserType: userType,
-				oldUserType: this.userType,
-				timestamp: new Date().toLocaleTimeString()
-			});
-
 			if (['normal', 'admin', 'special', 'anonymous'].includes(userType)) {
 				this.userType = userType
-				console.log('🏷️ 用户类型更新成功:', userType)
-				console.log('🏷️ 当前 tabBarStore.userType:', this.userType)
 
 				// 检查当前激活的标签是否在新的tabList中
 				const currentTabExists = this.tabList.find(t => t.name === this.activeTab)
-				console.log('🏷️ 当前激活标签检查:', {
-					activeTab: this.activeTab,
-					currentTabExists: !!currentTabExists,
-					newTabList: this.tabList.map(t => t.name)
-				});
 
 				if (!currentTabExists) {
 					// 如果当前标签不在新列表中，切换到合适的默认页面

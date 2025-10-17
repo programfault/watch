@@ -81,7 +81,6 @@ export const useUserStore = defineStore("user", {
 
 		// 是否是管理员
 		isAdmin: (state) => {
-            console.log("🔍 isAdmin 检查 - status:", state.userInfo?.status, "类型:", typeof state.userInfo?.status)
 			return parseInt(state.userInfo?.status) === 1; // status=1 是管理员（兼容字符串类型）
 		},
 
@@ -93,22 +92,11 @@ export const useUserStore = defineStore("user", {
 		// 是否有客户管理权限
 		hasCustomerPermission: (state) => {
 			const status = parseInt(state.userInfo?.status);
-            console.log("🔍 hasCustomerPermission 被计算:", {
-				isLoggedIn: state.isLoggedIn,
-				userInfo: state.userInfo,
-				permissions: state.permissions,
-				userStatus: state.userInfo?.status,
-				parsedStatus: status,
-				isAdmin: status === 1, // status=1 是管理员
-				stack: new Error().stack
-			});
-			const result = (
+			return (
 				state.isLoggedIn &&
 				(state.permissions.includes("customer_management") ||
 					status === 1) // status=1 是管理员（兼容字符串类型）
 			);
-			console.log("🔍 hasCustomerPermission 计算结果:", result);
-			return result;
 		},
 
 		// VIP 客户列表
@@ -279,27 +267,14 @@ export const useUserStore = defineStore("user", {
 			try {
 				const response = await login(loginData);
 
-				console.log('🔍 loginUser - 登录 API 原始响应:', response);
-
 				if (response.success) {
 					const { user, tokens, session_key, coupons, privileges } = response.data;
-
-					console.log('🔍 loginUser - 登录成功，解构后的数据:', {
-						user: user,
-						userStatus: user?.status,
-						userPhone: user?.phone,
-						userName: user?.name,
-						userType: typeof user?.status,
-						fullResponseData: response.data
-					});
 
 					this.userInfo = {
 						...user,
 						coupons: coupons || [],
 						privileges: privileges || []
 					};
-
-					console.log('🔍 loginUser - 用户信息已更新:', this.userInfo);
 
 					// 先设置登录状态，再设置权限，确保 updateTabBarUserType 时 isLoggedIn 为 true
 					this.isLoggedIn = true;
@@ -326,14 +301,6 @@ export const useUserStore = defineStore("user", {
 					// 登录成功，设置最后登录时间戳，避免initUserState重复验证token
 					const loginTime = Date.now();
 					uni.setStorageSync("lastLoginTime", loginTime);
-
-					// 验证登录后的状态更新
-					console.log('🔍 loginUser - 登录完成后状态验证:', {
-						isLoggedIn: this.isLoggedIn,
-						userInfoStatus: this.userInfo?.status,
-						userInfoName: this.userInfo?.name,
-						tabBarUserType: useTabBarStore().userType
-					});
 
 					return response.data;
 				} else {
@@ -860,20 +827,11 @@ export const useUserStore = defineStore("user", {
 
 		// 根据用户状态设置权限
 		setUserPermissions(userInfo) {
-			console.log('🔍 setUserPermissions - 设置用户权限，用户状态:', userInfo?.status);
-			console.log('🔍 setUserPermissions - 完整用户信息:', userInfo);
-
 			// 清空现有权限
 			this.permissions = [];
 
 			// 根据用户状态设置权限（兼容字符串和数字类型）
 			const status = parseInt(userInfo?.status);
-			console.log('🔍 setUserPermissions - status类型转换:', {
-				originalStatus: userInfo?.status,
-				originalType: typeof userInfo?.status,
-				parsedStatus: status,
-				parsedType: typeof status
-			});
 
 			if (status === 1) {
 				// status=1 是管理员，拥有所有权限
@@ -884,23 +842,17 @@ export const useUserStore = defineStore("user", {
 					'order_management',
 					'admin'
 				];
-				console.log('🔍 setUserPermissions - 设置管理员权限:', this.permissions);
 			} else if (status === 0) {
 				// status=0 是普通用户
 				this.permissions = [];
-				console.log('🔍 setUserPermissions - 设置普通用户权限:', this.permissions);
 			} else {
 				// 其他状态或未定义状态
 				this.permissions = [];
-				console.log('🔍 setUserPermissions - 未知状态，清空权限:', { originalStatus: userInfo?.status, parsedStatus: status });
 			}
 
 			// 自动更新tabBar用户类型
-			console.log('🔍 setUserPermissions - 即将调用 updateTabBarUserType');
 			this.updateTabBarUserType();
-		},
-
-		// 根据登录状态和用户status自动更新tabBar的用户类型
+		},		// 根据登录状态和用户status自动更新tabBar的用户类型
 		updateTabBarUserType() {
 			console.log('🔍 updateTabBarUserType - 开始执行');
 			const tabBarStore = useTabBarStore();
@@ -930,16 +882,7 @@ export const useUserStore = defineStore("user", {
 				// 其他status保持anonymous
 			}
 
-			console.log('🔍 updateTabBarUserType - 自动设置用户类型:', {
-				isLoggedIn: this.isLoggedIn,
-				status: this.userInfo?.status,
-				newUserType: userType,
-				oldUserType: tabBarStore.userType
-			});
-
-			console.log('🔍 updateTabBarUserType - 即将调用 tabBarStore.setUserType');
 			tabBarStore.setUserType(userType);
-			console.log('🔍 updateTabBarUserType - tabBarStore.setUserType 调用完成，当前类型:', tabBarStore.userType);
 		},
 	},
 });
