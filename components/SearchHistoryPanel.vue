@@ -1,5 +1,5 @@
 <template>
-  <view class="search-panel" v-if="visible">
+  <view class="search-panel" v-if="visible" :style="panelStyle">
     <!-- 搜索历史 -->
     <view class="search-history">
       <view class="history-header">
@@ -31,7 +31,8 @@
 </template>
 
 <script setup>
-import { useSearchStore } from '@/stores'
+import { useSearchStore, useLayoutStore } from '@/stores'
+import { computed } from 'vue'
 
 // 定义组件名称
 defineOptions({
@@ -49,8 +50,29 @@ defineProps({
 // 定义 emits
 const emit = defineEmits(['select-history', 'clear-history'])
 
-// 获取搜索store
+// 获取stores
 const searchStore = useSearchStore()
+const layoutStore = useLayoutStore()
+
+// 动态计算面板样式 - 与 page-content 使用相同的高度计算逻辑
+const panelStyle = computed(() => {
+  if (layoutStore.isInitialized && layoutStore.layoutInfo) {
+    const layout = layoutStore.layoutInfo
+    // 使用与 page-content 完全相同的计算逻辑
+    const marginTop = layout.content.startPosition + 4  // 减少间距从8px到4px
+    const minHeight = layout.content.availableHeight - 4
+
+    return {
+      marginTop: `${marginTop}px`,
+      minHeight: `${minHeight}px`
+    }
+  }
+  // 布局未初始化时的默认样式
+  return {
+    marginTop: '48px', // searchHeight(44px) + 4px间距
+    minHeight: 'calc(100vh - 48px - 70px)'
+  }
+})
 
 // 选择历史记录
 const handleSelectHistory = (keyword) => {
@@ -66,11 +88,10 @@ const handleClearHistory = () => {
 <style lang="scss" scoped>
 .search-panel {
   padding: 15px;
-  margin-top: 96px; /* navbar(44) + 搜索框区域(52) 的高度 */
   padding-top: 10px;
   padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* 确保搜索历史完整显示，增加足够空间 */
   background-color: #f8f8f8;
-  min-height: calc(100vh - 96px - 70px); /* navbar(44) + 搜索框区域(52) + tabbar(70) */
+  /* marginTop 和 minHeight 现在通过 JavaScript 动态计算 */
 
   .search-history {
     margin-bottom: 20px;

@@ -24,14 +24,14 @@
 		@clear-history="clearHistory" />
 
 	<!-- 主要内容区域 -->
-	<view class="page-content" :style="contentStyle">
+	<view class="page-content" :style="contentStyle" v-show="!searchStore.showSearchPanel">
 		<!-- 搜索结果页面 -->
-		<view class="search-results" v-if="showSearchResults && !searchStore.showSearchPanel">
+		<view class="search-results" v-show="showSearchResults">
 			<ProductListComponent ref="productListRef" :keyword="currentSearchKeyword" />
 		</view>
 
 		<!-- 首页内容 -->
-		<view class="home-content" v-if="!searchStore.showSearchPanel && !showSearchResults">
+		<view class="home-content" v-show="!showSearchResults">
 			<!-- 轮播图组件 -->
 			<CarouselComponent />
 			<!-- 品牌组件 -->
@@ -117,25 +117,21 @@ const contentStyle = computed(() => {
   }
 })
 
-// 等待 ProductListComponent 组件渲染完成的工具函数
-const waitForProductListComponent = async (maxRetries = 10) => {
-	// 检查渲染条件
-	console.log('🔍 检查组件渲染条件:')
-	console.log('  showSearchResults:', showSearchResults.value)
-	console.log('  searchStore.showSearchPanel:', searchStore.showSearchPanel)
-	console.log('  渲染条件结果:', showSearchResults.value && !searchStore.showSearchPanel)
+// 等待 ProductListComponent 组件可用的工具函数 (优化版本 - 适用于 v-show)
+const waitForProductListComponent = async (maxRetries = 5) => {
+	console.log('🔍 检查 ProductListComponent 可用性')
 
-	// 首先确保搜索结果页面已显示且搜索面板已隐藏，这样组件才会被渲染
-	if (!showSearchResults.value || searchStore.showSearchPanel) {
-		console.log('⚠️  组件渲染条件不满足，组件不会被渲染')
-		console.log('  需要: showSearchResults=true 且 searchStore.showSearchPanel=false')
-		return false
-	}
-
+	// 使用 v-show 后，组件在页面加载时就会创建，不需要复杂的渲染条件检查
 	for (let i = 0; i < maxRetries; i++) {
-		console.log(`等待 ProductListComponent 渲染 (第${i + 1}/${maxRetries}次)`)
+		// 检查组件 ref 是否可用
+		if (productListRef.value) {
+			console.log('✅ ProductListComponent 组件已准备就绪')
+			return true
+		}
 
-		// 先等待DOM更新
+		console.log(`等待 ProductListComponent 初始化 (第${i + 1}/${maxRetries}次)`)
+
+		// 等待一个tick周期让组件完成初始化
 		await new Promise(resolve => {
 			if (uni.$nextTick) {
 				uni.$nextTick(resolve)
@@ -143,24 +139,12 @@ const waitForProductListComponent = async (maxRetries = 10) => {
 				setTimeout(resolve, 50)
 			}
 		})
-
-		// 检查组件是否已经渲染
-		if (productListRef.value) {
-			console.log('✅ ProductListComponent 组件已准备就绪')
-			return true
-		}
-
-		// 如果还没有，再等待一小段时间
-		if (i < maxRetries - 1) {
-			await new Promise(resolve => setTimeout(resolve, 100))
-		}
 	}
 
-	console.error('❌ ProductListComponent 组件等待超时')
-	console.log('最终状态检查:')
-	console.log('  showSearchResults:', showSearchResults.value)
-	console.log('  searchStore.showSearchPanel:', searchStore.showSearchPanel)
-	console.log('  productListRef.value:', !!productListRef.value)
+	console.error('❌ ProductListComponent 组件初始化超时')
+	console.log('组件状态检查:', {
+		productListRefExists: !!productListRef.value
+	})
 	return false
 }
 
@@ -247,10 +231,10 @@ const onSearch = async (value) => {
 	currentSearchKeyword.value = keyword
 	showSearchResults.value = true
 
-	// 等待组件渲染完成
-	const componentReady = await waitForProductListComponent()
+	// 使用 v-show 后组件始终存在，只需等待一个tick确保状态更新完成
+	await uni.$nextTick?.() || new Promise(resolve => setTimeout(resolve, 0))
 
-	if (componentReady && productListRef.value) {
+	if (productListRef.value) {
 		console.log('调用 ProductListComponent.searchWithKeyword')
 		try {
 			await productListRef.value.searchWithKeyword(keyword)
@@ -263,11 +247,26 @@ const onSearch = async (value) => {
 			})
 		}
 	} else {
-		console.error('productListRef 不存在或等待超时')
-		uni.showToast({
-			title: '组件加载失败，请重试',
-			icon: 'none'
-		})
+		// 如果 ref 还不可用，尝试等待组件初始化
+		const componentReady = await waitForProductListComponent()
+		if (componentReady && productListRef.value) {
+			try {
+				await productListRef.value.searchWithKeyword(keyword)
+				console.log('搜索完成')
+			} catch (error) {
+				console.error('搜索调用失败:', error)
+				uni.showToast({
+					title: '搜索失败，请重试',
+					icon: 'none'
+				})
+			}
+		} else {
+			console.error('productListRef 不可用')
+			uni.showToast({
+				title: '组件初始化失败，请重试',
+				icon: 'none'
+			})
+		}
 	}
 }
 
@@ -359,11 +358,11 @@ const onBrandClick = async (brand) => {
 		// 显示搜索结果页面
 		showSearchResults.value = true
 
-		// 等待组件渲染完成
-		const componentReady = await waitForProductListComponent()
+		// 使用 v-show 后组件始终存在，只需等待一个tick确保状态更新完成
+		await uni.$nextTick?.() || new Promise(resolve => setTimeout(resolve, 0))
 
-		if (componentReady && productListRef.value) {
-			console.log('组件已加载，调用 ProductListComponent.searchByBrand')
+		if (productListRef.value) {
+			console.log('组件已准备，调用 ProductListComponent.searchByBrand')
 			try {
 				await productListRef.value.searchByBrand(brand.id, brand)
 				console.log('品牌筛选完成')
@@ -381,11 +380,32 @@ const onBrandClick = async (brand) => {
 				})
 			}
 		} else {
-			console.error('productListRef 组件不存在或等待超时')
-			uni.showToast({
-				title: '组件加载失败，请重试',
-				icon: 'none'
-			})
+			// 如果 ref 还不可用，尝试等待组件初始化
+			const componentReady = await waitForProductListComponent()
+			if (componentReady && productListRef.value) {
+				try {
+					await productListRef.value.searchByBrand(brand.id, brand)
+					console.log('品牌筛选完成')
+
+					uni.showToast({
+						title: `已切换到${brand.name_cn}`,
+						icon: 'success',
+						duration: 1500
+					})
+				} catch (error) {
+					console.error('品牌筛选调用失败:', error)
+					uni.showToast({
+						title: '品牌数据加载失败',
+						icon: 'none'
+					})
+				}
+			} else {
+				console.error('productListRef 组件初始化失败')
+				uni.showToast({
+					title: '组件初始化失败，请重试',
+					icon: 'none'
+				})
+			}
 		}
 	} catch (error) {
 		console.error('品牌点击处理失败:', error)

@@ -1,5 +1,5 @@
 <template>
-  <view class="toolbar-container">
+  <view class="toolbar-container" :style="toolbarStyle">
     <!-- 品牌信息和工具栏一体化容器 -->
     <view class="toolbar-unified">
       <!-- 品牌信息栏 -->
@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { useToolbarStore } from "@/stores";
+import { useToolbarStore, useLayoutStore } from "@/stores";
 import { computed, nextTick } from "vue";
 
 // 定义组件名称和emits
@@ -67,6 +67,24 @@ const emit = defineEmits(["priceSort", "filter", "displayModeChange"]);
 
 // Store实例
 const toolbarStore = useToolbarStore();
+const layoutStore = useLayoutStore();
+
+// 动态计算工具栏样式
+const toolbarStyle = computed(() => {
+  if (layoutStore.isInitialized && layoutStore.layoutInfo) {
+    const layout = layoutStore.layoutInfo
+    // 工具栏应该显示在搜索框下方
+    const toolbarTop = layout.navbar.navbarBottomPosition + layout.search.searchHeight + layout.search.searchMargin
+
+    return {
+      top: `${toolbarTop}px`
+    }
+  }
+  // 布局未初始化时的默认样式
+  return {
+    top: '142px' // navbar(98px) + searchHeight(44px) = 142px
+  }
+})
 
 // 计算属性
 const sortOrder = computed(() => {
@@ -117,7 +135,7 @@ const toggleDisplayMode = () => {
 <style lang="scss" scoped>
 .toolbar-container {
   position: fixed;
-  top: 126px; /* navbar(65) + 搜索框区域(61) 的高度 */
+  /* top 值现在通过 JavaScript 动态计算 */
   left: 0;
   right: 0;
   background-color: #f8f8f8; /* 与搜索框容器背景色保持一致 */
