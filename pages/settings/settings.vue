@@ -2,48 +2,55 @@
 	<view class="container">
 		<!-- 设置内容 -->
 		<view class="settings-content">
-			<!-- 其他设置 -->
-			<view class="settings-section">
-				<view class="settings-group">
-					<view class="setting-item">
-						<view class="item-content">
-							<up-icon name="lock" size="20" color="#666"></up-icon>
-							<text class="item-text">隐私政策</text>
-						</view>
-						<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
-					</view>
+		<!-- 设置列表 -->
+		<view class="settings-group">
+			<up-cell-group :border="false">
+				<up-cell
+					title="隐私政策"
+					isLink
+					arrow-direction="right"
+				>
+					<template #icon>
+						<up-icon name="lock" size="20" color="#666" style="margin-right: 8px;"></up-icon>
+					</template>
+				</up-cell>				<up-cell
+					title="关于我们"
+					isLink
+					arrow-direction="right"
+				>
+					<template #icon>
+						<up-icon name="info-circle" size="20" color="#666" style="margin-right: 8px;"></up-icon>
+					</template>
+				</up-cell>
 
-					<view class="setting-item">
-						<view class="item-content">
-							<up-icon name="info-circle" size="20" color="#666"></up-icon>
-							<text class="item-text">关于我们</text>
-						</view>
-						<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
-					</view>
+				<up-cell
+					title="版本更新"
+					value="v1.0.0"
+				>
+					<template #icon>
+						<up-icon name="tags" size="20" color="#666" style="margin-right: 8px;"></up-icon>
+					</template>
+				</up-cell>
 
-					<view class="setting-item">
-						<view class="item-content">
-							<up-icon name="reload" size="20" color="#666"></up-icon>
-							<text class="item-text">版本更新</text>
-						</view>
-						<view class="version-info">
-							<text class="version-text">v1.0.0</text>
-							<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
-						</view>
-					</view>
-
-					<!-- 退出登录 -->
-					<view class="setting-item logout-item" @click="handleLogout" v-if="userStore.isLoggedIn">
-						<view class="item-content">
-							<up-icon name="lock-open" size="20" color="#d32f2f"></up-icon>
-							<text class="logout-text">退出登录</text>
-						</view>
-						<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
-					</view>
-				</view>
-			</view>
+				<!-- 退出登录 -->
+				<up-cell
+					v-if="userStore.isLoggedIn"
+					title="退出登录"
+					isLink
+					arrow-direction="right"
+					@click="handleLogout"
+				>
+					<template #icon>
+						<up-icon name="lock-open" size="20" color="#d32f2f" style="margin-right: 8px;"></up-icon>
+					</template>
+					<template #title>
+						<text style="color: #d32f2f; font-weight: 500;">退出登录</text>
+					</template>
+				</up-cell>
+			</up-cell-group>
 		</view>
 	</view>
+</view>
 </template>
 
 <script setup>
@@ -117,90 +124,13 @@ const handleLogout = () => {
 	background-color: #f5f5f5;
 }
 
-.page-header {
-	background: #fff;
-	padding: 20px;
-	border-bottom: 1px solid #f0f0f0;
-
-	.page-title {
-		font-size: 24px;
-		font-weight: 600;
-		color: #333;
-	}
-}
-
 .settings-content {
-	padding: 20px;
-}
-
-.settings-section {
-	margin-bottom: 30px;
-
-	.section-title {
-		display: block;
-		font-size: 16px;
-		font-weight: 600;
-		color: #333;
-		margin-bottom: 12px;
-		padding-left: 4px;
-	}
+	padding: 30rpx;
 }
 
 .settings-group {
 	background: white;
-	border-radius: 4px;
 	overflow: hidden;
-	border: 1px solid #e5e5e5;
+	border: 1px solid #f0f0f0;
 }
-
-.setting-item {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 16px 20px;
-	border-bottom: 1px solid #f5f5f5;
-
-	&:last-child {
-		border-bottom: none;
-	}
-
-	&:active {
-		background-color: #f8f8f8;
-	}
-
-	.item-content {
-		display: flex;
-		align-items: center;
-		flex: 1;
-
-		.item-text {
-			margin-left: 12px;
-			font-size: 16px;
-			color: #333;
-		}
-	}
-
-	.version-info {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-
-		.version-text {
-			font-size: 14px;
-			color: #666;
-		}
-	}
-
-	// 退出登录项特殊样式
-	&.logout-item {
-		.logout-text {
-			margin-left: 12px;
-			font-size: 16px;
-			color: #d32f2f;
-			font-weight: 500;
-		}
-	}
-}
-
-// 样式结束
 </style>

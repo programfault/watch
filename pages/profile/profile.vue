@@ -104,7 +104,7 @@
 				</view>
 				<view class="modal-content">
 					<text class="modal-desc">绑定手机号后可享受更多服务</text>
-					<up-input	
+					<up-input
 						v-model="phoneNumber"
 						placeholder="请输入手机号"
 						type="number"
@@ -526,12 +526,47 @@ const handleNameClick = async () => {
 		console.error('- 错误对象:', error)
 		console.error('- 错误堆栈:', error.stack)
 
-		// 显示错误提示
-		uni.showToast({
-			title: `刷新失败: ${error.message || '未知错误'}`,
-			icon: 'error',
-			duration: 3000
-		})
+		// 判断是否为登录过期相关错误
+		const isTokenExpired = error.message && (
+			error.message.includes('刷新 token 失败') ||
+			error.message.includes('token') ||
+			error.message.includes('登录') ||
+			error.message.includes('401') ||
+			error.message.includes('unauthorized')
+		)
+
+		if (isTokenExpired) {
+			console.log('🔒 检测到登录过期，提示用户重新登录')
+
+			// 显示登录过期提示
+			uni.showModal({
+				title: '登录已过期',
+				content: '您的登录状态已过期，请重新登录以获取最新信息',
+				showCancel: true,
+				cancelText: '稍后',
+				confirmText: '重新登录',
+				success: (res) => {
+					if (res.confirm) {
+						console.log('用户选择重新登录')
+						// 清除登录状态
+						userStore.logout()
+						// 自动触发登录流程
+						performLogin()
+					} else {
+						console.log('用户选择稍后登录')
+					}
+				}
+			})
+		} else {
+			// 其他类型的刷新错误
+			console.log('🔧 普通刷新错误，显示通用错误提示')
+
+			uni.showToast({
+				title: '刷新失败，请稍后重试',
+				icon: 'none',
+				duration: 2500
+			})
+		}
 	} finally {
 		// 隐藏加载提示
 		uni.hideLoading()
