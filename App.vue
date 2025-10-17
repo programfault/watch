@@ -1,12 +1,22 @@
 <script>
-	import { useFavoritesStore, useUserStore } from '@/stores';
+	import { useFavoritesStore, useUserStore, useLayoutStore } from '@/stores';
 
 	export default {
 		onLaunch: async function() {
 			console.warn('当前组件仅支持 uni_modules 目录结构 ，请升级 HBuilderX 到 3.1.0 版本以上！')
 			console.log('App Launch 开始')
 
-			// 首先初始化用户状态，确保token先恢复
+			// 首先初始化布局信息，确保全局布局计算完成
+			console.log('App Launch - 开始初始化布局信息...')
+			const layoutStore = useLayoutStore()
+			try {
+				await layoutStore.initializeLayout()
+				console.log('App Launch - 布局信息初始化完成')
+			} catch (error) {
+				console.error('App Launch - 布局信息初始化失败:', error)
+			}
+
+			// 然后初始化用户状态，确保token先恢复
 			console.log('App Launch - 开始初始化用户状态...')
 			const userStore = useUserStore()
 			try {

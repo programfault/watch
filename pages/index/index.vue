@@ -1,4 +1,5 @@
 <template>
+	<!-- 导航栏 -->
 	<up-navbar title="天辰手表" :fixed="true" :safe-area-inset-top="true" :placeholder="true" bg-color="#ffffff"
 		title-color="#333333" height="44" @leftClick="leftClick">
 		<template #left v-if="showSearchResults">
@@ -7,41 +8,41 @@
 			</view>
 		</template>
 	</up-navbar>
-	<view class="container">
 
-		<view class="search_container" :style="searchContainerStyle">
+	<!-- 搜索框容器 - 全局固定定位 -->
+	<view class="search-container" :style="searchContainerStyle">
+		<view class="search-wrapper">
 			<up-search placeholder="搜索品牌、手表、服务..." v-model="searchKeyword" :show-action="searchStore.showSearchPanel"
 				:actionText="searchStore.showSearchPanel ? '取消' : '搜索'" :animation="false" shape="square"
 				bg-color="#ffffff" border-color="#e5e5e5" @focus="onSearchFocus" @search="onSearch"
 				@custom="onSearchAction" @clear="onSearchClear" @change="onSearchInput"></up-search>
 		</view>
-		<SearchHistoryPanel :visible="searchStore.showSearchPanel" @select-history="selectHistory"
-			@clear-history="clearHistory" />
-		<view class="content">
-			<!-- 搜索结果 -->
-			<view class="search-results" v-if="showSearchResults && !searchStore.showSearchPanel">
-				<ProductListComponent ref="productListRef" :keyword="currentSearchKeyword" />
-			</view>
+	</view>
 
-			<!-- 主容器 -->
-			<view class="container__history" v-if="!searchStore.showSearchPanel && !showSearchResults">
-				<!-- 轮播图组件 -->
-				<CarouselComponent />
-				<!-- 品牌组件 -->
-				<BrandsComponent @brandClick="onBrandClick" />
-			</view>
+	<!-- 搜索历史面板 - 全局弹层 -->
+	<SearchHistoryPanel :visible="searchStore.showSearchPanel" @select-history="selectHistory"
+		@clear-history="clearHistory" />
 
-			<!-- 悬浮客服按钮 -->
-			<FloatingServiceButton />
-
-			<CustomTabBar />
+	<!-- 主要内容区域 -->
+	<view class="page-content" :style="contentStyle">
+		<!-- 搜索结果页面 -->
+		<view class="search-results" v-if="showSearchResults && !searchStore.showSearchPanel">
+			<ProductListComponent ref="productListRef" :keyword="currentSearchKeyword" />
 		</view>
 
-		<!-- 固定搜索框容器 -->
-		<!-- 
+		<!-- 首页内容 -->
+		<view class="home-content" v-if="!searchStore.showSearchPanel && !showSearchResults">
+			<!-- 轮播图组件 -->
+			<CarouselComponent />
+			<!-- 品牌组件 -->
+			<BrandsComponent @brandClick="onBrandClick" />
+		</view>
 
-	<!-- 搜索历史面板 -->
-		<!--  -->
+		<!-- 悬浮客服按钮 -->
+		<FloatingServiceButton />
+
+		<!-- 底部标签栏 -->
+		<CustomTabBar />
 	</view>
 
 </template>
@@ -53,48 +54,10 @@ import CustomTabBar from '@/components/CustomTabBar.vue'
 import FloatingServiceButton from '@/components/FloatingServiceButton.vue'
 import ProductListComponent from '@/components/ProductListComponent.vue'
 import SearchHistoryPanel from '@/components/SearchHistoryPanel.vue'
-import { useAppStore, useProductStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
+import { useAppStore, useLayoutStore, useProductStore, useSearchStore, useTabBarStore, useUserStore } from '@/stores'
 import { hideTabSwitchLoading } from '@/utils/loadingUtils.js'
 import { onHide, onLoad, onShow, onReady } from '@dcloudio/uni-app'
-import { ref, nextTick } from 'vue'
-
-// 定义响应式变量用于动态设置搜索框的top值
-const searchContainerStyle = ref({});
-
-// 页面加载时获取状态栏高度并动态设置样式
-onReady(async () => {
-  try {
-    // 使用更现代的API获取窗口信息
-    let windowInfo;
-    try {
-      // 优先尝试使用uni.getWindowInfo() (更现代的API，避免过时警告)
-      windowInfo = uni.getWindowInfo();
-    } catch (err) {
-      // 降级方案使用uni.getSystemInfoSync()
-      console.log('uni.getWindowInfo()不可用，降级使用uni.getSystemInfoSync()');
-      windowInfo = uni.getSystemInfoSync();
-    }
-    
-    const statusBarHeight = windowInfo.statusBarHeight || 0;
-    console.log('页面获取状态栏高度:', statusBarHeight, 'px');
-    
-    // 确保DOM已渲染
-    await nextTick();
-    
-    // 计算搜索框的top值并设置到响应式样式对象中
-    const totalTop = 44 + statusBarHeight;
-    searchContainerStyle.value = {
-      top: `${totalTop}px`
-    };
-    console.log('已动态设置搜索框top值:', totalTop + 'px');
-  } catch (e) {
-    console.error('设置搜索框样式失败:', e);
-    // 失败时使用默认值
-    searchContainerStyle.value = {
-      top: '98px' // 44px + 默认54px
-    };
-  }
-});
+import { ref, computed } from 'vue'
 
 // 定义组件名称
 defineOptions({
@@ -104,6 +67,7 @@ defineOptions({
 // 获取 stores
 const searchStore = useSearchStore()
 const appStore = useAppStore()
+const layoutStore = useLayoutStore()
 const userStore = useUserStore()
 const tabBarStore = useTabBarStore()
 const productStore = useProductStore()
@@ -113,6 +77,45 @@ const searchKeyword = ref('')
 const showSearchResults = ref(false)
 const currentSearchKeyword = ref('')
 const productListRef = ref(null)
+
+// 使用布局store的样式计算
+const searchContainerStyle = computed(() => {
+  if (layoutStore.isInitialized) {
+    return layoutStore.searchContainerStyle
+  }
+  // 布局未初始化时的默认样式
+  return { top: '88px' }
+})
+
+const contentStyle = computed(() => {
+  if (layoutStore.isInitialized && layoutStore.layoutInfo) {
+    const layout = layoutStore.layoutInfo
+    const marginTop = layout.content.startPosition + 4  // 减少间距从8px到4px
+    const minHeight = layout.content.availableHeight - 4
+
+    console.log('📏 布局计算结果:', {
+      statusBarHeight: layout.device.statusBarHeight,
+      navbarHeight: layout.navbar.navbarHeight,
+      navbarBottomPosition: layout.navbar.navbarBottomPosition,
+      searchHeight: layout.search.searchHeight,
+      searchTop: layout.search.searchTop,
+      contentStartPosition: layout.content.startPosition,
+      finalMarginTop: marginTop,
+      availableHeight: layout.content.availableHeight,
+      finalMinHeight: minHeight
+    })
+
+    return {
+      marginTop: `${marginTop}px`, // 搜索框下方 + 8px间距
+      minHeight: `${minHeight}px`, // 减去间距
+    }
+  }
+  // 布局未初始化时的默认样式
+  return {
+    marginTop: '140px',
+    minHeight: 'calc(100vh - 200px)'
+  }
+})
 
 // 等待 ProductListComponent 组件渲染完成的工具函数
 const waitForProductListComponent = async (maxRetries = 10) => {
@@ -482,20 +485,15 @@ const leftClick = () => {
 </script>
 
 <style lang="scss" scoped>
-.container{
-	background-color: #f8f8f8;
-}
-// 固定搜索框容器样式
+/* ==================== 搜索框样式 ==================== */
+// 搜索框容器 - 全局固定定位 (位置由JS动态计算)
 .search-container {
 	position: fixed;
-	top: calc(44px + var(--status-bar-height, 44px));
 	left: 0;
 	right: 0;
-	height: 44px;
 	background-color: #f8f8f8;
 	z-index: 10;
-	padding: 0 4%;
-	/* 使用百分比实现响应式左右边距 */
+	padding: 0 4%; /* 使用百分比实现响应式左右边距 */
 	box-sizing: border-box;
 
 	/* 小屏幕适配 */
@@ -511,27 +509,38 @@ const leftClick = () => {
 
 // 搜索框包装器
 .search-wrapper {
-	padding: 0;
 	height: 100%;
 	width: 100%;
-	/* 确保占满容器宽度 */
+	@include flex;
+	align-items: center;
 }
 
+/* up-search组件样式调整 */
+:deep(.u-search) {
+	border-radius: 4px;
 
+	.u-search__content {
+		background-color: #f8f9fa;
+		border: 1px solid #e9ecef;
+		border-radius: 4px;
 
-// 搜索容器样式
-.search_container {
-		position: fixed;
-		left: 0;
-		width: 100%;
-	height: 44px;
-	background-color: #ffffff;
-	z-index: 11;
-	border-bottom: 1px solid #f0f0f0;
-	box-sizing: border-box;
-	padding: 0 16px;
-	display: flex;
-	align-items: center;
+		&--round {
+			border-radius: 4px;
+		}
+	}
+
+	.u-search__input-wrapper {
+		padding: 0 12px;
+	}
+
+	.u-search__input {
+		font-size: 14px;
+		color: #333333;
+
+		&::placeholder {
+			color: #999999;
+		}
+	}
 }
 
 // navbar相关样式
@@ -573,23 +582,12 @@ const leftClick = () => {
 	}
 }
 
-// 搜索结果页面样式 - 简化计算
-.search-results {
+/* ==================== 页面内容区域样式 ==================== */
+// 内容区域基础样式 (marginTop, minHeight 由JS动态计算)
+.page-content {
 	background-color: #f8f8f8;
-	margin-top: calc(44px + var(--status-bar-height, 44px) + 44px + 8px);
-	min-height: calc(100vh - 44px - var(--status-bar-height, 44px) - 44px - 8px - 70px);
+	padding: 0 4%; /* 使用百分比实现响应式内边距 */
 	padding-bottom: calc(100px + env(safe-area-inset-bottom));
-}
-
-// 主容器样式 - 简化计算
-.container__history {
-	min-height: calc(100vh - 44px - var(--status-bar-height, 44px) - 44px - 8px - 70px);
-	padding: 4%;
-	/* 使用百分比实现响应式内边距 */
-	margin-top: calc(44px + var(--status-bar-height, 44px) + 44px + 8px);
-	padding-top: 20px;
-	padding-bottom: calc(100px + env(safe-area-inset-bottom));
-	background-color: #f8f8f8;
 	box-sizing: border-box;
 
 	/* 小屏幕适配 */
@@ -603,5 +601,15 @@ const leftClick = () => {
 		padding-left: 8%;
 		padding-right: 8%;
 	}
+}
+
+// 搜索结果页面样式 (继承父容器的定位和尺寸)
+.search-results {
+	background-color: transparent; /* 继承父容器背景 */
+}
+
+// 首页内容样式 (继承父容器的定位和尺寸)
+.home-content {
+	background-color: transparent; /* 继承父容器背景 */
 }
 </style>

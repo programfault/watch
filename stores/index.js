@@ -29,6 +29,7 @@ export default pinia
 
 export { useAppStore } from './app.js'
 export { useFavoritesStore } from './favorites.js'
+export { useLayoutStore } from './layout.js'
 export { useProductStore } from './product.js'
 // 导出所有 stores
 export { useSearchStore } from './search.js'
