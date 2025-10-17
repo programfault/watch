@@ -31,14 +31,16 @@
 							<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
 						</view>
 					</view>
-				</view>
-			</view>
-		</view>
 
-		<!-- 退出登录 - 固定在底部 -->
-		<view class="logout-section" v-if="userStore.isLoggedIn">
-			<view class="logout-button" @click="handleLogout">
-				<text class="logout-text">退出登录</text>
+					<!-- 退出登录 -->
+					<view class="setting-item logout-item" @click="handleLogout" v-if="userStore.isLoggedIn">
+						<view class="item-content">
+							<up-icon name="lock-open" size="20" color="#d32f2f"></up-icon>
+							<text class="logout-text">退出登录</text>
+						</view>
+						<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
+					</view>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -188,42 +190,16 @@ const handleLogout = () => {
 			color: #666;
 		}
 	}
-}
 
-// 退出登录固定在底部
-.logout-section {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	padding: 20px;
-	background-color: #f5f5f5;
-	border-top: 1px solid #e5e5e5;
-
-	.logout-button {
-		background: white;
-		border-radius: 4px;
-		border: 1px solid #e5e5e5;
-		padding: 16px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-
-		&:active {
-			background-color: #f8f8f8;
-		}
-
+	// 退出登录项特殊样式
+	&.logout-item {
 		.logout-text {
+			margin-left: 12px;
 			font-size: 16px;
 			color: #d32f2f;
 			font-weight: 500;
 		}
 	}
-}
-
-// 为底部退出按钮留出空间
-.container {
-	padding-bottom: 100px;
 }
 
 // 样式结束

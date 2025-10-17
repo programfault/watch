@@ -17,70 +17,96 @@
 		"path": "pages/maintenance/maintenance",
 		"style": {
 			"navigationBarTitleText": "保养",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black",
 			"enablePullDownRefresh": true,
 			"backgroundTextStyle": "dark"
 		}
 	}, {
 		"path": "pages/rolex/rolex",
 		"style": {
-			"navigationBarTitleText": "劳力士"
+			"navigationBarTitleText": "劳力士",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}, {
 		"path": "pages/profile/profile",
 		"style": {
-			"navigationBarTitleText": "我的"
+			"navigationBarTitleText": "我的",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}, {
 		"path": "pages/customer/customer",
 		"style": {
-			"navigationBarTitleText": "客户"
+			"navigationBarTitleText": "客户",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}, {
 		"path": "pages/recruitment/recruitment",
 		"style": {
-			"navigationBarTitleText": "我的招聘"
+			"navigationBarTitleText": "我的招聘",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}, {
 		"path": "pages/activity/activity",
 		"style": {
-			"navigationBarTitleText": "活动详情"
+			"navigationBarTitleText": "活动详情",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}, {
 		"path": "pages/product/detail",
 		"style": {
-			"navigationBarTitleText": "产品详情"
+			"navigationBarTitleText": "产品详情",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}, {
 		"path": "pages/maintenance/manual",
 		"style": {
-			"navigationBarTitleText": "保养手册"
+			"navigationBarTitleText": "保养手册",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}, {
 		"path": "pages/settings/settings",
 		"style": {
-			"navigationBarTitleText": "设置"
+			"navigationBarTitleText": "设置",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}, {
 		"path": "pages/favorites/favorites",
 		"style": {
-			"navigationBarTitleText": "我的收藏"
+			"navigationBarTitleText": "我的收藏",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}, {
 		"path": "pages/benefits/benefits",
 		"style": {
 			"navigationBarTitleText": "福利中心",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black",
 			"enablePullDownRefresh": true,
 			"backgroundTextStyle": "dark"
 		}
 	}, {
 		"path": "pages/agreement/agreement",
 		"style": {
-			"navigationBarTitleText": "用户服务协议"
+			"navigationBarTitleText": "用户服务协议",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}, {
 		"path": "pages/privacy/privacy",
 		"style": {
-			"navigationBarTitleText": "隐私政策"
+			"navigationBarTitleText": "隐私政策",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
 		}
 	}],
 	"globalStyle": {
