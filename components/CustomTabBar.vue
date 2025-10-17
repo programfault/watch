@@ -1,5 +1,12 @@
 <template>
 	<view class="tabbar-container">
+		<!-- 调试信息 -->
+		<view style="position: fixed; top: 100rpx; left: 20rpx; background: rgba(0,0,0,0.8); color: white; padding: 10rpx; border-radius: 10rpx; z-index: 10000; font-size: 24rpx;">
+			用户类型: {{ tabBarStore.userType || 'undefined' }}
+			<br>登录状态: {{ userStore.isLoggedIn ? '已登录' : '未登录' }}
+			<br>Status: {{ userStore.userInfo?.status || 'null' }}
+		</view>
+
 		<!-- Tab切换Loading组件 -->
 		<TabSwitchLoading
 			:loading="tabSwitchLoading"
@@ -28,7 +35,7 @@
 				name="home"
 				text="首页"
 				icon="home"
-				v-if="['anonymous','normal', 'admin', 'special'].includes(userStore.userType || 'normal')"
+				v-if="['anonymous','normal', 'admin', 'special'].includes(tabBarStore.userType || 'normal')"
 			/>
 
 			<!-- 我的招聘 - 只有匿名用户可见 -->
@@ -36,7 +43,7 @@
 				name="recruitment"
 				text="我的招聘"
 				icon="info-circle"
-				v-if="['anonymous'].includes(userStore.userType || 'normal')"
+				v-if="['anonymous'].includes(tabBarStore.userType || 'normal')"
 			/>
 
 			<!-- 保养 - 匿名、普通用户、管理员可见 -->
@@ -44,7 +51,7 @@
 				name="maintenance"
 				text="保养"
 				icon="setting"
-				v-if="['anonymous','normal', 'admin'].includes(userStore.userType || 'normal')"
+				v-if="['anonymous','normal', 'admin'].includes(tabBarStore.userType || 'normal')"
 			/>
 
 			<!-- 客户 - 只有管理员可见 -->
@@ -52,7 +59,7 @@
 				name="customer"
 				text="客户"
 				icon="integral"
-				v-if="['admin'].includes(userStore.userType || 'normal')"
+				v-if="['admin'].includes(tabBarStore.userType || 'normal')"
 			/>
 
 			<!-- 劳力士 - 匿名、普通用户、特殊用户可见 -->
@@ -60,7 +67,7 @@
 				name="rolex"
 				text="劳力士"
 				icon="star"
-				v-if="['anonymous','normal', 'special'].includes(userStore.userType || 'normal')"
+				v-if="['anonymous','normal', 'special'].includes(tabBarStore.userType || 'normal')"
 			/>
 
 			<!-- 我的 - 所有用户都可见 -->
@@ -68,7 +75,7 @@
 				name="profile"
 				text="我的"
 				icon="account"
-				v-if="['anonymous','normal', 'admin', 'special'].includes(userStore.userType || 'normal')"
+				v-if="['anonymous','normal', 'admin', 'special'].includes(tabBarStore.userType || 'normal')"
 			/>
 		</u-tabbar>
 	</view>
@@ -77,7 +84,7 @@
 <script setup>
 import TabSwitchLoading from '@/components/TabSwitchLoading.vue'
 import { useTabBarStore, useUserStore } from '@/stores'
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
 // 定义组件名称（可选）
 defineOptions({
@@ -94,10 +101,41 @@ const tabSwitchText = ref('页面加载中...')
 
 // 添加调试信息 - 简化版
 const debugUserType = computed(() => {
-	const currentUserType = userStore.userType || 'normal'
+	const currentUserType = tabBarStore.userType || 'normal'
 	console.log('🔍 TabBar 当前用户类型:', currentUserType)
+	console.log('🔍 UserStore isLoggedIn:', userStore.isLoggedIn)
+	console.log('🔍 UserStore userInfo status:', userStore.userInfo?.status)
 	return currentUserType
 })
+
+// 监听用户类型变化并强制组件重新渲染
+watch(
+	() => tabBarStore.userType,
+	(newUserType, oldUserType) => {
+		console.log('🔄 TabBar 用户类型变化:', {
+			oldType: oldUserType,
+			newType: newUserType,
+			timestamp: new Date().toLocaleTimeString()
+		})
+		// 触发重新计算调试信息
+		debugUserType.value
+	},
+	{ immediate: true }
+)
+
+// 同时监听用户登录状态变化
+watch(
+	() => userStore.isLoggedIn,
+	(newLoginState, oldLoginState) => {
+		console.log('🔄 TabBar 用户登录状态变化:', {
+			oldState: oldLoginState,
+			newState: newLoginState,
+			userType: tabBarStore.userType,
+			timestamp: new Date().toLocaleTimeString()
+		})
+	},
+	{ immediate: true }
+)
 
 // 计算当前激活标签的索引
 // const activeTabIndex = computed(() => {
@@ -139,6 +177,8 @@ const initTabBar = async () => {
 		console.log('🚀 TabBar 初始化开始...')
 		console.log('- tabBarStore:', tabBarStore)
 		console.log('- tabBarStore.tabList:', tabBarStore?.tabList)
+		// 触发调试信息更新
+		debugUserType.value
 		console.log('- userStore.userType:', userStore?.userType)
 
 		// 确保tabBarStore已正确初始化
