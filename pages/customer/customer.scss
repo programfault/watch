@@ -4,13 +4,19 @@
   height: 100vh;
   background-color: #f8f8f8;
   box-sizing: border-box;
+  overflow: hidden; /* 确保整个页面不会滚动 */
+  position: fixed; /* 固定定位防止页面滚动 */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 
 
 .fixed-search {
   position: fixed;
-  top: env(safe-area-inset-top);
+  top: 0;
   left: 0;
   right: 0;
   z-index: 999;
@@ -47,17 +53,21 @@
   }
 }
 
-.scroll-content {
-  flex: 1;
-  padding-top: calc(80px + env(safe-area-inset-top)); /* 给固定搜索栏和安全区域留出空间 */
+.content-area {
+  padding-top: 80px; /* 给固定搜索栏留出空间 */
   padding-bottom: calc(50px + env(safe-area-inset-bottom)); /* 给tabbar留出空间 */
+  height: calc(100vh - 80px - 50px - env(safe-area-inset-bottom)); /* 精确计算可用高度 */
   box-sizing: border-box;
+  overflow: hidden; /* 防止滚动 */
 }
 
 .container {
-  padding: 0;
-  min-height: calc(100vh - env(safe-area-inset-top) - 50px - env(safe-area-inset-bottom) - 110px);
+  padding: 12px 0;
+  height: 100%; /* 使用父容器的完整高度 */
   box-sizing: border-box;
+  overflow: hidden; /* 防止容器内滚动 */
+  display: flex;
+  flex-direction: column;
 }
 
 .loading {
@@ -67,6 +77,9 @@
 
 .consumers-list {
   padding: 0 12px;
+  flex: 1;
+  overflow: hidden; /* 防止内容溢出产生滚动 */
+  max-height: 100%; /* 确保不超过父容器高度 */
 
   // 移除uni-list-item的默认样式
   :deep(.custom-list-item) {
@@ -95,6 +108,9 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     border: 1px solid #f5f5f5;
     transition: all 0.2s ease;
+    flex-shrink: 0; /* 防止项目收缩 */
+    max-height: 200px; /* 限制单个项目的最大高度 */
+    overflow: hidden; /* 防止单个项目内容溢出 */
 
     &:active {
       transform: scale(0.98);
@@ -266,7 +282,11 @@
 
 // 骨架屏样式
 .skeleton-wrapper {
-  padding: 10px;
+  padding: 12px;
+  flex: 1;
+  box-sizing: border-box;
+  overflow: hidden;
+  max-height: 100%;
 
   .skeleton-item {
     display: flex;
@@ -360,8 +380,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 40px;
+  flex: 1;
   text-align: center;
+  padding: 40px;
+  box-sizing: border-box;
+  overflow: hidden;
 
   .hint-icon {
     margin-bottom: 20px;
@@ -388,8 +411,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 40px;
+  flex: 1;
   text-align: center;
+  padding: 40px;
+  box-sizing: border-box;
+  overflow: hidden;
 
   .empty-icon {
     margin-bottom: 20px;

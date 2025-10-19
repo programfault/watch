@@ -1,5 +1,13 @@
 <template>
-	<uni-popup ref="consumerPopup" type="bottom" background-color="#fff" :mask-click="true" @maskClick="closePanel">
+	<u-popup
+		v-model:show="showPopup"
+		mode="bottom"
+		:closeOnClickOverlay="true"
+		:round="20"
+		:safeAreaInsetBottom="true"
+		bgColor="#fff"
+		@close="closePanel"
+	>
 		<view class="consumer-panel">
 			<!-- 头部 -->
 			<view class="consumer-header">
@@ -160,7 +168,7 @@
 				</view>
 			</view>
 		</view>
-	</uni-popup>
+	</u-popup>
 </template>
 
 <script setup>
@@ -221,20 +229,16 @@ const props = defineProps({
 // 定义事件
 const emit = defineEmits(['close', 'success'])
 
-// 创建refs
-const consumerPopup = ref(null)
+// 创建响应式数据
+const showPopup = ref(false)
 
 // 基础函数定义（先定义后使用）
 const openPanel = () => {
-	if (consumerPopup.value) {
-		consumerPopup.value.open()
-	}
+	showPopup.value = true
 }
 
 const closePanel = () => {
-	if (consumerPopup.value) {
-		consumerPopup.value.close()
-	}
+	showPopup.value = false
 	resetSelections()
 	emit('close')
 }
@@ -342,10 +346,9 @@ onMounted(() => {
 
 // 监听器
 watch(() => props.visible, (newVal) => {
-	if (newVal) {
-		openPanel()
-	} else {
-		closePanel()
+	showPopup.value = newVal
+	if (!newVal) {
+		resetSelections()
 	}
 }, { immediate: true })
 
@@ -542,12 +545,10 @@ defineExpose({
 .consumer-panel {
 	background-color: #fff;
 	border-radius: 20rpx 20rpx 0 0;
-	max-height: 80vh;
 	display: flex;
 	flex-direction: column;
 	width: 100%;
 	max-width: 100vw;
-	overflow: hidden;
 }
 
 .consumer-header {
@@ -578,10 +579,12 @@ defineExpose({
 .consumer-content {
 	flex: 1;
 	padding: 0 20rpx;
-	max-height: 60vh;
+	overflow-y: auto;
+	overflow-x: hidden;
+	min-height: 0;
+	max-width: 100%;
 	width: 100%;
 	box-sizing: border-box;
-	overflow-x: hidden;
 }
 
 .consumer-info-section,
@@ -946,18 +949,27 @@ defineExpose({
 			}
 		}
 	}.consumer-footer {
-	padding: 30rpx;
-	padding-bottom: calc(30rpx + 100rpx + env(safe-area-inset-bottom));
+	padding: 25rpx 30rpx;
 	border-top: 1rpx solid #eee;
+	flex-shrink: 0;
+	background-color: #fff;
+	box-sizing: border-box;
 
 	.confirm-btn {
 		width: 100%;
 		height: 88rpx;
 		background-color: #b8860b;
-		border-radius: 44rpx;
+		border-radius: 8rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		box-sizing: border-box;
+		transition: all 0.3s ease;
+
+		&:active {
+			background-color: #a67a0a;
+			transform: translateY(1rpx);
+		}
 
 		.confirm-text {
 			font-size: 32rpx;

@@ -41,7 +41,10 @@
 		"style": {
 			"navigationBarTitleText": "客户",
 			"navigationBarBackgroundColor": "#ffffff",
-			"navigationBarTextStyle": "black"
+			"navigationBarTextStyle": "black",
+			"enablePullDownRefresh": false,
+			"onReachBottomDistance": 0,
+			"disableScroll": true
 		}
 	}, {
 		"path": "pages/recruitment/recruitment",

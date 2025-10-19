@@ -5,6 +5,7 @@
       <view class="search-container">
         <view class="search-bar-wrapper">
           <up-search
+            ref="searchInput"
             @custom="onSearchConfirm"
             placeholder="请输入手机号搜索"
             :focus="false"
@@ -19,11 +20,8 @@
       </view>
     </view>
 
-    <!-- 可滚动内容区域 -->
-    <scroll-view
-      class="scroll-content"
-      scroll-y="true"
-    >
+    <!-- 内容区域 -->
+    <view class="content-area">
       <view class="container">
         <!-- 搜索提示状态 -->
         <view class="search-hint" v-if="!hasSearched && !userStore.consumersLoading">
@@ -36,7 +34,7 @@
 
         <!-- 加载状态 - 骨架屏 -->
         <view class="skeleton-wrapper" v-else-if="userStore.consumersLoading">
-          <view class="skeleton-item" v-for="i in 5" :key="i">
+          <view class="skeleton-item" v-for="i in 1" :key="i">
             <view class="skeleton-avatar"></view>
             <view class="skeleton-content">
               <view class="skeleton-line skeleton-line-title"></view>
@@ -131,7 +129,7 @@
 
         <!-- 由于不支持分页，移除加载更多功能 -->
       </view>
-    </scroll-view>
+    </view>
 
     <!-- 消费者面板 -->
     <ConsumerPanel
@@ -181,6 +179,7 @@ const panelPrivileges = ref([])
 
 // 组件引用
 const consumerPanel = ref(null)
+const searchInput = ref(null)
 
 // 页面生命周期 - onUnload
 onUnload(async () => {
@@ -191,21 +190,58 @@ onUnload(async () => {
 onLoad(() => {
   console.log('🚀 Customer页面 onLoad')
 
+  // 重置所有状态到初始状态
+  searchKeyword.value = ""
+  hasSearched.value = false
+  selectedConsumer.value = null
+  currentActionType.value = 'gift'
+  panelCoupons.value = []
+  panelPrivileges.value = []
+
   // 重置消费者列表和搜索状态
   userStore.resetConsumers()
-  hasSearched.value = false
+  userStore.clearConsumersSearch()
 
   // 异步加载福利数据（用于后续的赠送操作）
   loadBenefitsAsync()
+
+  console.log('✅ Customer页面初始化完成')
 })
 
 // 页面生命周期 - onShow
 onShow(() => {
   console.log('🔍 customer页面 onShow')
-  console.log('🔍 当前搜索状态:', {
-    searchKeyword: userStore.consumersSearchKeyword,
-    cardNumber: userStore.consumersCardNumber
+  console.log('🔍 恢复页面到初始状态')
+
+  // 重置所有搜索相关的状态
+  searchKeyword.value = ""
+  hasSearched.value = false
+
+  // 重置选中的消费者和面板状态
+  selectedConsumer.value = null
+  currentActionType.value = 'gift'
+  panelCoupons.value = []
+  panelPrivileges.value = []
+
+  // 重置消费者列表和store中的搜索状态
+  userStore.resetConsumers()
+  userStore.clearConsumersSearch() // 使用store的清除搜索方法
+
+  // 确保页面滚动位置重置到顶部，并清空搜索框
+  nextTick(() => {
+    // 重置页面滚动位置
+    uni.pageScrollTo({
+      scrollTop: 0,
+      duration: 0
+    })
+
+    // 手动清空搜索框（如果组件支持清空方法）
+    if (searchInput.value && typeof searchInput.value.clear === 'function') {
+      searchInput.value.clear()
+    }
   })
+
+  console.log('✅ 页面状态已重置到初始状态')
 })
 
 
@@ -367,8 +403,11 @@ const onSearchClear = () => {
   searchKeyword.value = ""
   hasSearched.value = false
 
-  // 重置消费者列表
+  // 重置消费者列表和搜索状态
   userStore.resetConsumers()
+  userStore.clearConsumersSearch()
+
+  console.log("✅ 搜索状态已清除")
 }
 
 // 搜索确认事件（只在点击搜索按钮时触发）
