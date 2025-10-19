@@ -1,5 +1,6 @@
 import { getWatchDetail, getWatches, searchWatches } from '@/api/app'
 import { defineStore } from 'pinia'
+import { useToolbarStore } from './toolbar.js'
 
 export const useProductStore = defineStore('product', {
   state: () => ({
@@ -341,56 +342,159 @@ export const useProductStore = defineStore('product', {
     },
 
     // 重置筛选条件
-    resetFilters() {
-      this.watchesFilters = {
-        brand_id: null,
-        keyword: '',
-        attribute_filters: [],  // 新格式：[{attribute_id: 1, values: [...]}]
-        price_range: null
-        // 注意：排序参数由toolbarStore管理，不在这里重置
+    async resetFilters() {
+      console.log('=== resetFilters 开始 ===')
+      console.log('重置前的筛选条件:', this.watchesFilters)
+
+      try {
+        // 获取 toolbarStore 实例来获取排序状态
+        const toolbarStore = useToolbarStore()
+
+        // 保留brand_id和keyword，清空其他筛选条件
+        const originalBrandId = this.watchesFilters.brand_id
+        const originalKeyword = this.watchesFilters.keyword
+
+        this.watchesFilters = {
+          brand_id: originalBrandId,
+          keyword: originalKeyword,
+          attribute_filters: [],
+          price_range: null
+          // 移除所有筛选面板相关的条件
+        }
+
+        // 清除所有可能的筛选面板条件
+        delete this.watchesFilters.min_price
+        delete this.watchesFilters.max_price
+
+        // 获取当前的排序参数
+        const sortParams = toolbarStore.getSortParams
+        console.log('resetFilters 获取排序参数:', sortParams)
+        console.log('重置后的筛选条件:', this.watchesFilters)
+
+        // 重新获取数据时携带排序参数
+        let data
+        if (this.searchKeyword) {
+          // 如果有搜索关键词，使用搜索方法并携带排序
+          console.log('重置后重新搜索:', this.searchKeyword)
+          const searchParams = {
+            keyword: this.searchKeyword,
+            ...sortParams
+          }
+          data = await this.searchWatches(searchParams)
+        } else if (originalBrandId) {
+          // 如果有品牌筛选，使用品牌方法并携带排序
+          console.log('重置后重新按品牌获取:', originalBrandId)
+          const brandParams = {
+            brand_id: originalBrandId,
+            ...sortParams
+          }
+          data = await this.fetchWatches(brandParams)
+        } else {
+          // 否则获取全部数据并携带排序
+          console.log('重置后获取全部数据')
+          data = await this.fetchWatches(sortParams)
+        }
+
+        console.log('resetFilters 完成，数据量:', this.watchesList.length)
+        console.log('重置时携带的排序信息:', sortParams)
+        return data
+      } catch (error) {
+        console.error('重置筛选条件失败:', error)
+        throw error
       }
     },
 
     // 根据品牌ID获取手表
     async fetchByBrand(brandId, params = {}) {
-      return await this.fetchWatches({
-        brand_id: brandId,
-        ...params
-      })
+      try {
+        // 获取 toolbarStore 实例来获取排序状态
+        const toolbarStore = useToolbarStore()
+
+        // 获取当前的排序参数
+        const sortParams = toolbarStore.getSortParams
+
+        // 重置除brand_id外的其他筛选条件，确保品牌筛选的纯净性
+        this.watchesFilters = {
+          brand_id: brandId,
+          keyword: '',
+          attribute_filters: [],
+          price_range: null
+        }
+
+        // 清空搜索关键词，因为这是品牌筛选，不是关键词搜索
+        this.searchKeyword = ''
+
+        console.log('fetchByBrand 设置筛选条件:', {
+          brandId,
+          filters: this.watchesFilters,
+          sortParams,
+          清空搜索关键词: this.searchKeyword
+        })
+
+        return await this.fetchWatches({
+          brand_id: brandId,
+          ...params,
+          ...sortParams
+        })
+      } catch (error) {
+        console.error('按品牌获取手表失败:', error)
+        throw error
+      }
     },
 
     // 搜索手表关键词
     async searchByKeyword(keyword, params = {}) {
       this.searchKeyword = keyword
 
-      // 合并搜索关键词、传入参数和当前筛选条件
-      const searchParams = {
-        keyword: keyword,
-        ...params,
-        ...this.watchesFilters
-      }
+      try {
+        // 获取 toolbarStore 实例来获取排序状态
+        const toolbarStore = useToolbarStore()
 
-      // 检查是否有来自FilterPanel的筛选条件，决定使用哪个API
-      const hasFilterPanelConditions =
-        this.watchesFilters.min_price || this.watchesFilters.max_price ||
-        this.watchesFilters.attribute_filters ||
-        Object.keys(this.watchesFilters).some(key =>
-          !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)
-        )
+        // 获取当前的排序参数
+        const sortParams = toolbarStore.getSortParams
 
-      console.log('searchByKeyword - 筛选条件检查:', {
-        hasMinPrice: !!this.watchesFilters.min_price,
-        hasMaxPrice: !!this.watchesFilters.max_price,
-        hasAttributeFilters: !!this.watchesFilters.attribute_filters,
-        attributeFiltersCount: this.watchesFilters.attribute_filters ? this.watchesFilters.attribute_filters.length : 0,
-        shouldUsePostAPI: hasFilterPanelConditions,
-        searchParams
-      })
+        // 清空品牌筛选，因为关键词搜索和品牌筛选是互斥的
+        if (this.watchesFilters.brand_id) {
+          console.log('关键词搜索：清空品牌筛选', this.watchesFilters.brand_id)
+          this.watchesFilters.brand_id = null
+          this.currentBrand = null
+        }
 
-      if (hasFilterPanelConditions) {
-        return await this.searchWatches(searchParams)
-      } else {
-        return await this.fetchWatches(searchParams)
+        // 合并搜索关键词、传入参数、当前筛选条件和排序参数
+        const searchParams = {
+          keyword: keyword,
+          ...params,
+          ...this.watchesFilters,
+          ...sortParams
+        }
+
+        // 检查是否有来自FilterPanel的筛选条件，决定使用哪个API
+        const hasFilterPanelConditions =
+          this.watchesFilters.min_price || this.watchesFilters.max_price ||
+          this.watchesFilters.attribute_filters ||
+          Object.keys(this.watchesFilters).some(key =>
+            !['page', 'per_page', 'brand_id', 'sort_by', 'sort_order', 'keyword'].includes(key)
+          )
+
+        console.log('searchByKeyword - 筛选条件检查:', {
+          hasMinPrice: !!this.watchesFilters.min_price,
+          hasMaxPrice: !!this.watchesFilters.max_price,
+          hasAttributeFilters: !!this.watchesFilters.attribute_filters,
+          attributeFiltersCount: this.watchesFilters.attribute_filters ? this.watchesFilters.attribute_filters.length : 0,
+          shouldUsePostAPI: hasFilterPanelConditions,
+          searchParams,
+          sortParams,
+          清空了brand_id: !this.watchesFilters.brand_id
+        })
+
+        if (hasFilterPanelConditions) {
+          return await this.searchWatches(searchParams)
+        } else {
+          return await this.fetchWatches(searchParams)
+        }
+      } catch (error) {
+        console.error('搜索关键词失败:', error)
+        throw error
       }
     },
 
@@ -509,6 +613,7 @@ export const useProductStore = defineStore('product', {
     // 价格排序
     async sortByPrice(direction) {
       console.log('开始价格排序:', direction)
+      console.log('当前筛选条件:', this.watchesFilters)
 
       try {
         // 准备排序参数
@@ -529,6 +634,11 @@ export const useProductStore = defineStore('product', {
         }
 
         console.log('价格排序请求参数:', requestParams)
+        console.log('检查brand_id是否存在:', {
+          'watchesFilters.brand_id': this.watchesFilters.brand_id,
+          'requestParams.brand_id': requestParams.brand_id,
+          'currentBrand': this.currentBrand?.name_cn
+        })
 
         // 检查是否有复杂筛选条件，决定使用哪个API
         const hasFilterPanelConditions =
@@ -542,16 +652,76 @@ export const useProductStore = defineStore('product', {
         let data
         if (hasFilterPanelConditions) {
           // 使用复杂搜索API
+          console.log('使用复杂搜索API进行价格排序')
           data = await this.searchWatches(requestParams)
         } else {
           // 使用简单查询API
+          console.log('使用简单查询API进行价格排序')
           data = await this.fetchWatches(requestParams)
         }
 
         console.log('价格排序完成，数据量:', this.watchesList.length)
+        console.log('排序后保持的品牌信息:', this.currentBrand?.name_cn)
         return data
       } catch (error) {
         console.error('价格排序失败:', error)
+        throw error
+      }
+    },
+
+    // 应用筛选条件
+    async applyFilters(filterParams) {
+      console.log('=== applyFilters 开始 ===')
+      console.log('传入的筛选参数:', filterParams)
+
+      try {
+        // 获取 toolbarStore 实例来获取排序状态
+        const toolbarStore = useToolbarStore()
+
+        // 更新筛选条件到store状态
+        if (filterParams.min_price !== undefined) {
+          this.watchesFilters.min_price = filterParams.min_price
+        }
+        if (filterParams.max_price !== undefined) {
+          this.watchesFilters.max_price = filterParams.max_price
+        }
+        if (filterParams.attribute_filters !== undefined) {
+          this.watchesFilters.attribute_filters = filterParams.attribute_filters
+        }
+
+        // 直接将filterParams的所有字段合并到watchesFilters
+        Object.keys(filterParams).forEach(key => {
+          if (filterParams[key] !== undefined) {
+            this.watchesFilters[key] = filterParams[key]
+          }
+        })
+
+        // 获取当前的排序参数
+        const sortParams = toolbarStore.getSortParams
+        console.log('applyFilters 获取排序参数:', sortParams)
+
+        // 准备请求参数，合并当前筛选条件和排序参数
+        const requestParams = {
+          ...this.watchesFilters,
+          ...sortParams
+        }
+
+        // 如果有搜索关键词，加入到参数中
+        if (this.searchKeyword) {
+          requestParams.keyword = this.searchKeyword
+        }
+
+        console.log('applyFilters 最终请求参数:', requestParams)
+        console.log('当前品牌信息:', this.currentBrand?.name_cn)
+        console.log('携带的排序信息:', sortParams)
+
+        // 使用复杂搜索API应用筛选
+        const data = await this.searchWatches(requestParams)
+
+        console.log('applyFilters 完成，数据量:', this.watchesList.length)
+        return data
+      } catch (error) {
+        console.error('应用筛选条件失败:', error)
         throw error
       }
     },

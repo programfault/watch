@@ -159,8 +159,17 @@ const onDisplayModeChange = (mode) => {
     toolbarStore.setDisplayMode(mode)
 }
 
-const onFilterChange = (filters) => {
-    productStore.applyFilters(filters)
+const onFilterChange = (filters, filterCount) => {
+    console.log('ProductListComponent 收到筛选变化:', { filters, filterCount })
+
+    // 如果筛选条件为空（重置操作），调用重置方法
+    if (!filters || Object.keys(filters).length === 0 || filterCount === 0) {
+        console.log('执行重置筛选操作')
+        productStore.resetFilters()
+    } else {
+        console.log('执行应用筛选操作')
+        productStore.applyFilters(filters)
+    }
 }
 
 const onFilterCountChange = (count) => {

@@ -16,7 +16,7 @@ export const useTabBarStore = defineStore('tabbar', {
             },
             {
 				name: 'recruitment',
-				text: '我的招聘',
+				text: '招聘',
 				icon: 'info-circle',
 				path: '/pages/recruitment/recruitment',
 				roles: ['anonymous'] // 只有匿名用户可以看到

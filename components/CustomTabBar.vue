@@ -31,10 +31,10 @@
 				v-if="['anonymous','normal', 'admin', 'special'].includes(tabBarStore.userType || 'normal')"
 			/>
 
-			<!-- 我的招聘 - 只有匿名用户可见 -->
+			<!-- 招聘 - 只有匿名用户可见 -->
 			<u-tabbar-item
 				name="recruitment"
-				text="我的招聘"
+				text="招聘"
 				icon="info-circle"
 				v-if="['anonymous'].includes(tabBarStore.userType || 'normal')"
 			/>
