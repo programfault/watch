@@ -24,7 +24,17 @@ export function createApp() {
   const app = createSSRApp(App)
   app.use(pinia)
 //   app.use(uvUI)
-  app.use(uviewPlus)
+  .use(uviewPlus, () => {
+		return {
+			options: {
+				// 修改config对象的属性
+				config: {
+					// 只加载一次字体图标
+					loadFontOnce: true
+				}
+			}
+		}
+	})
   return {
     app
   }
