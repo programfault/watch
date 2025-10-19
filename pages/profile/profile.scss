@@ -4,49 +4,15 @@
 	display: flex;
 	flex-direction: column;
 	box-sizing: border-box;
+	overflow: hidden; /* 禁用页面滚动 */
+	position: fixed; /* 固定定位防止页面滚动 */
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
 }
 
-// 自定义下拉刷新样式
-.custom-refresher {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 80px;
-	width: 100%;
-	position: relative;
-
-	.pull-tips, .refreshing-tips {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 8px;
-
-		.tip-text {
-			font-size: 14px;
-			color: #999;
-			transition: color 0.3s ease;
-
-			&.tip-release {
-				color: #007aff;
-				font-weight: 600;
-			}
-
-			&.refreshing {
-				color: #007aff;
-				font-weight: 500;
-			}
-		}
-
-		.icon-rotate {
-			transform: rotate(180deg);
-			transition: transform 0.3s ease;
-		}
-	}
-}
-
-
-
-
+// 禁用下拉刷新 - 已移除相关样式
 
 .not-login {
 	display: flex;
@@ -68,7 +34,10 @@
 	padding-top: calc(30rpx + env(safe-area-inset-top));
 	padding-bottom: calc(70px + env(safe-area-inset-bottom));
 	box-sizing: border-box;
-	overflow-y: auto;
+	overflow: hidden; /* 禁用内容滚动 */
+	max-height: 100%; /* 限制最大高度 */
+	display: flex;
+	flex-direction: column;
 
 	.user-info {
 		background: white;
@@ -78,6 +47,8 @@
 		display: flex;
 		align-items: center;
 		gap: 20px;
+		flex-shrink: 0; /* 防止收缩 */
+		overflow: hidden; /* 防止内容溢出 */
 
 		.avatar-container {
 			position: relative;
@@ -218,6 +189,8 @@
 		margin-bottom: 30rpx;
 		overflow: hidden;
 		border: 1px solid #f0f0f0;
+		flex-shrink: 0; /* 防止收缩 */
+		max-height: 300px; /* 限制菜单区域最大高度 */
 	}
 
 	.not-login-card {
@@ -272,6 +245,8 @@
 
 	.login-section {
 		margin: 20px 20px 0;
+		flex-shrink: 0; /* 防止收缩 */
+		overflow: hidden; /* 防止内容溢出 */
 
 		.wechat-login-btn {
 			width: 100%;
