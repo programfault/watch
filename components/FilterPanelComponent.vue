@@ -1,11 +1,18 @@
 <template>
-	<uni-popup ref="filterPopup" type="bottom" background-color="#fff" :mask-click="true" @maskClick="closePanel">
+	<u-popup
+		v-model:show="showPopup"
+		mode="bottom"
+		:closeOnClickOverlay="true"
+		:round="20"
+		:safeAreaInsetBottom="true"
+		bgColor="#fff"
+		@close="closePanel"
+	>
 		<view class="filter-panel">
 			<!-- 头部 -->
 			<view class="filter-header">
 				<text class="header-title">筛选</text>
 				<view class="header-actions">
-					<text class="reset-btn" @click="resetFilters">重置</text>
 					<text class="close-btn" @click="closePanel">×</text>
 				</view>
 			</view>
@@ -48,7 +55,7 @@
 							@click="toggleOption(attribute.attribute_id, option.value)"
 						>
 							<text class="option-text">{{ option.value }}</text>
-							<text class="option-count">({{ option.count }})</text>
+							<!-- <text class="option-count">({{ option.count }})</text> -->
 						</view>
 					</view>
 				</view>
@@ -56,12 +63,17 @@
 
 			<!-- 底部按钮 -->
 			<view class="filter-footer">
-				<view class="confirm-btn" @click="confirmFilters">
-					<text class="confirm-text">确定</text>
+				<view class="footer-buttons">
+					<view class="reset-btn" @click="resetFilters">
+						<text class="reset-text">重置</text>
+					</view>
+					<view class="confirm-btn" @click="confirmFilters">
+						<text class="confirm-text">确定</text>
+					</view>
 				</view>
 			</view>
 		</view>
-	</uni-popup>
+	</u-popup>
 </template>
 
 <script setup>
@@ -86,8 +98,8 @@ const selectedFilters = ref({
 	attributes: {} // { attribute_id: [selected_values] }
 });
 
-// 组件引用
-const filterPopup = ref(null);
+// 控制弹窗显示状态
+const showPopup = ref(false);
 
 // 计算属性
 const filterOptions = computed(() => {
@@ -143,15 +155,11 @@ onMounted(() => {
 
 // 方法
 const openPanel = () => {
-	if (filterPopup.value) {
-		filterPopup.value.open();
-	}
+	showPopup.value = true;
 };
 
 const closePanel = () => {
-	if (filterPopup.value) {
-		filterPopup.value.close();
-	}
+	showPopup.value = false;
 	// 通知父组件关闭筛选状态
 	emit('close');
 };
@@ -259,18 +267,20 @@ defineExpose({
 <style lang="scss" scoped>
 .filter-panel {
 	background-color: #fff;
-	border-radius: 20rpx 20rpx 0 0;
 	max-height: 75vh;
 	display: flex;
 	flex-direction: column;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .filter-header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 30rpx;
+	padding: 25rpx 30rpx;
 	border-bottom: 1rpx solid #eee;
+	flex-shrink: 0;
 
 	.header-title {
 		font-size: 32rpx;
@@ -281,77 +291,86 @@ defineExpose({
 	.header-actions {
 		display: flex;
 		align-items: center;
-		gap: 30rpx;
-
-		.reset-btn {
-			font-size: 28rpx;
-			color: #666;
-		}
 
 		.close-btn {
-			font-size: 40rpx;
+			font-size: 36rpx;
 			color: #666;
 			line-height: 1;
+			padding: 8rpx 12rpx;
 		}
 	}
 }
 
 .filter-content {
 	flex: 1;
-	padding: 0 30rpx;
+	padding: 0 25rpx;
 	overflow-y: auto;
+	overflow-x: hidden; /* 防止水平滚动 */
 	/* 确保内容区域不会挤压底部按钮 */
 	min-height: 0;
+	max-width: 100%;
+	box-sizing: border-box;
 }
 
 .filter-section {
-	margin-bottom: 40rpx;
+	margin-bottom: 35rpx;
+	width: 100%;
+	box-sizing: border-box;
 
 	.section-title {
 		display: block;
-		font-size: 30rpx;
+		font-size: 28rpx;
 		font-weight: bold;
 		color: #333;
-		margin-bottom: 20rpx;
-		padding-top: 30rpx;
+		margin-bottom: 18rpx;
+		padding-top: 25rpx;
+		width: 100%;
 	}
 }
 
 .price-range {
 	display: flex;
 	align-items: center;
-	gap: 20rpx;
+	gap: 15rpx;
+	width: 100%;
 
 	.price-input {
 		flex: 1;
 		height: 80rpx;
-		padding: 0 20rpx;
+		padding: 0 15rpx;
 		border: 1rpx solid #ddd;
 		border-radius: 8rpx;
-		font-size: 28rpx;
+		font-size: 26rpx;
 		background-color: #f9f9f9;
+		box-sizing: border-box;
+		min-width: 0; /* 防止flex子项溢出 */
 	}
 
 	.price-separator {
-		font-size: 28rpx;
+		font-size: 26rpx;
 		color: #666;
+		flex-shrink: 0; /* 防止分隔符被压缩 */
 	}
 }
 
 .filter-options {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 20rpx;
+	gap: 15rpx;
+	width: 100%;
 }
 
 .filter-option {
 	display: flex;
 	align-items: center;
-	padding: 16rpx 24rpx;
+	padding: 14rpx 20rpx;
 	border: 1rpx solid #ddd;
 	border-radius: 30rpx;
 	background-color: #f9f9f9;
 	transition: all 0.3s ease;
+	box-sizing: border-box;
+	max-width: 100%;
+	flex-shrink: 0; /* 防止选项被过度压缩 */
 
 	&.active {
 		background-color: #b8860b;
@@ -364,34 +383,73 @@ defineExpose({
 	}
 
 	.option-text {
-		font-size: 26rpx;
+		font-size: 24rpx;
 		color: #333;
 		margin-right: 8rpx;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 200rpx; /* 限制最大宽度，防止文字过长 */
 	}
 
 	.option-count {
-		font-size: 22rpx;
+		font-size: 20rpx;
 		color: #999;
+		flex-shrink: 0;
 	}
 }
 
 .filter-footer {
-	padding: 30rpx;
-	/* 调整底部间距，避免被TabBar遮挡但不要太高 */
-	padding-bottom: calc(30rpx + env(safe-area-inset-bottom) + 80rpx);
+	padding: 25rpx 30rpx;
 	border-top: 1rpx solid #eee;
 	/* 确保底部按钮固定显示，不被内容挤压 */
 	flex-shrink: 0;
 	background-color: #fff;
+	box-sizing: border-box;
 
-	.confirm-btn {
+	.footer-buttons {
+		display: flex;
+		gap: 20rpx;
 		width: 100%;
+	}
+
+	.reset-btn {
+		flex: 1;
 		height: 88rpx;
-		background-color: #b8860b;
-		border-radius: 44rpx;
+		background-color: #f5f5f5;
+		border: 1rpx solid #ddd;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		box-sizing: border-box;
+		transition: all 0.3s ease;
+
+		&:active {
+			background-color: #e8e8e8;
+			transform: translateY(1rpx);
+		}
+
+		.reset-text {
+			font-size: 30rpx;
+			color: #666;
+			font-weight: 500;
+		}
+	}
+
+	.confirm-btn {
+		flex: 2;
+		height: 88rpx;
+		background-color: #b8860b;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
+		transition: all 0.3s ease;
+
+		&:active {
+			background-color: #a67a0a;
+			transform: translateY(1rpx);
+		}
 
 		.confirm-text {
 			font-size: 32rpx;

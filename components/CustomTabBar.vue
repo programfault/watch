@@ -129,13 +129,6 @@ const handleTabChange = (name) => {
 // 初始化函数
 const initTabBar = async () => {
 	try {
-		console.log('🚀 TabBar 初始化开始...')
-		console.log('- tabBarStore:', tabBarStore)
-		console.log('- tabBarStore.tabList:', tabBarStore?.tabList)
-		// 触发调试信息更新
-		debugUserType.value
-		console.log('- userStore.userType:', userStore?.userType)
-
 		// 确保tabBarStore已正确初始化
 		if (!tabBarStore || !tabBarStore.tabList) {
 			console.warn('🏷️ TabBar store 未正确初始化，尝试重新初始化...')
