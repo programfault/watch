@@ -109,22 +109,25 @@ const watchesScrollStyle = computed(() => {
     if (layoutStore.isInitialized && layoutStore.layoutInfo) {
         const layout = layoutStore.layoutInfo
 
-        // 计算 Toolbar 的总高度
-        // Toolbar = navbar底部位置 + 搜索框高度 + 搜索框边距 + Toolbar内容高度 + Toolbar外边距
-        const toolbarTop = layout.navbar.navbarBottomPosition + layout.search.searchHeight + layout.search.searchMargin
-        const toolbarContentHeight = 44 + 44 + 1 // 品牌信息区域44px + 工具栏44px + 分隔线1px
-        const toolbarMargin = 12 + 8 // 上边距12px + 下边距8px
-        const totalToolbarHeight = toolbarContentHeight + toolbarMargin
+        // 简化计算：toolbarTop + 少量padding
+        const navbarBottomPosition = layout.navbar.navbarBottomPosition
+        const searchHeight = layout.search.searchHeight
+        const searchMargin = layout.search.searchMargin
 
-        // 总的顶部偏移 = Toolbar位置 + Toolbar高度 + 额外间距
-        const paddingTop = toolbarTop + totalToolbarHeight + 8
+        // Toolbar 的顶部位置
+        const toolbarTop = navbarBottomPosition + searchHeight + searchMargin
 
-        console.log('🔧 产品列表顶部间距计算:', {
+        // 简单的计算：toolbarTop + 一点padding
+        const paddingTop = toolbarTop + 8 // 只需要8px的缓冲即可
+
+        console.log('🔧 简化的产品列表顶部间距计算:', {
+            navbarBottomPosition,
+            searchHeight,
+            searchMargin,
             toolbarTop,
-            toolbarContentHeight,
-            toolbarMargin,
-            totalToolbarHeight,
-            finalPaddingTop: paddingTop
+            padding: 8,
+            finalPaddingTop: paddingTop,
+            '说明': 'paddingTop = toolbarTop + 8px padding'
         })
 
         return {
@@ -267,6 +270,9 @@ defineExpose({
     padding: 10px 0;
 
     &.single-mode {
+        /* 单列模式只需要少量顶部间距 */
+        padding-top: 8px;
+
         .watch-item-single {
             display: flex;
             background-color: #fff;
@@ -310,34 +316,53 @@ defineExpose({
     }
 
     &.grid-mode {
+        padding-top: 8px; /* 网格模式也只需要少量顶部间距 */
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
 
         .watch-item-grid {
             background-color: #fff;
-            padding: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            height: 220px; /* 设置统一的卡片高度 */
+            box-sizing: border-box;
 
             .watch-image-grid {
                 width: 100%;
-                height: 120px;
-                margin-bottom: 8px;
+                height: 140px; /* 增加图片高度，更好展示手表 */
+                margin-bottom: 10px;
+                border-radius: 4px;
+                object-fit: cover; /* 确保图片填充良好 */
             }
 
             .watch-info-grid {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+
                 .watch-name-grid {
                     font-size: 14px;
                     color: #333;
                     font-weight: 500;
-                    margin-bottom: 5px;
-                    display: block;
+                    margin-bottom: 6px;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2; /* 限制显示2行，避免文本过长 */
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    line-height: 1.3;
+                    height: 36px; /* 固定高度，保持一致性 */
                 }
 
                 .watch-price-grid {
                     font-size: 16px;
                     color: #e85a4f;
                     font-weight: bold;
-                    margin-bottom: 5px;
+                    margin-bottom: 4px;
                     display: block;
                 }
 
@@ -345,6 +370,7 @@ defineExpose({
                     .brand-text-grid {
                         font-size: 12px;
                         color: #999;
+                        line-height: 1.2;
                     }
                 }
             }
