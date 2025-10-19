@@ -332,6 +332,7 @@ onShow(() => {
   overflow: hidden; /* 防止滚动 */
   display: flex;
   flex-direction: column;
+  gap: 10px;
 }
 
 // 移除重复样式，优化后的整洁版本
