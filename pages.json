@@ -97,8 +97,9 @@
 			"navigationBarTitleText": "福利中心",
 			"navigationBarBackgroundColor": "#ffffff",
 			"navigationBarTextStyle": "black",
-			"enablePullDownRefresh": true,
-			"backgroundTextStyle": "dark"
+			"enablePullDownRefresh": false,
+			"onReachBottomDistance": 0,
+			"disableScroll": true
 		}
 	}, {
 		"path": "pages/agreement/agreement",

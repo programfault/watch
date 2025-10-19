@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <!-- 加载状态 - 骨架屏 -->
-    <view v-if="initialLoading || userInfoLoading" class="benefits-skeleton">
+    <view v-if="initialLoading || userInfoLoading" class="benefits-skeleton" :style="dynamicSkeletonStyle">
       <!-- 优惠券骨架屏 -->
       <view class="section-skeleton">
         <view class="section-title-skeleton"></view>
@@ -33,47 +33,14 @@
       </view>
     </view>
 
-    <!-- 内容区域（支持下拉刷新） -->
-    <scroll-view
-      class="benefits-scroll"
-      scroll-y="true"
-      enable-back-to-top="true"
-      refresher-enabled="true"
-      :refresher-threshold="100"
-      refresher-default-style="none"
-      refresher-background="#f5f5f5"
-      :refresher-triggered="isRefreshing"
-      @refresherrefresh="onRefresh"
-      @refresherpulling="onRefresherPulling"
-      @refresherrestore="onRefreshRestore"
-    >
-      <!-- 自定义下拉刷新内容 -->
-      <view slot="refresher" class="custom-refresher">
-        <view v-if="!isRefreshing" class="pull-tips">
-          <up-icon
-            name="arrow-down"
-            size="20"
-            color="#999"
-            :class="{ 'icon-rotate': pullDistance >= 80 }"
-          />
-          <text v-if="pullDistance < 80" class="tip-text">下拉刷新福利</text>
-          <text v-else class="tip-text tip-release">松手立即刷新</text>
-        </view>
-        <view v-else class="refreshing-tips">
-          <ui-icon name="loading" size="20" />
-          <text class="tip-text refreshing">正在刷新...</text>
-        </view>
-      </view>
+    <!-- 内容区域 -->
+    <view class="benefits-content" :style="dynamicContentStyle" v-if="!initialLoading && !userInfoLoading">
+      <!-- 优惠券列表 -->
+      <CouponList :coupons="coupons" />
 
-      <view class="benefits-content" v-if="!initialLoading && !userInfoLoading">
-
-        <!-- 优惠券列表 -->
-        <CouponList :coupons="coupons" />
-
-        <!-- 特权列表 -->
-        <PrivilegeList :privileges="privileges" />
-      </view>
-    </scroll-view>
+      <!-- 特权列表 -->
+      <PrivilegeList :privileges="privileges" />
+    </view>
 
     <!-- 底部标签栏组件 -->
     <CustomTabBar v-show="true" />
@@ -84,7 +51,7 @@
 import CouponList from '@/components/CouponList.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import PrivilegeList from '@/components/PrivilegeList.vue'
-import { useTabBarStore, useUserStore } from '@/stores'
+import { useTabBarStore, useUserStore, useLayoutStore } from '@/stores'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, nextTick, ref } from 'vue'
 
@@ -96,12 +63,11 @@ defineOptions({
 // 获取 stores
 const userStore = useUserStore()
 const tabBarStore = useTabBarStore()
+const layoutStore = useLayoutStore()
 
 // 响应式数据
 const userInfoLoading = ref(false)
 const initialLoading = ref(true) // 初始加载状态，防止白屏
-const isRefreshing = ref(false)
-const pullDistance = ref(0)
 const externalUserId = ref('')
 const targetUserInfo = ref(null) // 存储通过ID获取的目标用户信息
 
@@ -117,6 +83,69 @@ const coupons = computed(() => {
 // 特权列表 - 优先使用通过userId获取的用户对象中的数据
 const privileges = computed(() => {
   return targetUserInfo.value?.privileges || userInfo.value.privileges || []
+})
+
+// 动态内容区域样式
+const dynamicContentStyle = computed(() => {
+  if (layoutStore.isInitialized) {
+    // 使用layout store计算的安全区域高度和响应式边距
+    const safeBottom = layoutStore.safeAreaBottom || 0
+    const screenWidth = layoutStore.screenWidth || 375
+
+    // 根据屏幕宽度计算响应式边距
+    let horizontalPadding = '32rpx'
+    if (screenWidth <= 320) {
+      horizontalPadding = '24rpx' // 小屏幕
+    } else if (screenWidth >= 768) {
+      horizontalPadding = '48rpx' // 大屏幕
+    }
+
+    const paddingBottom = 100 + Math.max(safeBottom, 0) // 100rpx基础高度 + 安全区域
+
+    console.log('🎨 Benefits页面动态样式计算:', {
+      screenWidth,
+      safeBottom,
+      horizontalPadding,
+      paddingBottom,
+      isLayoutInitialized: layoutStore.isInitialized
+    })
+
+    return {
+      padding: `24rpx ${horizontalPadding} ${paddingBottom}rpx`,
+      'box-sizing': 'border-box'
+    }
+  }
+  // 回退到固定高度
+  console.log('⚠️ Benefits页面使用固定样式 - layout store未初始化')
+  return {
+    padding: '24rpx 32rpx 120rpx',
+    'box-sizing': 'border-box'
+  }
+})
+
+// 动态骨架屏样式
+const dynamicSkeletonStyle = computed(() => {
+  if (layoutStore.isInitialized) {
+    const screenWidth = layoutStore.screenWidth || 375
+
+    // 使用与内容区域相同的响应式边距逻辑
+    let horizontalPadding = '32rpx'
+    if (screenWidth <= 320) {
+      horizontalPadding = '24rpx'
+    } else if (screenWidth >= 768) {
+      horizontalPadding = '48rpx'
+    }
+
+    return {
+      padding: `24rpx ${horizontalPadding}`,
+      'box-sizing': 'border-box'
+    }
+  }
+  // 回退到固定样式
+  return {
+    padding: '24rpx 32rpx',
+    'box-sizing': 'border-box'
+  }
 })
 
 // 检查登录状态并跳转
@@ -135,6 +164,16 @@ const checkLoginAndRedirect = () => {
 // 页面生命周期 - onLoad
 onLoad((options) => {
   console.log('Benefits页面 onLoad', options)
+
+  // 确保layout store已初始化
+  if (!layoutStore.isInitialized) {
+    console.log('Benefits页面 - 初始化layout store')
+    try {
+      layoutStore.initializeLayout()
+    } catch (error) {
+      console.error('Benefits页面 - layout store初始化失败:', error)
+    }
+  }
 
   // 立即显示页面结构，不等待数据加载
   nextTick(() => {
@@ -269,72 +308,33 @@ onShow(() => {
   tabBarStore.setActiveTab('profile')
   // 页面显示，状态由Pinia自动管理
 })
-
-// 下拉刷新
-const onRefresh = async () => {
-  console.log('Benefits页面 - 开始下拉刷新')
-  isRefreshing.value = true
-
-  try {
-    if (!userStore.isLoggedIn) {
-      // 未登录状态，跳转到登录页面
-      console.log('未登录，跳转到登录页面')
-      // 等待一下让用户看到动画
-      await new Promise(resolve => setTimeout(resolve, 800))
-      uni.navigateTo({
-        url: '/pages/login/login'
-      })
-      return
-    }
-    console.log('已登录状态，刷新用户信息')
-    // 已登录状态，刷新用户信息（包含优惠券和特权）
-    await userStore.fetchUserInfo()
-    uni.showToast({
-      title: '刷新成功',
-      icon: 'success'
-    })
-  } catch (error) {
-    console.error('Benefits页面 - 刷新失败:', error)
-    uni.showToast({
-      title: '刷新失败',
-      icon: 'error'
-    })
-  } finally {
-    isRefreshing.value = false
-    pullDistance.value = 0
-  }
-}
-
-// 下拉距离监听
-const onRefresherPulling = (e) => {
-  pullDistance.value = e.detail.deltaY || 0
-}
-
-// 刷新状态恢复
-const onRefreshRestore = () => {
-  isRefreshing.value = false
-  pullDistance.value = 0
-}
 </script>
 
 <style lang="scss">
 .container {
   width: 100%;
   height: 100vh;
-  background-color: #f5f5f5;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 确保页面不滚动 */
+  position: fixed; /* 固定定位防止页面滚动 */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.benefits-content {
+  /* padding通过内联样式动态设置 */
+  box-sizing: border-box;
+  flex: 1; /* 占满剩余空间 */
+  overflow: hidden; /* 防止滚动 */
   display: flex;
   flex-direction: column;
 }
 
-.benefits-scroll {
-  flex: 1;
-  width: 100%;
-}
-
-.benefits-content {
-  padding: 0 20rpx 80px;
-}
-
+// 移除重复样式，优化后的整洁版本
 .loading {
   position: fixed;
   top: 0;
@@ -345,241 +345,87 @@ const onRefreshRestore = () => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background-color: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   z-index: 999;
-}
 
-.loading-text {
-  margin-top: 16rpx;
-  font-size: 28rpx;
-  color: #999;
-}
-
-// 自定义下拉刷新样式
-.custom-refresher {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 80px;
-  width: 100%;
-  position: relative;
-
-  .pull-tips, .refreshing-tips {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    .tip-text {
-      font-size: 14px;
-      color: #999;
-      transition: color 0.3s ease;
-
-      &.tip-release {
-        font-weight: 600;
-      }
-      &.refreshing {
-        font-weight: 500;
-      }
-    }
-
-    .icon-rotate {
-      transform: rotate(180deg);
-      transition: transform 0.3s ease;
-    }
+  .loading-text {
+    margin-top: 32rpx;
+    font-size: 28rpx;
+    color: #64748b;
+    font-weight: 500;
   }
 }
 
-
-
-.pull-icon-container,
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 8rpx;
-}
-
-.loading-container {
-  animation: rotate 1s linear infinite;
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.tip-text {
-  font-size: 28rpx;
-  color: #666;
-  text-align: center;
-  margin-top: 0;
-  padding: 0;
-}
-
-.tip-release {
-  color: #07c160;
-  font-weight: 500;
-}
-
-.refreshing {
-  color: #07c160;
-}
-
-.icon-rotate {
-  transform: rotate(180deg);
-  transition: transform 0.3s ease;
-}
-
-.user-info-header {
-  background-color: #fff;
-  padding: 30rpx 30rpx 20rpx;
-  border-bottom: 1rpx solid #eee;
-}
-
-.user-name-section {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20rpx;
-}
-
-.name-text {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.vip-badge {
-  margin-left: 12rpx;
-  padding: 2rpx 12rpx;
-  background-color: #ff6b35;
-  color: #fff;
-  font-size: 20rpx;
-  border-radius: 10rpx;
-}
-
-.user-stats {
-  display: flex;
-  align-items: center;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: 24rpx;
-  color: #999;
-  margin-bottom: 4rpx;
-}
-
-.stat-value.gold {
-  color: #ff6b35;
-}
-
-.stat-label {
-  font-size: 28rpx;
-  color: #333;
-  font-weight: 500;
-}
-
-.stat-divider {
-  width: 2rpx;
-  height: 40rpx;
-  background-color: #eee;
-  margin: 0 30rpx;
-}
-
-.not-login-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40rpx 0;
-}
-
-.not-login-icon {
-  margin-bottom: 20rpx;
-}
-
-.not-login-tip {
-  font-size: 28rpx;
-  color: #999;
-  margin-bottom: 20rpx;
-}
-
-.login-btn {
-  background-color: #007aff;
-  color: #fff;
-  border-radius: 40rpx;
-  font-size: 28rpx;
-  padding: 20rpx 40rpx;
-  line-height: 1.4;
-}
+// 移除下拉刷新相关样式
 
 // 福利页面骨架屏样式
 .benefits-skeleton {
-  padding: 20rpx;
+  /* padding通过内联样式动态设置 */
+  box-sizing: border-box;
 
   .section-skeleton {
-    margin-bottom: 40rpx;
+    margin-bottom: 48rpx;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
 
     .section-title-skeleton {
-      height: 40rpx;
-      width: 200rpx;
+      height: 44rpx;
+      width: 220rpx;
       background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
       background-size: 200% 100%;
       animation: skeleton-loading 1.5s infinite;
-      border-radius: 4rpx;
-      margin-bottom: 20rpx;
+      border-radius: 6rpx;
+      margin-bottom: 24rpx;
     }
 
     .card-skeleton {
       background-color: #fff;
-      border-radius: 12rpx;
-      padding: 30rpx;
-      margin-bottom: 20rpx;
-      box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+      border-radius: 16rpx;
+      padding: 32rpx;
+      margin-bottom: 24rpx;
+      box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.08);
+      border: 1rpx solid #f0f0f0;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
 
       .card-header-skeleton {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20rpx;
+        margin-bottom: 24rpx;
 
         .card-title-skeleton {
-          height: 32rpx;
-          width: 40%;
+          height: 36rpx;
+          width: 45%;
           background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
           background-size: 200% 100%;
           animation: skeleton-loading 1.5s infinite;
-          border-radius: 4rpx;
+          border-radius: 6rpx;
         }
 
         .card-badge-skeleton {
-          height: 28rpx;
-          width: 80rpx;
+          height: 32rpx;
+          width: 88rpx;
           background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
           background-size: 200% 100%;
           animation: skeleton-loading 1.5s infinite;
-          border-radius: 14rpx;
+          border-radius: 16rpx;
           animation-delay: 0.2s;
         }
       }
 
       .card-content-skeleton {
         .skeleton-line {
-          height: 24rpx;
+          height: 28rpx;
           background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
           background-size: 200% 100%;
           animation: skeleton-loading 1.5s infinite;
-          border-radius: 4rpx;
-          margin-bottom: 12rpx;
+          border-radius: 6rpx;
+          margin-bottom: 16rpx;
           width: 100%;
 
           &:last-child {
@@ -587,7 +433,7 @@ const onRefreshRestore = () => {
           }
 
           &.skeleton-line-short {
-            width: 60%;
+            width: 65%;
             animation-delay: 0.3s;
           }
         }

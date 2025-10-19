@@ -69,108 +69,136 @@ const formatDateRange = (startDate, endDate) => {
 <style lang="scss" scoped>
 // 特权列表样式
 .benefits-section {
-	margin-bottom: 20rpx;
+	margin-bottom: 48rpx;
+
+	&:last-child {
+		margin-bottom: 0;
+	}
 
 	.section-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 12rpx;
-		padding: 0 4rpx;
+		margin-bottom: 20rpx;
+		padding: 0 8rpx;
 
 		.section-title {
-			font-size: 32rpx;
-			font-weight: 600;
+			font-size: 36rpx;
+			font-weight: 700;
 			color: #1a1a1a;
+			letter-spacing: 0.5rpx;
 		}
 
 		.section-count {
-			font-size: 24rpx;
-			color: #64748b;
-			background: #f1f5f9;
-			padding: 4rpx 16rpx;
-			border-radius: 20rpx;
+			font-size: 26rpx;
+			color: #8b5cf6;
+			background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+			padding: 6rpx 16rpx;
+			border-radius: 24rpx;
+			font-weight: 600;
+			border: 1rpx solid #ddd6fe;
 		}
 	}
 
 	.benefits-list {
 		display: flex;
 		flex-direction: column;
-		gap: 12rpx;
+		gap: 20rpx;
 		padding: 0;
 
 		.benefit-card {
 			width: 100%;
 			background: white;
-			border-radius: 16rpx;
-			padding: 20rpx;
+			border-radius: 20rpx;
+			padding: 32rpx;
 			border: 1rpx solid #f0f0f0;
-			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+			box-shadow: 0 6rpx 30rpx rgba(0, 0, 0, 0.08);
 			position: relative;
 			overflow: hidden;
 			box-sizing: border-box;
+			transition: all 0.3s ease;
+
+			&:hover {
+				transform: translateY(-2rpx);
+				box-shadow: 0 8rpx 35rpx rgba(0, 0, 0, 0.12);
+			}
 
 			&.expired {
 				opacity: 0.6;
-				background: #f8f9fa;
+				background: #fafafa;
+				transform: none !important;
 			}
 
 			&.privilege-card {
-				border-left: 4px solid #8b5cf6;
+				border-left: 6rpx solid #8b5cf6;
 			}
 
 			.card-header {
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
-				margin-bottom: 8rpx;
+				margin-bottom: 16rpx;
 
 				.card-title {
-					font-size: 28rpx;
-					font-weight: 600;
+					font-size: 32rpx;
+					font-weight: 700;
 					color: #1a1a1a;
 					flex: 1;
-					margin-right: 8rpx;
+					margin-right: 16rpx;
+					line-height: 1.3;
 				}
 
 				.privilege-badge {
 					background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 					color: white;
-					font-size: 20rpx;
-					font-weight: 600;
-					padding: 4rpx 8rpx;
-					border-radius: 6rpx;
+					font-size: 24rpx;
+					font-weight: 700;
+					padding: 8rpx 16rpx;
+					border-radius: 12rpx;
 					text-transform: uppercase;
+					letter-spacing: 0.5rpx;
+					box-shadow: 0 2rpx 8rpx rgba(139, 92, 246, 0.3);
 				}
 			}
 
 			.card-desc {
-				font-size: 24rpx;
+				font-size: 26rpx;
 				color: #64748b;
-				line-height: 1.4;
-				margin-bottom: 12rpx;
+				line-height: 1.5;
+				margin-bottom: 20rpx;
+				background: #faf5ff;
+				padding: 16rpx;
+				border-radius: 12rpx;
+				border-left: 4rpx solid #8b5cf6;
 			}
 
 			.card-footer {
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
+				padding-top: 16rpx;
+				border-top: 1rpx solid #f1f5f9;
 
 				.valid-date {
-					font-size: 22rpx;
+					font-size: 24rpx;
 					color: #94a3b8;
+					font-weight: 500;
 				}
 
 				.status-text {
-					font-size: 22rpx;
-					font-weight: 500;
+					font-size: 24rpx;
+					font-weight: 600;
+					padding: 4rpx 12rpx;
+					border-radius: 8rpx;
 
 					&.valid {
-						color: #10b981;
+						color: #8b5cf6;
+						background: #faf5ff;
 					}
 
 					&.invalid {
 						color: #ef4444;
+						background: #fef2f2;
 					}
 				}
 			}
@@ -179,19 +207,21 @@ const formatDateRange = (startDate, endDate) => {
 		.empty-state {
 			width: 100%;
 			background: white;
-			border-radius: 16rpx;
-			padding: 40rpx 20rpx;
+			border-radius: 20rpx;
+			padding: 60rpx 32rpx;
 			border: 1rpx solid #f0f0f0;
 			text-align: center;
 			display: flex;
 			flex-direction: column;
 			align-items: center;
-			gap: 8rpx;
+			gap: 16rpx;
 			box-sizing: border-box;
+			box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
 
 			.empty-text {
-				font-size: 24rpx;
+				font-size: 28rpx;
 				color: #94a3b8;
+				font-weight: 500;
 			}
 		}
 	}
