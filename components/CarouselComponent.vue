@@ -115,7 +115,7 @@ const onCarouselClick = (index) => {
 }
 
 .empty-section {
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 
   .empty-placeholder {
     height: 200px;

@@ -26,7 +26,7 @@
 	<!-- 主要内容区域 -->
 	<view class="page-content" :style="contentStyle" v-show="!searchStore.showSearchPanel">
 		<!-- 搜索结果页面 -->
-		<view class="search-results" v-show="showSearchResults">
+		<view class="search-results" :style="searchResultsStyle" v-if="showSearchResults">
 			<ProductListComponent ref="productListRef" :keyword="currentSearchKeyword" />
 		</view>
 
@@ -115,7 +115,8 @@ const contentStyle = computed(() => {
     return {
       marginTop: `${marginTop}px`, // 搜索框下方 + 4px间距
       minHeight: `${minHeight}px`, // 减去间距
-      paddingBottom: paddingBottom // 使用动态计算的底部间距
+      paddingBottom: "8px", // 使用动态计算的底部间距
+      paddingTop: `${layout.search.searchHeight + 8}px` // 搜索框高度 + 8px间距，避免被搜索框遮挡
     }
   }
   // 布局未初始化时的默认样式
@@ -126,11 +127,36 @@ const contentStyle = computed(() => {
   }
 })
 
-// 等待 ProductListComponent 组件可用的工具函数 (优化版本 - 适用于 v-show)
-const waitForProductListComponent = async (maxRetries = 5) => {
+// 搜索结果容器的样式计算
+const searchResultsStyle = computed(() => {
+  if (layoutStore.isInitialized && layoutStore.layoutInfo) {
+    const layout = layoutStore.layoutInfo
+
+    // 计算搜索结果容器的高度
+    const contentStartPosition = layout.content.startPosition + 4 // 内容开始位置
+    const tabbarTotalHeight = layout.tabbar.totalHeight + layout.tabbar.safeAreaBottom // TabBar总高度
+    const availableHeight = layout.device.windowHeight - contentStartPosition - tabbarTotalHeight
+
+    console.log('🔍 搜索结果容器高度计算:', {
+      windowHeight: layout.device.windowHeight,
+      contentStartPosition,
+      tabbarTotalHeight,
+      availableHeight
+    })
+
+    return {
+      height: `${availableHeight}px`
+    }
+  }
+  // 布局未初始化时的默认样式
+  return {
+    height: 'calc(100vh - 140px - 80px)'
+  }
+})// 等待 ProductListComponent 组件可用的工具函数 (适用于 v-if)
+const waitForProductListComponent = async (maxRetries = 10) => {
 	console.log('🔍 检查 ProductListComponent 可用性')
 
-	// 使用 v-show 后，组件在页面加载时就会创建，不需要复杂的渲染条件检查
+	// 使用 v-if 后，组件需要等待渲染完成后才能访问
 	for (let i = 0; i < maxRetries; i++) {
 		// 检查组件 ref 是否可用
 		if (productListRef.value) {
@@ -138,21 +164,22 @@ const waitForProductListComponent = async (maxRetries = 5) => {
 			return true
 		}
 
-		console.log(`等待 ProductListComponent 初始化 (第${i + 1}/${maxRetries}次)`)
+		console.log(`等待 ProductListComponent 渲染 (第${i + 1}/${maxRetries}次)`)
 
-		// 等待一个tick周期让组件完成初始化
+		// 等待一个tick周期让组件完成渲染
 		await new Promise(resolve => {
 			if (uni.$nextTick) {
 				uni.$nextTick(resolve)
 			} else {
-				setTimeout(resolve, 50)
+				setTimeout(resolve, 100) // 增加等待时间，因为 v-if 需要重新渲染
 			}
 		})
 	}
 
-	console.error('❌ ProductListComponent 组件初始化超时')
+	console.error('❌ ProductListComponent 组件渲染超时')
 	console.log('组件状态检查:', {
-		productListRefExists: !!productListRef.value
+		productListRefExists: !!productListRef.value,
+		showSearchResults: showSearchResults.value
 	})
 	return false
 }
@@ -161,6 +188,11 @@ const waitForProductListComponent = async (maxRetries = 5) => {
 // 初始化数据的方法 - 简化版本
 const initData = async () => {
 	console.log('🚀 开始主页数据初始化')
+
+	// 确保初始状态正确
+	showSearchResults.value = false
+	currentSearchKeyword.value = ''
+	searchKeyword.value = ''
 
 	// 立即初始化不需要网络请求的数据
 	searchStore.init()
@@ -450,6 +482,11 @@ onLoad(async () => {
 
 onShow(() => {
 	console.log('📱 主页 onShow')
+	console.log('🔍 当前状态检查:', {
+		showSearchResults: showSearchResults.value,
+		currentSearchKeyword: currentSearchKeyword.value,
+		searchKeyword: searchKeyword.value
+	})
 
 	// 检查是否有保存的搜索状态，如果有则保持，否则重置到默认首页
 	const hasActiveSearch = showSearchResults.value || currentSearchKeyword.value
@@ -643,9 +680,13 @@ page {
 	}
 }
 
-// 搜索结果页面样式 (继承父容器的定位和尺寸)
+// 搜索结果页面样式 - 高度由计算属性动态设置
 .search-results {
 	background-color: transparent; /* 继承父容器背景 */
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	position: relative;
 }
 
 // 首页内容样式 (继承父容器的定位和尺寸)

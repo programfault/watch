@@ -17,7 +17,7 @@
         @close="onFilterClose"
     />
 
-    <scroll-view scroll-y class="watches-scroll" @scrolltolower="loadMore" lower-threshold="100">
+    <scroll-view scroll-y class="watches-scroll" :style="watchesScrollStyle" @scrolltolower="loadMore" lower-threshold="100">
         <!-- 单列模式 -->
         <view v-if="hasWatches && displayMode === 'single'" class="watches-list single-mode">
             <view v-for="watch in watches" :key="watch.id" class="watch-item-single" @click="goToDetail(watch.id)">
@@ -64,7 +64,7 @@
 <script setup>
 import FilterPanelComponent from "@/components/FilterPanelComponent.vue"
 import ToolbarComponent from "@/components/ToolbarComponent.vue"
-import { useAppStore } from "@/stores"
+import { useAppStore, useLayoutStore } from "@/stores"
 import { useProductStore } from "@/stores/product.js"
 import { useToolbarStore } from "@/stores/toolbar.js"
 import { storeToRefs } from 'pinia'
@@ -87,6 +87,7 @@ const props = defineProps({
 const productStore = useProductStore()
 const toolbarStore = useToolbarStore()
 const appStore = useAppStore()
+const layoutStore = useLayoutStore()
 
 // 从store获取响应式数据
 const {
@@ -102,6 +103,40 @@ const filterPanel = ref(null)
 
 // 计算属性
 const hasWatches = computed(() => watches.value && watches.value.length > 0)
+
+// 动态计算产品列表的顶部间距
+const watchesScrollStyle = computed(() => {
+    if (layoutStore.isInitialized && layoutStore.layoutInfo) {
+        const layout = layoutStore.layoutInfo
+
+        // 计算 Toolbar 的总高度
+        // Toolbar = navbar底部位置 + 搜索框高度 + 搜索框边距 + Toolbar内容高度 + Toolbar外边距
+        const toolbarTop = layout.navbar.navbarBottomPosition + layout.search.searchHeight + layout.search.searchMargin
+        const toolbarContentHeight = 44 + 44 + 1 // 品牌信息区域44px + 工具栏44px + 分隔线1px
+        const toolbarMargin = 12 + 8 // 上边距12px + 下边距8px
+        const totalToolbarHeight = toolbarContentHeight + toolbarMargin
+
+        // 总的顶部偏移 = Toolbar位置 + Toolbar高度 + 额外间距
+        const paddingTop = toolbarTop + totalToolbarHeight + 8
+
+        console.log('🔧 产品列表顶部间距计算:', {
+            toolbarTop,
+            toolbarContentHeight,
+            toolbarMargin,
+            totalToolbarHeight,
+            finalPaddingTop: paddingTop
+        })
+
+        return {
+            paddingTop: `${paddingTop}px`
+        }
+    }
+
+    // 布局未初始化时的默认样式
+    return {
+        paddingTop: '120px'
+    }
+})
 
 // 显示模式
 const { displayMode } = storeToRefs(toolbarStore)
@@ -211,21 +246,26 @@ defineExpose({
     padding: 0;
     padding-top: 0; /* 移除顶部间距，让工具栏更贴近搜索框 */
     background-color: #f8f8f8;
-    /* 使用100%宽度，由父容器控制边距 */
+    /* 使用100%宽度和高度，由父容器控制边距 */
     width: 100%;
+    height: 100%;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 
 
 .watches-scroll {
     flex: 1;
-    height: calc(100vh - 126px - 70px); /* 减去 navbar+搜索框(126) + tabbar(70) */
-    padding-top: 108px; /* 为固定的工具栏容器留出空间，防止内容被覆盖 */
+    height: 100%; /* 使用父容器的高度 */
+    /* padding-top 现在通过计算属性动态设置 */
     box-sizing: border-box;
 }
 
 .watches-list {
+    padding: 10px 0;
+
     &.single-mode {
         .watch-item-single {
             display: flex;
