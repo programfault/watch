@@ -19,7 +19,7 @@
 			"navigationBarTitleText": "保养",
 			"navigationBarBackgroundColor": "#ffffff",
 			"navigationBarTextStyle": "black",
-			"enablePullDownRefresh": true,
+			"enablePullDownRefresh": false,
 			"backgroundTextStyle": "dark"
 		}
 	}, {

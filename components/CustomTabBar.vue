@@ -186,28 +186,3 @@ onUnmounted(() => {
 	uni.$off('hideTabSwitchLoading')
 })
 </script>
-
-<style lang="scss" scoped>
-.tabbar-container {
-	position: relative;
-	z-index: 9999;
-
-	/* 添加transition来平滑显示/隐藏 */
-	transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-}
-
-/* 全局样式：为所有页面添加底部安全区域 */
-</style>
-
-<style lang="scss">
-/* 全局样式：为所有页面容器添加 TabBar 高度适配 */
-page {
-	padding-bottom: calc(50px + env(safe-area-inset-bottom));
-}
-
-/* 减少页面切换时的闪烁 */
-.uni-tabbar, .u-tabbar {
-	transition: none !important;
-	animation: none !important;
-}
-</style>

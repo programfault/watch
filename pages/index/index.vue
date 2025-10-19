@@ -93,6 +93,9 @@ const contentStyle = computed(() => {
     const marginTop = layout.content.startPosition + 4  // 减少间距从8px到4px
     const minHeight = layout.content.availableHeight - 4
 
+    // 使用 layout store 计算的底部安全区域高度
+    const paddingBottom = `calc(${layout.tabbar.totalHeight}px + ${layout.tabbar.safeAreaBottom}px)`
+
     console.log('📏 布局计算结果:', {
       statusBarHeight: layout.device.statusBarHeight,
       navbarHeight: layout.navbar.navbarHeight,
@@ -102,18 +105,24 @@ const contentStyle = computed(() => {
       contentStartPosition: layout.content.startPosition,
       finalMarginTop: marginTop,
       availableHeight: layout.content.availableHeight,
-      finalMinHeight: minHeight
+      finalMinHeight: minHeight,
+      tabbarHeight: layout.tabbar.height,
+      tabbarTotalHeight: layout.tabbar.totalHeight,
+      safeAreaBottom: layout.tabbar.safeAreaBottom,
+      finalPaddingBottom: paddingBottom
     })
 
     return {
-      marginTop: `${marginTop}px`, // 搜索框下方 + 8px间距
+      marginTop: `${marginTop}px`, // 搜索框下方 + 4px间距
       minHeight: `${minHeight}px`, // 减去间距
+      paddingBottom: paddingBottom // 使用动态计算的底部间距
     }
   }
   // 布局未初始化时的默认样式
   return {
     marginTop: '140px',
-    minHeight: 'calc(100vh - 200px)'
+    minHeight: 'calc(100vh - 200px)',
+    paddingBottom: '80px' // 默认值
   }
 })
 
@@ -511,7 +520,7 @@ const leftClick = () => {
 	position: fixed;
 	left: 0;
 	right: 0;
-	background-color: #f8f8f8;
+	background-color: #f8fafc;
 	z-index: 10;
 	padding: 0 4%; /* 使用百分比实现响应式左右边距 */
 	box-sizing: border-box;
@@ -603,12 +612,23 @@ const leftClick = () => {
 }
 
 /* ==================== 页面内容区域样式 ==================== */
-// 内容区域基础样式 (marginTop, minHeight 由JS动态计算)
+/* 页面整体禁用滚动，防止触发onReachBottom */
+page {
+	height: 100vh;
+	overflow: hidden;
+}
+
+// 内容区域基础样式 (marginTop, minHeight, paddingBottom 由JS动态计算)
 .page-content {
-	background-color: #f8f8f8;
+	background-color: #f8fafc;
 	padding: 0 4%; /* 使用百分比实现响应式内边距 */
-	padding-bottom: calc(100px + env(safe-area-inset-bottom));
 	box-sizing: border-box;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	overflow-y: auto; /* 内容区域可以滚动 */
 
 	/* 小屏幕适配 */
 	@media screen and (max-width: 375px) {

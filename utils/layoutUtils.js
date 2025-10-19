@@ -106,7 +106,7 @@ export function calculatePageLayout(options = {}) {
 
   // 如果tabBar组件已经处理了safeArea，那么实际占据的高度就是tabbarHeight + safeAreaBottom
   // 但在计算可用高度时，我们需要减去tabBar的总占用空间
-  const tabBarTotalHeight = tabbarHeight + safeAreaBottom;
+  const tabBarTotalHeight = tabbarHeight;
 
   const result = {
     device: deviceInfo,

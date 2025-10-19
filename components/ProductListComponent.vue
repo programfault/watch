@@ -226,8 +226,6 @@ defineExpose({
 }
 
 .watches-list {
-    padding: 10px;
-
     &.single-mode {
         .watch-item-single {
             display: flex;
