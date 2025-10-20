@@ -26,7 +26,7 @@
 					<!-- 姓名 -->
 					<view class="form-item">
 						<text class="form-label">姓名</text>
-						<uni-easyinput
+						<u-input
 							v-model="userForm.name"
 							placeholder="请输入姓名"
 							:clearable="true"
@@ -36,43 +36,51 @@
 					<!-- 性别 -->
 					<view class="form-item">
 						<text class="form-label">性别</text>
-						<uni-data-select
-							v-model="userForm.gender"
-							:localdata="genderOptions"
-							placeholder="请选择性别"
-						/>
+						<u-radio-group v-model="userForm.gender" placement="row">
+							<u-radio
+								v-for="item in genderOptions"
+								:key="item.value"
+								:name="item.value"
+								:label="item.label"
+							/>
+						</u-radio-group>
 					</view>
 
 					<!-- 手机号 -->
 					<view class="form-item">
 						<text class="form-label">手机号</text>
-						<uni-easyinput
+						<u-input
 							v-model="userForm.phone"
 							placeholder="请输入手机号"
 							:clearable="true"
+							type="number"
 						/>
 					</view>
 
 					<!-- 生日 -->
 					<view class="form-item">
 						<text class="form-label">生日</text>
-						<uni-datetime-picker
+						<u-datetime-picker
 							v-model="userForm.birthday"
-							type="date"
+							mode="date"
+							:hasInput="true"
 							placeholder="请选择生日"
-							:clearIcon="true"
+							format="YYYY-M-D"
+							:minDate="new Date('1900-01-01').getTime()"
+							:maxDate="new Date().getTime()"
+							@confirm="onBirthdayConfirm"
 						/>
 					</view>
 
 					<!-- 备注 -->
 					<view class="form-item">
 						<text class="form-label">备注</text>
-						<uni-easyinput
+						<u-textarea
 							v-model="userForm.remark"
-							type="textarea"
 							placeholder="请输入备注信息"
 							:clearable="true"
 							:autoHeight="true"
+							maxlength="200"
 						/>
 					</view>
 				</view>
@@ -81,11 +89,12 @@
 				<view v-if="showPoints && actionType !== 'update'" class="action-section">
 					<text class="section-title">{{ pointsTitle }}</text>
 					<view class="points-input-wrapper">
-						<uni-easyinput
+						<u-input
 							v-model="giftPoints"
-							type="number"
 							:placeholder="pointsPlaceholder"
+							type="number"
 							:clearable="true"
+							@input="onPointsInput"
 						/>
 					</view>
 				</view>
@@ -258,9 +267,11 @@ const resetSelections = () => {
 }
 
 // 响应式数据
-const giftPoints = ref('')
+const giftPoints = ref(0)
 const selectedCoupons = ref([])
 const selectedPrivileges = ref([])
+
+// uview plus 组件相关的响应式数据（已不需要）
 
 // 用户信息表单数据
 const userForm = ref({
@@ -273,9 +284,8 @@ const userForm = ref({
 
 // 性别选项
 const genderOptions = [
-	{ value: '1', text: '男' },
-	{ value: '2', text: '女' },
-	{ value: '0', text: '未知' }
+	{ value: '1', label: '男' },
+	{ value: '2', label: '女' }
 ]
 
 // 计算属性
@@ -308,6 +318,8 @@ const confirmText = computed(() => {
 const selectHintText = computed(() => {
 	return `请选择要${props.actionType === 'gift' ? '赠送' : '核销'}的内容`
 })
+
+// 性别文本显示（u-radio-group 自动处理，不再需要）
 
 const filteredCoupons = computed(() => {
 	if (props.actionType !== 'gift') {
@@ -375,9 +387,32 @@ const initUserForm = () => {
 			name: props.consumerData.name || '',
 			gender: props.consumerData.gender ? String(props.consumerData.gender) : '',
 			phone: '',
-			birthday: props.consumerData.birthday || '',
+			birthday: formatBirthdayForDisplay(props.consumerData.birthday) || '',
 			remark: props.consumerData.remark || ''
 		}
+	}
+}
+
+// 格式化生日用于显示（将后台的 Y-m-d 格式转换为组件需要的格式）
+const formatBirthdayForDisplay = (birthday) => {
+	if (!birthday) return ''
+
+	// 如果已经是时间戳格式，直接返回
+	if (typeof birthday === 'number') {
+		return birthday
+	}
+
+	// 如果是字符串格式，尝试转换为时间戳
+	try {
+		// 处理 Y-m-d 格式，如 "2024-1-5" 或 "2024-01-05"
+		const date = new Date(birthday)
+		if (isNaN(date.getTime())) {
+			return ''
+		}
+		return date.getTime()
+	} catch (error) {
+		console.error('日期格式转换失败:', birthday, error)
+		return ''
 	}
 }
 
@@ -423,6 +458,57 @@ const togglePrivilegeSelection = (privilegeId) => {
 
 // 重置选择状态已在上方定义
 
+// 生日选择确认（可选的额外处理）
+const onBirthdayConfirm = (e) => {
+	console.log('生日选择确认:', e)
+	// u-datetime-picker 会自动更新 v-model，这里可以做额外处理
+	// 确保日期格式为 Y-m-d 格式发送给后台
+	if (e.value) {
+		const date = new Date(e.value)
+		const year = date.getFullYear()
+		const month = date.getMonth() + 1
+		const day = date.getDate()
+		// 注意：这里不直接修改 userForm.value.birthday，让组件自己处理显示
+		// userForm.value.birthday 会保持时间戳格式用于显示
+		// 在提交时再转换为 Y-m-d 格式
+		console.log('格式化后的日期将在提交时转换为:', `${year}-${month}-${day}`)
+	}
+}
+
+// 格式化生日用于提交（将时间戳转换为后台需要的 Y-m-d 格式）
+const formatBirthdayForSubmit = (birthday) => {
+	if (!birthday) return ''
+
+	try {
+		const date = new Date(birthday)
+		if (isNaN(date.getTime())) {
+			return ''
+		}
+		const year = date.getFullYear()
+		const month = date.getMonth() + 1
+		const day = date.getDate()
+		return `${year}-${month}-${day}`
+	} catch (error) {
+		console.error('日期格式转换失败:', birthday, error)
+		return ''
+	}
+}
+
+// 积分输入验证
+const onPointsInput = (value) => {
+	// 只允许输入数字，自动过滤非数字字符
+	const numericValue = String(value).replace(/[^0-9]/g, '')
+
+	// 限制最大值
+	let finalValue = parseInt(numericValue) || 0
+	if (finalValue > 99999) {
+		finalValue = 99999
+	}
+
+	// 更新值
+	giftPoints.value = finalValue
+}
+
 const confirmAction = async () => {
 	// 验证操作数据
 	if (!props.consumerData || !props.consumerData.id) {
@@ -445,7 +531,7 @@ const confirmAction = async () => {
 				name: userForm.value.name.trim(),
 				gender: userForm.value.gender ? parseInt(userForm.value.gender) : 0,
 				phone: userForm.value.phone.trim(),
-				birthday: userForm.value.birthday,
+				birthday: formatBirthdayForSubmit(userForm.value.birthday),
 				remark: userForm.value.remark.trim()
 			}
 		}
@@ -614,38 +700,25 @@ defineExpose({
 			font-weight: 500;
 		}
 
-		:deep(.uni-easyinput) {
+		// uview-plus 组件样式
+		:deep(.u-input) {
 			border: 1px solid #e0e0e0;
 			border-radius: 8rpx;
 
-			.uni-easyinput__content {
-				padding: 16rpx 20rpx;
-			}
+			&[readonly] {
+				cursor: pointer;
+				background-color: #fafafa;
 
-			.uni-easyinput__content-input {
-				font-size: 28rpx;
-				color: #333;
+				&:hover {
+					border-color: #007aff;
+					background-color: #f0f8ff;
+				}
 			}
 		}
 
-		:deep(.uni-data-select) {
+		:deep(.u-textarea) {
 			border: 1px solid #e0e0e0;
 			border-radius: 8rpx;
-
-			.uni-select {
-				padding: 16rpx 20rpx;
-				font-size: 28rpx;
-			}
-		}
-
-		:deep(.uni-datetime-picker) {
-			border: 1px solid #e0e0e0;
-			border-radius: 8rpx;
-
-			.uni-datetime-picker-item {
-				padding: 16rpx 20rpx;
-				font-size: 28rpx;
-			}
 		}
 	}
 }
@@ -716,21 +789,6 @@ defineExpose({
 	margin-bottom: 20rpx;
 	width: 100%;
 	box-sizing: border-box;
-
-	// 修复 uni-easyinput 组件的宽度问题
-	:deep(.uni-easyinput) {
-		width: 100% !important;
-	}
-
-	:deep(.uni-easyinput__content) {
-		width: 100% !important;
-		box-sizing: border-box !important;
-	}
-
-	:deep(.uni-easyinput__content-input) {
-		width: 100% !important;
-		box-sizing: border-box !important;
-	}
 }
 
 // 福利卡片通用样式

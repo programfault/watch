@@ -558,7 +558,7 @@ const leftClick = () => {
 	left: 0;
 	right: 0;
 	background-color: #f8fafc;
-	z-index: 10;
+	z-index: 1;
 	padding: 0 4%; /* 使用百分比实现响应式左右边距 */
 	box-sizing: border-box;
 

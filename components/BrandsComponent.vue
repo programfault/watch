@@ -5,13 +5,12 @@
     </view>
 
     <!-- 品牌网格 -->
-    <uni-grid
-      :column="3"
-      :square="false"
-      :showBorder="false"
+    <u-grid
+      :col="3"
+      :border="false"
       v-if="sortedBrandsList.length > 0"
     >
-      <uni-grid-item
+      <u-grid-item
         v-for="(brand, index) in sortedBrandsList"
         :key="brand.id"
         @click="onBrandClick(brand)"
@@ -26,8 +25,8 @@
           <text class="brand-name-cn">{{ brand.name_cn }}</text>
           <!-- <text class="brand-name-en">{{ brand.name_en }}</text> -->
         </view>
-      </uni-grid-item>
-    </uni-grid>
+      </u-grid-item>
+    </u-grid>
 
     <!-- 品牌加载状态 -->
     <view class="loading-section" v-if="appStore.brandsLoading">

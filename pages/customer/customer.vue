@@ -121,7 +121,7 @@
         <!-- 搜索无结果状态 -->
         <view class="empty-state" v-else-if="hasSearched && !userStore.consumersLoading">
           <view class="empty-icon">
-            <up-icon name="inbox" size="48" color="#ccc"/>
+            <up-icon name="search" size="48" color="#ccc"/>
           </view>
           <text class="empty-text">未找到匹配的消费者</text>
           <text class="empty-subtext">请尝试其他手机号码</text>
