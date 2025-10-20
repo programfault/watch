@@ -1,5 +1,5 @@
 <template>
-<view class="product-list-container">
+<view class="product-list-container" v-if="shouldShowComponent">
     <!-- 工具栏（包含品牌信息） -->
     <ToolbarComponent
         :currentBrand="currentBrand"
@@ -17,7 +17,17 @@
         @close="onFilterClose"
     />
 
-    <scroll-view scroll-y class="watches-scroll" :style="watchesScrollStyle" @scrolltolower="loadMore" lower-threshold="100">
+    <!-- 手表列表容器 - 使用scroll-view实现loadmore -->
+    <scroll-view
+        class="watches-scroll"
+        :style="watchesScrollStyle"
+        scroll-y="true"
+        :lower-threshold="100"
+        @scrolltolower="onScrollToLower"
+        :enable-back-to-top="true"
+        :scroll-with-animation="false"
+        :show-scrollbar="false"
+    >
         <!-- 单列模式 -->
         <view v-if="hasWatches && displayMode === 'single'" class="watches-list single-mode">
             <view v-for="watch in watches" :key="watch.id" class="watch-item-single" @click="goToDetail(watch.id)">
@@ -46,6 +56,7 @@
             </view>
         </view>
 
+        <!-- 加载状态 -->
         <view class="load-status">
             <view v-if="loading" class="loading">
                 <text>加载中...</text>
@@ -53,8 +64,12 @@
             <view v-else-if="!hasWatches && !loading" class="empty">
                 <text>暂无手表数据</text>
             </view>
-            <view v-else-if="!pagination.has_next" class="no-more">
+            <view v-else-if="hasWatches && !pagination.has_next" class="no-more">
                 <text>已显示全部 {{ watches.length }} 款手表</text>
+            </view>
+            <!-- 添加自动加载更多提示 -->
+            <view v-else-if="hasWatches && pagination.has_next" class="can-load-more">
+                <text>滚动到底部自动加载更多...</text>
             </view>
         </view>
     </scroll-view>
@@ -68,8 +83,8 @@ import { useAppStore, useLayoutStore } from "@/stores"
 import { useProductStore } from "@/stores/product.js"
 import { useToolbarStore } from "@/stores/toolbar.js"
 import { storeToRefs } from 'pinia'
-import { computed, ref } from 'vue'
-
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { calculatePageLayout } from '@/utils/layoutUtils.js'
 // 定义组件名称
 defineOptions({
     name: 'ProductListComponent'
@@ -87,7 +102,6 @@ const props = defineProps({
 const productStore = useProductStore()
 const toolbarStore = useToolbarStore()
 const appStore = useAppStore()
-const layoutStore = useLayoutStore()
 
 // 从store获取响应式数据
 const {
@@ -104,47 +118,64 @@ const filterPanel = ref(null)
 // 计算属性
 const hasWatches = computed(() => watches.value && watches.value.length > 0)
 
-// 动态计算产品列表的顶部间距
-const watchesScrollStyle = computed(() => {
-    if (layoutStore.isInitialized && layoutStore.layoutInfo) {
-        const layout = layoutStore.layoutInfo
 
-        // 简化计算：toolbarTop + 少量padding
-        const navbarBottomPosition = layout.navbar.navbarBottomPosition
-        const searchHeight = layout.search.searchHeight
-        const searchMargin = layout.search.searchMargin
-
-        // Toolbar 的顶部位置
-        const toolbarTop = navbarBottomPosition + searchHeight + searchMargin
-
-        // 简单的计算：toolbarTop + 一点padding
-        const paddingTop = toolbarTop + 8 // 只需要8px的缓冲即可
-
-        console.log('🔧 简化的产品列表顶部间距计算:', {
-            navbarBottomPosition,
-            searchHeight,
-            searchMargin,
-            toolbarTop,
-            padding: 8,
-            finalPaddingTop: paddingTop,
-            '说明': 'paddingTop = toolbarTop + 8px padding'
-        })
-
-        return {
-            paddingTop: `${paddingTop}px`
-        }
-    }
-
-    // 布局未初始化时的默认样式
-    return {
-        paddingTop: '120px'
-    }
+// 判断是否应该显示组件（只有在有搜索结果或正在加载时才显示）
+const shouldShowComponent = computed(() => {
+    return hasWatches.value || loading.value || currentBrand.value || props.keyword
 })
 
-// 显示模式
+// 动态计算产品列表的样式
+const watchesScrollStyle = computed(() => {
+    // 简化样式计算，专注于让scroll-view可以滚动
+    const info = calculatePageLayout()
+    const navHeight = info.navbarTotalHeight || 0
+    const searchHeight = info.searchHeight || 0
+    return {
+        marginTop: `${navHeight + searchHeight}px`,
+        height: "70vh"
+    }
+})// 显示模式
 const { displayMode } = storeToRefs(toolbarStore)
 
-// 方法定义
+// 监听页面滚动实现loadMore功能
+let isLoadingMore = false
+
+// scroll-view滚动到底部的处理
+const onScrollToLower = () => {
+    console.log('📜 scroll-view 滚动到底部，触发加载更多')
+
+    if (isLoadingMore || !pagination.value.has_next || loading.value) {
+        console.log('⏸️ 无法加载更多:', {
+            isLoadingMore,
+            hasNext: pagination.value.has_next,
+            loading: loading.value
+        })
+        return
+    }
+
+    loadMore()
+}
+
+// 暴露给父组件的滚动检查方法
+const checkLoadMore = () => {
+    if (isLoadingMore || !pagination.value.has_next || loading.value) {
+        return false
+    }
+
+    console.log('🔄 组件收到滚动检查，准备加载更多')
+    loadMore()
+    return true
+}
+
+// 组件挂载和卸载的简化处理
+onMounted(() => {
+    console.log('📱 ProductListComponent 挂载完成')
+})
+
+onUnmounted(() => {
+    console.log('📱 ProductListComponent 卸载')
+    isLoadingMore = false
+})// 方法定义
 const onPriceSort = (direction) => {
     productStore.sortByPrice(direction)
 }
@@ -180,9 +211,30 @@ const onFilterClose = () => {
     // 筛选面板关闭时的处理
 }
 
-const loadMore = () => {
-    if (pagination.value.has_next && !loading.value) {
-        productStore.loadMoreWatches()
+const loadMore = async () => {
+    if (isLoadingMore || !pagination.value.has_next || loading.value) {
+        console.log('⏸️ 无法加载更多:', {
+            isLoadingMore,
+            hasNext: pagination.value.has_next,
+            loading: loading.value
+        })
+        return
+    }
+
+    console.log('🔄 开始加载更多数据')
+    isLoadingMore = true
+
+    try {
+        await productStore.loadMoreWatches()
+        console.log('✅ 加载更多完成')
+    } catch (error) {
+        console.error('❌ 加载更多失败:', error)
+        uni.showToast({
+            title: '加载失败，请重试',
+            icon: 'none'
+        })
+    } finally {
+        isLoadingMore = false
     }
 }
 
@@ -199,201 +251,184 @@ const getWatchImage = (watch) => {
     return '/static/default-watch.jpg'
 }
 
-// 当关键词改变时，重新搜索
+// 暴露给父组件的方法
 const searchWithKeyword = async (keyword) => {
-    console.log('ProductListComponent 开始搜索:', keyword)
-    if (keyword && keyword.trim()) {
-        try {
-            // 传递正确的参数格式：包含 keyword 的对象
-            await productStore.searchWatches({ keyword: keyword.trim() })
-            console.log('搜索完成，结果数量:', watches.value?.length)
-        } catch (error) {
-            console.error('搜索失败:', error)
-            uni.showToast({
-                title: '搜索失败，请重试',
-                icon: 'none'
-            })
-        }
-    }
+    console.log('🔍 ProductListComponent.searchWithKeyword:', keyword)
+    return await productStore.searchByKeyword(keyword)
 }
 
-// 品牌筛选方法
-const searchByBrand = async (brandId, brandInfo = null) => {
-    console.log('ProductListComponent 开始品牌筛选:', { brandId, brandInfo })
-
-    if (!brandId) {
-        console.error('品牌ID为空')
-        return
-    }
-
-    try {
-        // 使用 productStore 的 fetchByBrand 方法
-        await productStore.fetchByBrand(brandId)
-        console.log('品牌筛选完成，结果数量:', watches.value?.length)
-        console.log('当前品牌信息:', currentBrand.value)
-    } catch (error) {
-        console.error('品牌筛选失败:', error)
-        uni.showToast({
-            title: '品牌数据加载失败，请重试',
-            icon: 'none'
-        })
-    }
+const searchByBrand = async (brandId, brand) => {
+    console.log('🏷️ ProductListComponent.searchByBrand:', { brandId, brand })
+    return await productStore.fetchByBrand(brandId)
 }
 
-// 初始化方法
-const init = () => {
-    console.log('ProductListComponent 初始化完成')
-}
-
-// 暴露方法给父组件
 defineExpose({
     searchWithKeyword,
     searchByBrand,
-    init
+    checkLoadMore
 })
 </script>
 
 <style lang="scss" scoped>
 .product-list-container {
-    padding: 0;
-    padding-top: 0; /* 移除顶部间距，让工具栏更贴近搜索框 */
-    background-color: #f8f8f8;
-    /* 使用100%宽度和高度，由父容器控制边距 */
+    position: relative;
     width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+    background-color: transparent;
 }
 
-
-
 .watches-scroll {
-    flex: 1;
-    height: 100%; /* 使用父容器的高度 */
-    /* padding-top 现在通过计算属性动态设置 */
-    box-sizing: border-box;
+    width: 100%;
+    background-color: transparent;
+    /* 使用相对定位，让scroll-view正常工作 */
 }
 
 .watches-list {
-    padding: 10px 0;
+    width: 100%;
+    box-sizing: border-box;
 
     &.single-mode {
-        /* 单列模式只需要少量顶部间距 */
-        padding-top: 8px;
-
-        .watch-item-single {
-            display: flex;
-            background-color: #fff;
-            padding: 15px;
-            margin-bottom: 10px;
-
-            .watch-image {
-                width: 80px;
-                height: 80px;
-                margin-right: 15px;
-            }
-
-            .watch-info {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-
-                .watch-name {
-                    font-size: 16px;
-                    color: #333;
-                    font-weight: 500;
-                    margin-bottom: 5px;
-                }
-
-                .watch-price {
-                    font-size: 18px;
-                    color: #e85a4f;
-                    font-weight: bold;
-                    margin-bottom: 5px;
-                }
-
-                .watch-meta {
-                    .brand-text {
-                        font-size: 12px;
-                        color: #999;
-                    }
-                }
-            }
-        }
+        display: flex;
+        flex-direction: column;
+        gap: 16rpx;
+        padding: 20rpx 0; /* 统一的内边距 */
     }
 
     &.grid-mode {
-        padding-top: 8px; /* 网格模式也只需要少量顶部间距 */
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        grid-template-columns: 1fr 1fr;
+        gap: 16rpx;
+        padding: 20rpx 0; /* 网格模式稍微小一点的左右边距 */
+    }
+}
 
-        .watch-item-grid {
-            background-color: #fff;
-            padding: 12px;
-            border-radius: 8px;
+/* 单列模式样式 */
+.watch-item-single {
+    display: flex;
+    background-color: #ffffff;
+    border-radius: 12rpx;
+    padding: 24rpx;
+    transition: all 0.3s ease;
+
+    &:active {
+        background-color: #f8f9fa;
+        transform: translateY(2rpx);
+    }
+
+    .watch-image {
+        width: 160rpx;
+        height: 160rpx;
+        border-radius: 8rpx;
+        margin-right: 24rpx;
+        flex-shrink: 0;
+    }
+
+    .watch-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        .watch-name {
+            font-size: 30rpx;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 12rpx;
+            line-height: 1.4;
+        }
+
+        .watch-price {
+            font-size: 32rpx;
+            font-weight: 700;
+            color: #b8860b;
+            margin-bottom: 16rpx;
+        }
+
+        .watch-meta {
             display: flex;
-            flex-direction: column;
-            height: 220px; /* 设置统一的卡片高度 */
-            box-sizing: border-box;
+            justify-content: space-between;
+            align-items: center;
 
-            .watch-image-grid {
-                width: 100%;
-                height: 140px; /* 增加图片高度，更好展示手表 */
-                margin-bottom: 10px;
-                border-radius: 4px;
-                object-fit: cover; /* 确保图片填充良好 */
-            }
-
-            .watch-info-grid {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-
-                .watch-name-grid {
-                    font-size: 14px;
-                    color: #333;
-                    font-weight: 500;
-                    margin-bottom: 6px;
-                    display: -webkit-box;
-                    -webkit-line-clamp: 2; /* 限制显示2行，避免文本过长 */
-                    -webkit-box-orient: vertical;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    line-height: 1.3;
-                    height: 36px; /* 固定高度，保持一致性 */
-                }
-
-                .watch-price-grid {
-                    font-size: 16px;
-                    color: #e85a4f;
-                    font-weight: bold;
-                    margin-bottom: 4px;
-                    display: block;
-                }
-
-                .watch-meta-grid {
-                    .brand-text-grid {
-                        font-size: 12px;
-                        color: #999;
-                        line-height: 1.2;
-                    }
-                }
+            .brand-text {
+                font-size: 24rpx;
+                color: #888888;
+                background-color: #f5f5f5;
+                padding: 6rpx 12rpx;
+                border-radius: 12rpx;
             }
         }
     }
 }
 
-.load-status {
-    text-align: center;
-    padding: 20px;
+/* 网格模式样式 */
+.watch-item-grid {
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    border-radius: 12rpx;
+    padding: 20rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
 
-    .loading, .empty, .no-more {
-        color: #999;
-        font-size: 14px;
+    &:active {
+        background-color: #f8f9fa;
+        transform: translateY(2rpx);
+    }
+
+    .watch-image-grid {
+        width: 100%;
+        height: 200rpx;
+        border-radius: 8rpx;
+        margin-bottom: 16rpx;
+    }
+
+    .watch-info-grid {
+        display: flex;
+        flex-direction: column;
+
+        .watch-name-grid {
+            font-size: 26rpx;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 8rpx;
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .watch-price-grid {
+            font-size: 28rpx;
+            font-weight: 700;
+            color: #b8860b;
+            margin-bottom: 12rpx;
+        }
+
+        .watch-meta-grid {
+            .brand-text-grid {
+                font-size: 22rpx;
+                color: #888888;
+                background-color: #f5f5f5;
+                padding: 4rpx 8rpx;
+                border-radius: 8rpx;
+                display: inline-block;
+            }
+        }
+    }
+}
+
+/* 加载状态样式 */
+.load-status {
+    padding: 40rpx 20rpx;
+    text-align: center;
+
+    .loading, .empty, .no-more, .can-load-more {
+        color: #999999;
+        font-size: 28rpx;
+    }
+
+    .can-load-more {
+        color: #b8860b;
+        font-weight: 500;
     }
 }
 </style>

@@ -121,7 +121,9 @@ export function calculatePageLayout(options = {}) {
       startPosition: searchLayout.contentStartPosition,
       // 可用高度 = 窗口高度 - 内容开始位置 - tabBar总高度
       availableHeight: deviceInfo.windowHeight - searchLayout.contentStartPosition - tabBarTotalHeight
-    }
+      },
+    navbarTotalHeight: navbarDims.totalNavbarHeight,
+    searchHeight: searchLayout.searchHeight,
   };
 
   console.log('📊 完整布局计算结果:', {
