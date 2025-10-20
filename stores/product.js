@@ -1,6 +1,5 @@
 import { getWatchDetail, getWatches, searchWatches } from '@/api/app'
-import { defineStore } from 'pinia'
-import { useToolbarStore } from './toolbar.js'
+import { defineStore, getActivePinia } from 'pinia'
 
 export const useProductStore = defineStore('product', {
   state: () => ({
@@ -118,6 +117,34 @@ export const useProductStore = defineStore('product', {
   },
 
   actions: {
+    // 获取 toolbar store 的辅助方法
+    getToolbarStore() {
+      // 在微信小程序环境中，使用全局的 pinia 实例来获取 store
+      const pinia = this.$pinia || getActivePinia()
+      if (pinia) {
+        // 从 pinia 实例中获取已注册的 store
+        for (const [key, store] of pinia._s.entries()) {
+          if (key === 'toolbar') {
+            return store
+          }
+        }
+      }
+
+      // 如果找不到，尝试直接导入（可能在某些环境中有效）
+      try {
+        const { useToolbarStore } = require('@/stores/toolbar.js')
+        return useToolbarStore()
+      } catch (error) {
+        console.warn('无法获取 toolbar store:', error)
+        // 返回一个默认的对象，避免错误
+        return {
+          getSortParams: {},
+          sortBy: '',
+          sortOrder: ''
+        }
+      }
+    },
+
     // 简单查询手表列表
     async fetchWatches(params = {}, isLoadMore = false) {
       if (!isLoadMore) {
@@ -348,7 +375,7 @@ export const useProductStore = defineStore('product', {
 
       try {
         // 获取 toolbarStore 实例来获取排序状态
-        const toolbarStore = useToolbarStore()
+        const toolbarStore = this.getToolbarStore()
 
         // 保留brand_id和keyword，清空其他筛选条件
         const originalBrandId = this.watchesFilters.brand_id
@@ -405,27 +432,31 @@ export const useProductStore = defineStore('product', {
     },
 
     // 根据品牌ID获取手表
-    async fetchByBrand(brandId, params = {}) {
+    async fetchByBrand(brandId, isLoadMore = false, params = {}) {
       try {
-        // 获取 toolbarStore 实例来获取排序状态
-        const toolbarStore = useToolbarStore()
+        // 获取 toolbarStore 实例来获取排序状态 - 使用同步导入
+        const toolbarStore = this.getToolbarStore()
 
         // 获取当前的排序参数
         const sortParams = toolbarStore.getSortParams
 
-        // 重置除brand_id外的其他筛选条件，确保品牌筛选的纯净性
-        this.watchesFilters = {
-          brand_id: brandId,
-          keyword: '',
-          attribute_filters: [],
-          price_range: null
-        }
+        // 只在非加载更多时重置筛选条件
+        if (!isLoadMore) {
+          // 重置除brand_id外的其他筛选条件，确保品牌筛选的纯净性
+          this.watchesFilters = {
+            brand_id: brandId,
+            keyword: '',
+            attribute_filters: [],
+            price_range: null
+          }
 
-        // 清空搜索关键词，因为这是品牌筛选，不是关键词搜索
-        this.searchKeyword = ''
+          // 清空搜索关键词，因为这是品牌筛选，不是关键词搜索
+          this.searchKeyword = ''
+        }
 
         console.log('fetchByBrand 设置筛选条件:', {
           brandId,
+          isLoadMore,
           filters: this.watchesFilters,
           sortParams,
           清空搜索关键词: this.searchKeyword
@@ -435,7 +466,7 @@ export const useProductStore = defineStore('product', {
           brand_id: brandId,
           ...params,
           ...sortParams
-        })
+        }, isLoadMore)
       } catch (error) {
         console.error('按品牌获取手表失败:', error)
         throw error
@@ -448,7 +479,7 @@ export const useProductStore = defineStore('product', {
 
       try {
         // 获取 toolbarStore 实例来获取排序状态
-        const toolbarStore = useToolbarStore()
+        const toolbarStore = this.getToolbarStore()
 
         // 获取当前的排序参数
         const sortParams = toolbarStore.getSortParams
@@ -578,14 +609,57 @@ export const useProductStore = defineStore('product', {
       }
 
       try {
-        // 如果有搜索关键词，使用搜索方法
-        if (this.searchKeyword) {
-          console.log('使用搜索方法加载更多:', this.searchKeyword)
-          await this.searchWatches({ keyword: this.searchKeyword }, true)
+        // 获取 toolbarStore 来获取排序状态
+        const toolbarStore = this.getToolbarStore()
+
+        // 构建完整的搜索参数，包含当前所有状态
+        const searchParams = {
+          // 搜索关键词
+          keyword: this.searchKeyword || '',
+          // 品牌ID
+          brand_id: this.currentBrand?.id || '',
+          // 排序参数
+          sort_by: toolbarStore.sortBy || '',
+          sort_order: toolbarStore.sortOrder || '',
+          // 筛选条件
+          ...this.watchesFilters
+        }
+
+        console.log('加载更多时的完整参数:', searchParams)
+
+        // 检查是否有高级筛选条件（除了基本的keyword和brand_id）
+        const hasAdvancedFilters = this.watchesFilters.attribute_filters?.length > 0 ||
+                                 this.watchesFilters.min_price ||
+                                 this.watchesFilters.max_price ||
+                                 this.watchesFilters.price_range
+
+        // 检查是否有排序
+        const hasSorting = toolbarStore.sortOrder && toolbarStore.sortOrder !== 'none'
+
+        console.log('加载更多条件检查:', {
+          hasAdvancedFilters,
+          hasSorting,
+          searchKeyword: this.searchKeyword,
+          brandId: this.currentBrand?.id,
+          '选择策略': hasAdvancedFilters || hasSorting ? 'advancedSearch(POST)' : '简单方法(GET)'
+        })
+
+        // 优先级：有高级筛选条件或排序时，统一使用 searchWatches (POST请求)
+        if (hasAdvancedFilters || hasSorting) {
+          console.log('🔄 使用高级搜索方法加载更多 (POST请求)')
+          await this.searchWatches(searchParams, true)
+        } else if (this.searchKeyword) {
+          // 仅有搜索关键词，无其他筛选时使用搜索方法
+          console.log('🔍 使用搜索方法加载更多 (POST请求):', this.searchKeyword)
+          await this.searchWatches(searchParams, true)
+        } else if (this.currentBrand?.id) {
+          // 仅有品牌筛选，无其他筛选时使用品牌获取方法
+          console.log('🏷️ 使用品牌方法加载更多 (GET请求):', this.currentBrand.name_cn)
+          await this.fetchByBrand(this.currentBrand.id, true)
         } else {
-          // 否则使用普通获取方法
-          console.log('使用普通方法加载更多')
-          await this.fetchWatches({}, true)
+          // 兜底：使用高级搜索方法
+          console.log('📄 使用兜底高级搜索方法加载更多 (POST请求)')
+          await this.searchWatches(searchParams, true)
         }
 
         console.log('加载更多完成，当前总数:', this.watchesList.length)
@@ -676,7 +750,7 @@ export const useProductStore = defineStore('product', {
 
       try {
         // 获取 toolbarStore 实例来获取排序状态
-        const toolbarStore = useToolbarStore()
+        const toolbarStore = this.getToolbarStore()
 
         // 更新筛选条件到store状态
         if (filterParams.min_price !== undefined) {

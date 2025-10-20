@@ -260,7 +260,7 @@ const searchWithKeyword = async (keyword) => {
 
 const searchByBrand = async (brandId, brand) => {
     console.log('🏷️ ProductListComponent.searchByBrand:', { brandId, brand })
-    return await productStore.fetchByBrand(brandId)
+    return await productStore.fetchByBrand(brandId, false) // false = 不是加载更多
 }
 
 defineExpose({
