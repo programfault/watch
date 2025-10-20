@@ -22,7 +22,7 @@
         class="watches-scroll"
         :style="watchesScrollStyle"
         scroll-y="true"
-        :lower-threshold="100"
+        :lower-threshold="200"
         @scrolltolower="onScrollToLower"
         :enable-back-to-top="true"
         :scroll-with-animation="false"
@@ -69,7 +69,8 @@
             </view>
             <!-- 添加自动加载更多提示 -->
             <view v-else-if="hasWatches && pagination.has_next" class="can-load-more">
-                <text>滚动到底部自动加载更多...</text>
+                <u-loading-icon mode="spinner" size="24" color="#b8860b"></u-loading-icon>
+                <text class="loading-text">加载中...</text>
             </view>
         </view>
     </scroll-view>
@@ -427,8 +428,17 @@ defineExpose({
     }
 
     .can-load-more {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12rpx;
         color: #b8860b;
         font-weight: 500;
+
+        .loading-text {
+            font-size: 26rpx;
+            color: #b8860b;
+        }
     }
 }
 </style>
