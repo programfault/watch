@@ -16,14 +16,15 @@
 				console.error('App Launch - 布局信息初始化失败:', error)
 			}
 
-			// 然后初始化用户状态，确保token先恢复
+			// 然后初始化用户状态，包括token刷新和状态恢复
 			console.log('App Launch - 开始初始化用户状态...')
 			const userStore = useUserStore()
 			try {
 				await userStore.initUserState()
-				console.log('App Launch - 用户状态初始化完成')
+				console.log('App Launch - 用户状态初始化完成，登录状态:', userStore.isLoggedIn)
 			} catch (error) {
 				console.error('App Launch - 用户状态初始化失败:', error)
+				// 确保错误不影响应用启动，但要记录错误信息
 			}
 
 			// 用户状态初始化完成后，再初始化其他store

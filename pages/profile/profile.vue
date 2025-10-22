@@ -101,12 +101,16 @@
 		<CustomTabBar v-show="true" />
 
 		<!-- 绑定手机号弹窗 -->
-		<uni-popup
+		<up-popup
+			v-if="userStore.isLoggedIn"
 			ref="bindPhonePopup"
-			type="bottom"
-			background-color="#fff"
-			:mask-click="true"
-			@maskClick="closeBindPhonePopup"
+			v-model:show="showBindPhone"
+			mode="bottom"
+			:overlay="true"
+			:closeOnClickOverlay="true"
+			:round="20"
+			bg-color="#fff"
+			@close="closeBindPhonePopup"
 		>
 			<view class="bind-phone-modal">
 				<view class="modal-header">
@@ -117,7 +121,7 @@
 					<text class="modal-desc">绑定手机号后可享受更多服务</text>
 					<up-input
 						v-model="phoneNumber"
-						placeholder="请输入手机号"
+						placeholder="手机号留空表示不更新"
 						type="number"
 						maxlength="11"
 						:border="true"
@@ -138,7 +142,7 @@
 					</button>
 				</view>
 			</view>
-		</uni-popup>
+		</up-popup>
 	</view>
 </template>
 
@@ -170,6 +174,7 @@ const phoneNumber = ref('')
 const phoneError = ref(false)
 const phoneErrorMsg = ref('')
 const bindingPhone = ref(false)
+const showBindPhone = ref(false)
 
 const userInfo = computed(() => {
 	return userStore.userInfo || {}
@@ -271,25 +276,15 @@ const showBindPhonePopup = () => {
 	phoneNumber.value = ''
 	phoneError.value = false
 	phoneErrorMsg.value = ''
+	showBindPhone.value = true
 
-	// 添加延迟以确保DOM已经更新
-	nextTick(() => {
-		if (bindPhonePopup.value) {
-			console.log('弹窗引用存在，准备打开')
-			bindPhonePopup.value.open()
-			console.log('弹窗已调用open方法')
-		} else {
-			console.error('弹窗引用不存在，bindPhonePopup.value =', bindPhonePopup.value)
-		}
-	})
+	console.log('弹窗已打开')
 }
 
 // 关闭绑定手机号弹窗
 const closeBindPhonePopup = () => {
 	console.log('关闭弹窗')
-	if (bindPhonePopup.value) {
-		bindPhonePopup.value.close()
-	}
+	showBindPhone.value = false
 	phoneNumber.value = ''
 	phoneError.value = false
 	phoneErrorMsg.value = ''
@@ -609,6 +604,12 @@ const handleNameClick = async () => {
 	&:hover {
 		opacity: 0.8;
 	}
+}
+
+/* 确保弹窗组件不影响页面布局 */
+:deep(.u-popup) {
+	position: fixed !important;
+	z-index: 9999 !important;
 }
 
 .bind-phone-modal {

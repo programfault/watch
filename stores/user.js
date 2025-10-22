@@ -241,18 +241,39 @@ export const useUserStore = defineStore("user", {
 	actions: {
 		// 初始化用户状态（应用启动时调用）
 		async initUserState() {
-			console.log('🔍 initUserState - 开始执行');
+			console.log('� initUserState - 应用启动，开始初始化用户状态');
+
 			// 检查是否刚登录，避免重复验证token
 			const justLoggedIn = uni.getStorageSync("justLoggedIn");
 			if (justLoggedIn === "true") {
-				console.log("刚登录，跳过token验证");
+				console.log("🚀 initUserState - 刚完成登录，跳过token刷新验证");
 				uni.removeStorageSync("justLoggedIn");
+
+				// 即使刚登录，也要确保tabBar状态同步
+				this.updateTabBarUserType();
 				return;
 			}
 
-			// 统一调用checkLoginStatus方法，确保逻辑一致
-			await this.checkLoginStatus();
-			console.log('🔍 initUserState - 执行完成');
+			try {
+				// 执行完整的登录状态检查和token刷新
+				await this.checkLoginStatus();
+
+				console.log('🚀 initUserState - 用户状态初始化完成', {
+					isLoggedIn: this.isLoggedIn,
+					hasUserInfo: !!this.userInfo,
+					hasTokens: !!this.tokens?.access_token
+				});
+
+			} catch (error) {
+				console.error('🚀 initUserState - 用户状态初始化失败:', error);
+				// 初始化失败不应该影响应用启动，只记录错误
+				// 确保至少设置了默认状态
+				if (!this.isLoggedIn) {
+					this.updateTabBarUserType(); // 确保tabBar显示匿名状态
+				}
+			}
+
+			console.log('� initUserState - 执行完成');
 		},
 
 		// 微信小程序登录
@@ -456,33 +477,44 @@ export const useUserStore = defineStore("user", {
 		},		// 刷新用户token
 		async refreshUserToken() {
 			if (!this.tokens?.refresh_token) {
-				this.logout();
+				console.log('🔄 refreshUserToken - 没有refresh_token，无法刷新');
 				return false;
 			}
 
 			try {
-				const response = await refreshToken(this.tokens.refresh_token);
+				console.log('🔄 refreshUserToken - 开始刷新token');
+				const response = await refreshToken({
+					refresh_token: this.tokens.refresh_token
+				});
 
 				if (response.success) {
 					const newTokens = response.data.tokens;
+					console.log('🔄 refreshUserToken - token刷新成功');
 
-					// 更新tokens
-					this.tokens = {
-						...this.tokens,
+					// 更新tokens，确保是纯净的对象
+					const cleanTokens = {
 						access_token: newTokens.access_token,
+						refresh_token: newTokens.refresh_token || this.tokens.refresh_token, // 保留原refresh_token如果新的没有
+						token_type: newTokens.token_type || this.tokens.token_type,
 						expires_in: newTokens.expires_in,
-						refresh_expires_in: newTokens.refresh_expires_in
+						refresh_expires_in: newTokens.refresh_expires_in || this.tokens.refresh_expires_in
 					};
+
+					this.tokens = cleanTokens;
+
+					// 更新最后登录时间
+					const loginTime = Date.now();
+					uni.setStorageSync("lastLoginTime", loginTime);
 
 					return true;
 				} else {
-					console.error("刷新token失败:", response.message);
-					this.logout();
+					console.error("🔄 refreshUserToken - 刷新token失败:", response.message);
+					// 不立即logout，让调用方决定如何处理
 					return false;
 				}
 			} catch (error) {
-				console.error("刷新token异常:", error);
-				this.logout();
+				console.error("🔄 refreshUserToken - 刷新token异常:", error);
+				// 不立即logout，让调用方决定如何处理
 				return false;
 			}
 		},
@@ -605,20 +637,45 @@ export const useUserStore = defineStore("user", {
 				}
 			}
 
-			// 当有token但isLoggedIn为false时，验证token并刷新用户信息
-			if (this.tokens?.access_token && !this.isLoggedIn) {
-				console.log('🔍 checkLoginStatus - 有token但未登录，尝试刷新用户信息');
+			// 如果有token，主动刷新token以保持其有效性
+			if (this.tokens?.access_token) {
+				console.log('🔍 checkLoginStatus - 检测到有效token，主动刷新以保持新鲜度');
+				console.log('🔍 checkLoginStatus - 当前token预览:', this.tokens.access_token.substring(0, 10) + '...');
+
 				try {
-					await this.fetchUserInfo();
+					// 1. 首先尝试刷新token
+					console.log('🔍 checkLoginStatus - 步骤1: 尝试刷新token');
+					const refreshSuccess = await this.refreshUserToken();
+
+					if (refreshSuccess) {
+						console.log('🔍 checkLoginStatus - 步骤2: token刷新成功，获取最新用户信息');
+						// 2. token刷新成功后，获取最新的用户信息
+						await this.fetchUserInfo();
+						console.log('🔍 checkLoginStatus - 用户信息更新完成');
+					} else {
+						console.log('🔍 checkLoginStatus - 步骤3: token刷新失败，但尝试用现有token获取用户信息');
+						// 3. 如果刷新失败，尝试用现有token获取用户信息
+						try {
+							await this.fetchUserInfo();
+							console.log('🔍 checkLoginStatus - 现有token仍然有效，用户信息获取成功');
+						} catch (fetchError) {
+							console.error('🔍 checkLoginStatus - 现有token也失效了:', fetchError);
+							throw fetchError; // 重新抛出错误，进入外层catch处理
+						}
+					}
 				} catch (error) {
-					console.error('🔍 checkLoginStatus - 验证token失败:', error);
-					// token 无效，清除状态
+					console.error('🔍 checkLoginStatus - token验证和刷新完全失败:', error);
+					// token 完全无效，清除状态
+					console.log('🔍 checkLoginStatus - 清除无效的token和用户状态');
 					this.tokens = null;
+					this.userInfo = null;
+					this.isLoggedIn = false;
+					// 清理本地存储中的相关数据
+					uni.removeStorageSync("session_key");
+					uni.removeStorageSync("lastLoginTime");
 				}
-			} else if (!this.tokens?.access_token) {
-				console.log('🔍 checkLoginStatus - 无有效token，保持未登录状态');
 			} else {
-				console.log('🔍 checkLoginStatus - 已登录且token有效');
+				console.log('🔍 checkLoginStatus - 无有效token，保持未登录状态');
 			}
 
 			// 确保tabBar用户类型与当前状态同步
