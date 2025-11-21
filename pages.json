@@ -140,9 +140,6 @@
 			"pagePath": "pages/customer/customer",
 			"text": "客户"
 		}, {
-			"pagePath": "pages/rolex/rolex",
-			"text": "劳力士"
-		}, {
 			"pagePath": "pages/recruitment/recruitment",
 			"text": "招聘"
 		}, {

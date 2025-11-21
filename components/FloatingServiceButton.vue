@@ -1,9 +1,19 @@
 <template>
   <view class="floating-service-button">
-    <button
+    <!-- <button
       open-type="contact"
       session-from="weapp"
       class="service-btn"
+    >
+      <up-icon
+        name="server-man"
+        size="28"
+        color="#fff"
+      />
+    </button> -->
+     <button
+      class="service-btn"
+      @click="handleServiceClick"
     >
       <up-icon
         name="server-man"
@@ -15,10 +25,17 @@
 </template>
 
 <script setup>
+import { openCustomerService } from '@/utils/customerServiceUtils'
+
 // 定义组件名称
 defineOptions({
   name: 'FloatingServiceButton'
 })
+
+// 点击按钮时打开客服
+const handleServiceClick = () => {
+  openCustomerService()
+}
 </script>
 
 <style lang="scss" scoped>

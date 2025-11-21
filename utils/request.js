@@ -7,7 +7,7 @@ import { useUserStore } from '@/stores/user.js'
 
 // API 配置
 const API_CONFIG = {
-  baseURL: 'https://roc.tailtweak.com/api/mini',
+  baseURL: 'https://www.timepalace.cn/api/mini',
   timeout: 10000
 }
 

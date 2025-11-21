@@ -56,12 +56,12 @@
 			/>
 
 			<!-- 劳力士 - 匿名、普通用户、特殊用户可见 -->
-			<u-tabbar-item
+			<!-- <u-tabbar-item
 				name="rolex"
 				text="劳力士"
 				icon="star"
 				v-if="['anonymous','normal', 'special'].includes(tabBarStore.userType || 'normal')"
-			/>
+			/> -->
 
 			<!-- 我的 - 所有用户都可见 -->
 			<u-tabbar-item
