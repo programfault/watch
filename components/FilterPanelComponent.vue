@@ -267,7 +267,7 @@ defineExpose({
 <style lang="scss" scoped>
 .filter-panel {
 	background-color: #fff;
-	max-height: 75vh;
+	height: 75vh;
 	display: flex;
 	flex-direction: column;
 	width: 100%;
@@ -304,9 +304,7 @@ defineExpose({
 .filter-content {
 	flex: 1;
 	padding: 0 25rpx;
-	overflow-y: auto;
-	overflow-x: hidden; /* 防止水平滚动 */
-	/* 确保内容区域不会挤压底部按钮 */
+	/* 移除 overflow 样式，让 scroll-view 自己处理滚动 */
 	min-height: 0;
 	max-width: 100%;
 	box-sizing: border-box;
