@@ -33,8 +33,8 @@ defineOptions({
 })
 
 // 点击按钮时打开客服
-const handleServiceClick = () => {
-  openCustomerService()
+const handleServiceClick = async () => {
+  await openCustomerService()
 }
 </script>
 

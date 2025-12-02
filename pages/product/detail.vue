@@ -37,14 +37,14 @@
             </view>
 
             <!-- 产品描述 -->
-            <view class="summary-section">
+            <!-- <view class="summary-section">
                 <view class="section-header">
                     <text class="section-title">产品介绍</text>
                 </view>
                 <view class="summary-content">
                     <text class="summary-text">{{ currentWatch.summary }}</text>
                 </view>
-            </view>
+            </view> -->
 
             <!-- 技术规格 -->
             <view v-if="currentWatch.attributes && currentWatch.attributes.length > 0" class="specs-section">
@@ -84,7 +84,7 @@
             <view class="bottom-actions">
                 <view class="left-actions">
                     <view class="icon-btn contact-btn contact-wrapper">
-                        <button class="invisible-contact-btn" open-type="contact" session-from="weapp"></button>
+                        <button class="invisible-contact-btn" @click="handleServiceClick" session-from="weapp"></button>
                         <up-icon name="server-man" size="26" color="#e85a4f"></up-icon>
                         <text class="action-text">客服</text>
                     </view>
@@ -120,11 +120,14 @@ import { getCurrentTimeToMinute } from '@/utils/timeUtils.js'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
+
+import { openCustomerService } from '@/utils/customerServiceUtils'
 // 导入位置相关工具函数
 import {
     calculateDistance,
     checkLocationPermission,
     formatDistance,
+    getUserLocation,
     openMapNavigation,
     requestLocationPermission
 } from '@/utils/locationUtils.js'
@@ -136,7 +139,9 @@ const { currentWatch, watchDetailLoading } = storeToRefs(productStore)
 const { isLoggedIn } = storeToRefs(userStore)
 
 const watchId = ref(null)
-
+const handleServiceClick = async () => {
+  await openCustomerService()
+}
 // 收藏状态
 const isFavorited = computed(() => {
     return currentWatch.value?.id ? favoritesStore.isFavorited(currentWatch.value.id) : false
@@ -282,7 +287,7 @@ const callStore = (store) => {
     })
 }
 
-// 地图导航
+// 地图导航 - 点击时主动请求权限和获取位置
 const navigateToStore = async (store) => {
     if (!store.latitude || !store.longitude) {
         uni.showToast({
@@ -292,6 +297,25 @@ const navigateToStore = async (store) => {
         return
     }
 
+    // 先检查权限
+    if (!locationAuthorized.value) {
+        const hasPermission = await requestLocationPermission()
+        if (!hasPermission) {
+            return
+        }
+        locationAuthorized.value = true
+    }
+
+    // 获取用户位置
+    if (!userLocation.value) {
+        const location = await getUserLocation()
+        if (!location) {
+            return
+        }
+        userLocation.value = location
+    }
+
+    // 打开地图导航
     await openMapNavigation(store)
 }
 
@@ -311,13 +335,15 @@ const formatStoreDistance = (store) => {
 }
 
 // 页面显示时检查权限
-onShow(() => {
-    checkLocationPermission()
+onShow(async () => {
+    const hasPermission = await checkLocationPermission()
+    locationAuthorized.value = hasPermission
 })
 
 // 组件挂载时检查权限
-onMounted(() => {
-    checkLocationPermission()
+onMounted(async () => {
+    const hasPermission = await checkLocationPermission()
+    locationAuthorized.value = hasPermission
 })
 
 onLoad((options) => {
