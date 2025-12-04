@@ -617,6 +617,13 @@ const confirmAction = async () => {
 			errorMessage = props.actionType === 'update' ? '用户信息更新失败' :
 				`${props.actionType === 'gift' ? '赠送' : '核销'}操作失败`
 		}
+
+		// 显示错误提示
+		uni.showToast({
+			title: errorMessage,
+			icon: 'none',
+			duration: 3000
+		})
 	}
 }
 
@@ -635,6 +642,8 @@ defineExpose({
 	flex-direction: column;
 	width: 100%;
 	max-width: 100vw;
+	height: 75vh;
+	box-sizing: border-box;
 }
 
 .consumer-header {
@@ -643,6 +652,7 @@ defineExpose({
 	align-items: center;
 	padding: 30rpx;
 	border-bottom: 1rpx solid #eee;
+	flex-shrink: 0;
 
 	.header-title {
 		font-size: 32rpx;

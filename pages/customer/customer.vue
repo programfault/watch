@@ -6,15 +6,18 @@
         <view class="search-bar-wrapper">
           <up-search
             ref="searchInput"
-            @custom="onSearchConfirm"
+            @custom="onSearchAction"
+            @search="onSearchConfirm"
             placeholder="请输入手机号搜索"
             :focus="false"
             v-model="searchKeyword"
-            :show-action="true"
-            action-text="搜索"
+            :show-action="showSearchHistory"
+            :action-text="showSearchHistory ? '取消' : '搜索'"
             @clear="onSearchClear"
             :auto-search="false"
             :clear-trigger="'click'"
+            @focus="handleSearchFocus"
+            @click="handleSearchClick"
           />
         </view>
       </view>
@@ -23,8 +26,29 @@
     <!-- 内容区域 -->
     <view class="content-area">
       <view class="container">
+        <!-- 搜索历史面板 -->
+        <view class="search-history-section" v-if="showSearchHistory">
+          <view class="history-header">
+            <text class="history-title">搜索历史</text>
+            <text class="clear-btn" v-if="searchHistory.length > 0" @click="clearSearchHistory">清空</text>
+          </view>
+          <view class="history-list" v-if="searchHistory.length > 0">
+            <view
+              v-for="(item, index) in searchHistory"
+              :key="index"
+              class="history-item"
+              @click="fillSearchFromHistory(item)"
+            >
+              <text class="history-text">{{ item }}</text>
+            </view>
+          </view>
+          <view class="history-empty" v-else>
+            <text class="empty-text">暂无搜索历史</text>
+          </view>
+        </view>
+
         <!-- 搜索提示状态 -->
-        <view class="search-hint" v-if="!hasSearched && !userStore.consumersLoading">
+        <view class="search-hint" v-else-if="!hasSearched && !userStore.consumersLoading">
           <view class="hint-icon">
             <up-icon name="search" size="48" color="#ccc"/>
           </view>
@@ -33,7 +57,7 @@
         </view>
 
         <!-- 加载状态 - 骨架屏 -->
-        <view class="skeleton-wrapper" v-else-if="userStore.consumersLoading">
+        <view class="skeleton-wrapper" v-else-if="!showSearchHistory && userStore.consumersLoading">
           <view class="skeleton-item" v-for="i in 1" :key="i">
             <view class="skeleton-avatar"></view>
             <view class="skeleton-content">
@@ -48,7 +72,7 @@
         </view>
 
         <!-- 消费者列表 -->
-        <view class="consumers-list" v-else-if="userStore.hasFilteredConsumers">
+        <view class="consumers-list" v-else-if="!showSearchHistory && userStore.hasFilteredConsumers">
           <view
             v-for="consumer in userStore.filteredConsumers"
             :key="consumer.id"
@@ -119,7 +143,7 @@
         </view>
 
         <!-- 搜索无结果状态 -->
-        <view class="empty-state" v-else-if="hasSearched && !userStore.consumersLoading">
+        <view class="empty-state" v-else-if="!showSearchHistory && hasSearched && !userStore.consumersLoading">
           <view class="empty-icon">
             <up-icon name="search" size="48" color="#ccc"/>
           </view>
@@ -177,6 +201,12 @@ const currentActionType = ref('gift') // 'gift' 或 'verify'
 const panelCoupons = ref([])
 const panelPrivileges = ref([])
 
+// 搜索历史相关
+const searchHistory = ref([])
+const showSearchHistory = ref(false)
+const SEARCH_HISTORY_KEY = 'customer_search_history'
+const MAX_HISTORY_COUNT = 10
+
 // 组件引用
 const consumerPanel = ref(null)
 const searchInput = ref(null)
@@ -204,6 +234,9 @@ onLoad(() => {
 
   // 异步加载福利数据（用于后续的赠送操作）
   loadBenefitsAsync()
+
+  // 加载搜索历史
+  loadSearchHistory()
 
   console.log('✅ Customer页面初始化完成')
 })
@@ -340,6 +373,12 @@ const performSearch = async (keyword) => {
 
   console.log("执行搜索:", keyword)
 
+  // 隐藏搜索历史面板
+  showSearchHistory.value = false
+
+  // 保存到搜索历史
+  saveToSearchHistory(keyword.trim())
+
   try {
     userStore.consumersLoading = true
     hasSearched.value = true
@@ -402,6 +441,7 @@ const onSearchClear = () => {
   console.log("搜索清除")
   searchKeyword.value = ""
   hasSearched.value = false
+  showSearchHistory.value = false
 
   // 重置消费者列表和搜索状态
   userStore.resetConsumers()
@@ -410,14 +450,38 @@ const onSearchClear = () => {
   console.log("✅ 搜索状态已清除")
 }
 
-// 搜索确认事件（只在点击搜索按钮时触发）
-const onSearchConfirm = async (e) => {
-  // 使用当前输入框的值，确保是最新的搜索关键词
+// 搜索操作事件（点击搜索/取消按钮时触发）
+const onSearchAction = async (e) => {
+  // 如果当前显示搜索历史,点击取消按钮
+  if (showSearchHistory.value) {
+    console.log('点击取消按钮,隐藏搜索历史')
+    showSearchHistory.value = false
+    return
+  }
+
+  // 否则是点击搜索按钮,执行搜索
   const keyword = searchKeyword.value?.trim() || ''
   console.log("点击搜索按钮，搜索关键词:", keyword)
 
   if (!keyword) {
-    // 如果关键词为空，提示用户输入搜索内容
+    uni.showToast({
+      title: '请输入搜索内容',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
+  // 执行搜索
+  await performSearch(keyword)
+}
+
+// 搜索确认事件（按回车键或点击键盘确认按钮时触发）
+const onSearchConfirm = async (e) => {
+  const keyword = searchKeyword.value?.trim() || ''
+  console.log("键盘确认搜索，搜索关键词:", keyword)
+
+  if (!keyword) {
     uni.showToast({
       title: '请输入搜索内容',
       icon: 'none',
@@ -441,6 +505,87 @@ const getAvatarText = (consumer) => {
     // 如果姓名为空，显示"匿"
     return "匿"
   }
+}
+
+// ==================== 搜索历史相关方法 ====================
+
+// 加载搜索历史
+const loadSearchHistory = () => {
+  try {
+    const history = uni.getStorageSync(SEARCH_HISTORY_KEY)
+    if (history && Array.isArray(history)) {
+      searchHistory.value = history
+      console.log('✅ 搜索历史加载成功:', history)
+    }
+  } catch (error) {
+    console.error('加载搜索历史失败:', error)
+  }
+}
+
+// 保存到搜索历史
+const saveToSearchHistory = (keyword) => {
+  if (!keyword || !keyword.trim()) return
+
+  const trimmedKeyword = keyword.trim()
+
+  // 移除重复项（如果已存在，移到最前面）
+  const newHistory = [trimmedKeyword, ...searchHistory.value.filter(item => item !== trimmedKeyword)]
+
+  // 限制历史记录数量
+  if (newHistory.length > MAX_HISTORY_COUNT) {
+    newHistory.length = MAX_HISTORY_COUNT
+  }
+
+  searchHistory.value = newHistory
+
+  // 保存到本地存储
+  try {
+    uni.setStorageSync(SEARCH_HISTORY_KEY, newHistory)
+    console.log('✅ 搜索历史已保存:', newHistory)
+  } catch (error) {
+    console.error('保存搜索历史失败:', error)
+  }
+}
+
+// 处理搜索框点击
+const handleSearchClick = () => {
+  console.log('🔍 搜索框被点击')
+  showSearchHistory.value = true
+}
+
+// 处理搜索框聚焦
+const handleSearchFocus = () => {
+  console.log('🔍 搜索框获得焦点')
+  showSearchHistory.value = true
+}
+
+// 从历史记录填充搜索框并搜索
+const fillSearchFromHistory = (keyword) => {
+  searchKeyword.value = keyword
+  performSearch(keyword)
+}
+
+// 清空搜索历史
+const clearSearchHistory = () => {
+  uni.showModal({
+    title: '提示',
+    content: '确定要清空搜索历史吗？',
+    success: (res) => {
+      if (res.confirm) {
+        searchHistory.value = []
+        try {
+          uni.removeStorageSync(SEARCH_HISTORY_KEY)
+          uni.showToast({
+            title: '已清空',
+            icon: 'success'
+          })
+          console.log('✅ 搜索历史已清空')
+        } catch (error) {
+          console.error('清空搜索历史失败:', error)
+        }
+      }
+    }
+  })
 }
 </script>
 
