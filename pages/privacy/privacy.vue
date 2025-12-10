@@ -5,7 +5,7 @@
         <!-- 标题 -->
         <view class="title-section">
           <text class="main-title">隐私政策</text>
-          <text class="update-time">最后更新时间：2025年10月10日</text>
+          <text class="update-time">最后更新时间:2025年12月9日</text>
         </view>
 
         <!-- 政策内容 -->
@@ -157,17 +157,17 @@
           <view class="section-item">
             <text class="section-title">11. 联系我们</text>
             <text class="section-content">
-              如果您对本隐私政策有任何疑问、意见或建议，或需要行使您的个人信息相关权利，请通过以下方式联系我们：
+              如果您对本隐私政策有任何疑问、意见或建议,或需要行使您的个人信息相关权利,请通过以下方式联系我们:
             </text>
             <view class="contact-info">
-              <text class="contact-item">公司名称：大连天辰表行</text>
-              <text class="contact-item">联系地址：大连市相关地址</text>
-              <text class="contact-item">联系电话：400-xxx-xxxx</text>
-              <text class="contact-item">电子邮箱：privacy@tianchenwatch.com</text>
-              <text class="contact-item">客服时间：周一至周日 9:00-18:00</text>
+              <text class="contact-item">公司名称:大连天辰表行有限公司</text>
+              <text class="contact-item">联系地址:辽宁省大连市中山区XXX街XXX号</text>
+              <text class="contact-item">客服热线:400-xxx-xxxx</text>
+              <text class="contact-item">电子邮箱:service@tianchenwatch.com</text>
+              <text class="contact-item">客服时间:周一至周日 9:00-21:00</text>
             </view>
             <text class="section-content">
-              我们将在收到您的询问后30个工作日内回复。
+              我们将在收到您的咨询后15个工作日内给予回复。如果您对我们的回复不满意,特别是您认为我们的个人信息处理行为损害了您的合法权益,您还可以向网信、电信、公安及工商等监管部门进行投诉或举报。
             </text>
           </view>
         </view>
@@ -175,7 +175,10 @@
         <!-- 底部声明 -->
         <view class="footer-section">
           <text class="footer-text">
-            本隐私政策自2025年10月10日起生效。大连天辰表行保留在法律允许范围内的最终解释权。
+            本隐私政策自2025年12月9日起生效。大连天辰表行有限公司保留在法律允许范围内的最终解释权。
+          </text>
+          <text class="footer-text" style="margin-top: 20rpx;">
+            感谢您对大连天辰表行的信任与支持!
           </text>
         </view>
       </view>

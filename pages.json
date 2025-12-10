@@ -116,6 +116,13 @@
 			"navigationBarTextStyle": "black"
 		}
 	}, {
+		"path": "pages/agreement/about",
+		"style": {
+			"navigationBarTitleText": "关于我们",
+			"navigationBarBackgroundColor": "#ffffff",
+			"navigationBarTextStyle": "black"
+		}
+	}, {
 		"path": "pages/debug/auth-test",
 		"style": {
 			"navigationStyle": "custom",

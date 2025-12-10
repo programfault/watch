@@ -9,14 +9,17 @@
 					title="隐私政策"
 					isLink
 					arrow-direction="right"
+					@click="goToPrivacy"
 				>
 					<template #icon>
 						<up-icon name="lock" size="20" color="#666" style="margin-right: 8px;"></up-icon>
 					</template>
-				</up-cell>				<up-cell
+				</up-cell>
+				<up-cell
 					title="关于我们"
 					isLink
 					arrow-direction="right"
+					@click="goToAbout"
 				>
 					<template #icon>
 						<up-icon name="info-circle" size="20" color="#666" style="margin-right: 8px;"></up-icon>
@@ -88,7 +91,19 @@ const initSettings = () => {
 	console.log('设置页面初始化完成')
 }
 
-// 其他功能方法可以在这里添加
+// 跳转到隐私政策页面
+const goToPrivacy = () => {
+	uni.navigateTo({
+		url: '/pages/privacy/privacy'
+	})
+}
+
+// 跳转到关于我们页面
+const goToAbout = () => {
+	uni.navigateTo({
+		url: '/pages/agreement/about'
+	})
+}
 
 // 退出登录
 const handleLogout = () => {
