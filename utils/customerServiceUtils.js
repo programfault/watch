@@ -15,20 +15,20 @@ const CORP_ID = 'ww17da4a406b6bf90b'
  * @returns {string} 场景标识
  */
 const getSceneIdentifier = () => {
-  try {
-    const favoritesStore = useFavoritesStore()
-    const recentlyViewed = favoritesStore.getRecentlyViewed()
+    try {
+        const favoritesStore = useFavoritesStore()
+        const recentlyViewed = favoritesStore.getRecentlyViewed()
 
-    if (recentlyViewed && recentlyViewed.length > 0) {
-      const ids = recentlyViewed.map(item => item.id).join('-')
-      console.log('📍 使用最近浏览的产品作为场景:', ids)
-      return ids
+        if (recentlyViewed && recentlyViewed.length > 0) {
+            const ids = recentlyViewed.map(item => item.id).join('-')
+            console.log('📍 使用最近浏览的产品作为场景:', ids)
+            return ids
+        }
+    } catch (error) {
+        console.warn('⚠️ 获取最近浏览产品失败:', error)
     }
-  } catch (error) {
-    console.warn('⚠️ 获取最近浏览产品失败:', error)
-  }
 
-  return ''
+    return ''
 }
 
 /**
@@ -37,19 +37,19 @@ const getSceneIdentifier = () => {
  * @returns {Promise<string>} 返回客服 URL
  */
 const fetchCustomerServiceUrl = async (scene = '') => {
-  console.log('🔗 正在获取客服链接...', `场景: ${scene}`)
+    console.log('🔗 正在获取客服链接...', `场景: ${scene}`)
 
-  const result = await post('/link', { scene }, {
-    needAuth: false,
-    showError: false
-  })
+    const result = await post('/link', { scene }, {
+        needAuth: false,
+        showError: false
+    })
 
-  if (result?.url) {
-    console.log('✅ 客服链接获取成功')
-    return result.url
-  }
+    if (result?.url) {
+        console.log('✅ 客服链接获取成功')
+        return result.url
+    }
 
-  throw new Error('无效的响应数据')
+    throw new Error('无效的响应数据')
 }
 
 /**
@@ -60,36 +60,42 @@ const fetchCustomerServiceUrl = async (scene = '') => {
  * @returns {Promise<void>}
  */
 export const openCustomerService = async (options = {}) => {
-  const { scene = getSceneIdentifier(), corpId = CORP_ID } = options
+    const { scene = getSceneIdentifier(), corpId = CORP_ID, sendProductCard = true, product = null } = options
 
-  console.log('📞 打开微信客服...', { scene })
+    console.log('📞 打开微信客服...', { scene })
 
-  try {
-    // 获取动态客服 URL
-    const kfServiceUrl = await fetchCustomerServiceUrl(scene)
+    try {
+        // 获取动态客服 URL
+        const kfServiceUrl = await fetchCustomerServiceUrl(scene)
 
-    // 打开客服会话
-    const api = uni.openCustomerServiceChat || wx?.openCustomerServiceChat
+        // 打开客服会话
+        const api = uni.openCustomerServiceChat || wx?.openCustomerServiceChat
 
-    if (!api) {
-      console.warn('⚠️ 当前环境不支持客服功能')
-      uni.showToast({ title: '客服功能仅在小程序中可用', icon: 'none' })
-      return
+        if (!api) {
+            console.warn('⚠️ 当前环境不支持客服功能')
+            uni.showToast({ title: '客服功能仅在小程序中可用', icon: 'none' })
+            return
+        }
+        const chatConfig = {
+            extInfo: { url: kfServiceUrl },
+            corpId,
+            success: (res) => {
+                console.log('✅ 客服打开成功', res)
+            },
+            fail: (error) => {
+                console.error('❌ 客服打开失败:', error)
+                uni.showToast({ title: '打开客服失败，请稍后重试', icon: 'none' })
+            }
+        }
+        if (sendProductCard && product) {
+            chatConfig.showMessageCard = true
+            chatConfig.sendMessageTitle = 'productTitle'
+            chatConfig.sendMessageImg = 'productImage'
+            chatConfig.showMessageCard = true
+        }
+        api(chatConfig)
+    } catch (error) {
+        console.error('❌ 打开客服异常:', error)
+        uni.showToast({ title: '无法打开客服，请稍后重试', icon: 'none' })
     }
-
-    api({
-      extInfo: { url: kfServiceUrl },
-      corpId,
-      success: (res) => {
-        console.log('✅ 客服打开成功', res)
-      },
-      fail: (error) => {
-        console.error('❌ 客服打开失败:', error)
-        uni.showToast({ title: '打开客服失败，请稍后重试', icon: 'none' })
-      }
-    })
-  } catch (error) {
-    console.error('❌ 打开客服异常:', error)
-    uni.showToast({ title: '无法打开客服，请稍后重试', icon: 'none' })
-  }
 }

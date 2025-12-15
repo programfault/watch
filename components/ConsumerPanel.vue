@@ -574,7 +574,8 @@ const confirmAction = async () => {
 			`${props.actionType === 'gift' ? '赠送' : '核销'}操作成功`
 		uni.showToast({
 			title: successTitle,
-			icon: 'success'
+			icon: 'success',
+            duration: 2000
 		})
 
 		// 发送成功事件给父组件
@@ -584,8 +585,9 @@ const confirmAction = async () => {
 			response: response
 		})
 
-		// 关闭面板
-		closePanel()
+		setTimeout(() => {
+            closePanel()
+        }, 100)
 
 	} catch (error) {
 		console.error('消费者操作失败:', error)

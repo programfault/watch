@@ -168,6 +168,7 @@
       :showPrivileges="true"
       @success="handlePanelSuccess"
       @close="handlePanelClose"
+
     />
     <!-- 底部标签栏组件 -->
 		<CustomTabBar v-show="true" />
@@ -210,7 +211,6 @@ const MAX_HISTORY_COUNT = 10
 // 组件引用
 const consumerPanel = ref(null)
 const searchInput = ref(null)
-
 // 页面生命周期 - onUnload
 onUnload(async () => {
   userStore.setConsumersCardNumber('')
@@ -339,11 +339,33 @@ const handleUpdate = (consumer) => {
 
 // 处理面板成功事件
 const handlePanelSuccess = async (data) => {
-  console.log('操作成功:', data)
+    console.log('=====================')
+    console.log('操作成功:', data)
+    const { actionType } = data
+    const successTitle = actionType === 'update' ? '用户信息更新成功' :
+    `${actionType === 'gift' ? '赠送' : '核销'}操作成功`
 
-  // 刷新当前搜索结果以获取最新状态
-  try {
-    await refreshCurrentSearch()
+    uni.showToast({
+        title: successTitle,
+        icon: 'success',
+        duration: 2000
+    })
+    // 刷新当前搜索结果以获取最新状态
+    try {
+   setTimeout(async () => {
+        // 刷新当前搜索结果以获取最新状态
+        try {
+            await refreshCurrentSearch()
+        } catch (error) {
+            console.error('刷新搜索结果失败:', error)
+        }
+
+        // 重置选中的消费者
+        selectedConsumer.value = null
+        currentActionType.value = 'gift'
+        panelCoupons.value = []
+        panelPrivileges.value = []
+    }, 2100)
   } catch (error) {
     console.error('刷新搜索结果失败:', error)
   }
