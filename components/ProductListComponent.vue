@@ -34,7 +34,7 @@
                 <image :src="getWatchImage(watch)" class="watch-image" mode="aspectFit" lazy-load></image>
                 <view class="watch-info">
                     <text class="watch-name">{{ watch.name_cn || watch.name }}</text>
-                    <text class="watch-price">¥{{ watch.price }}</text>
+                    <text class="watch-price">¥{{ formatPrice(watch.price) }}</text>
                     <view class="watch-meta">
                         <text class="brand-text">{{ watch.brand?.name_cn }}</text>
                     </view>
@@ -48,7 +48,7 @@
                 <image :src="getWatchImage(watch)" class="watch-image-grid" mode="aspectFit" lazy-load></image>
                 <view class="watch-info-grid">
                     <text class="watch-name-grid">{{ watch.name_cn || watch.name }}</text>
-                    <text class="watch-price-grid">¥{{ watch.price }}</text>
+                    <text class="watch-price-grid">¥{{ formatPrice(watch.price) }}</text>
                     <view class="watch-meta-grid">
                         <text class="brand-text-grid">{{ watch.brand?.name_cn }}</text>
                     </view>
@@ -103,7 +103,13 @@ const props = defineProps({
 const productStore = useProductStore()
 const toolbarStore = useToolbarStore()
 const appStore = useAppStore()
-
+const formatPrice = (price) => {
+    if (!price) return '0'
+    return Number(price).toLocaleString('zh-CN', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    })
+}
 // 从store获取响应式数据
 const {
     watchesList: watches,

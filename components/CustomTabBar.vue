@@ -28,6 +28,7 @@
 				name="home"
 				text="首页"
 				icon="home"
+				@click="handleTabItemClick('home')"
 				v-if="['anonymous','normal', 'admin', 'special'].includes(tabBarStore.userType || 'normal')"
 			/>
 
@@ -36,6 +37,7 @@
 				name="recruitment"
 				text="招聘"
 				icon="info-circle"
+				@click="handleTabItemClick('recruitment')"
 				v-if="['anonymous'].includes(tabBarStore.userType || 'normal')"
 			/>
 
@@ -44,6 +46,7 @@
 				name="maintenance"
 				text="保养"
 				icon="setting"
+				@click="handleTabItemClick('maintenance')"
 				v-if="['anonymous','normal', 'admin'].includes(tabBarStore.userType || 'normal')"
 			/>
 
@@ -52,6 +55,7 @@
 				name="customer"
 				text="客户"
 				icon="integral"
+				@click="handleTabItemClick('customer')"
 				v-if="['admin'].includes(tabBarStore.userType || 'normal')"
 			/>
 
@@ -60,6 +64,7 @@
 				name="rolex"
 				text="劳力士"
 				icon="star"
+				@click="handleTabItemClick('rolex')"
 				v-if="['anonymous','normal', 'special'].includes(tabBarStore.userType || 'normal')"
 			/> -->
 
@@ -68,6 +73,7 @@
 				name="profile"
 				text="我的"
 				icon="account"
+				@click="handleTabItemClick('profile')"
 				v-if="['anonymous','normal', 'admin', 'special'].includes(tabBarStore.userType || 'normal')"
 			/>
 		</u-tabbar>
@@ -83,6 +89,9 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 defineOptions({
 	name: 'CustomTabBar'
 })
+
+// 定义事件
+const emit = defineEmits(['tab-click'])
 
 // 获取 stores
 const tabBarStore = useTabBarStore()
@@ -101,9 +110,26 @@ const tabSwitchText = ref('页面加载中...')
 
 // mapIcon 函数已移除 - 直接在模板中使用 uview-plus 图标名称
 
-// 处理标签切换事件 - 简化版，直接使用路径映射
+// 处理标签项点击事件 - 每次点击都会触发（包括点击当前激活的标签）
+const handleTabItemClick = (name) => {
+	console.log('🏷️ [CustomTabBar] 标签项被点击:', name)
+	console.log('🏷️ [CustomTabBar] 当前激活标签:', tabBarStore.activeTab)
+
+	// 始终触发 tab-click 事件，让父组件可以处理（包括刷新等操作）
+	emit('tab-click', name)
+
+	// 如果点击的不是当前激活的标签，才进行页面切换
+	if (tabBarStore.activeTab !== name) {
+		console.log('🏷️ [CustomTabBar] 切换到新标签，显示loading')
+		// handleTabChange 会被 u-tabbar 的 @change 事件自动调用
+	} else {
+		console.log('🏷️ [CustomTabBar] 点击当前激活标签 - 不切换页面')
+	}
+}
+
+// 处理标签切换事件 - 仅在切换到不同标签时由 u-tabbar @change 触发
 const handleTabChange = (name) => {
-	console.log('🏷️ 标签切换到:', name)
+	console.log('🏷️ [CustomTabBar] @change 事件触发，切换到:', name)
 
 	// 直接定义路径映射，不依赖 store
 	const pathMap = {
@@ -117,12 +143,10 @@ const handleTabChange = (name) => {
 
 	const path = pathMap[name]
 	if (path) {
-		// 如果切换到的不是当前激活的tab，才显示loading
-		if (tabBarStore.activeTab !== name) {
-			tabBarStore.switchTabWithLoading(name)
-		}
+		// 切换页面并显示loading
+		tabBarStore.switchTabWithLoading(name)
 	} else {
-		console.warn('🏷️ 未找到标签对应的路径:', name)
+		console.warn('🏷️ [CustomTabBar] 未找到标签对应的路径:', name)
 	}
 }
 

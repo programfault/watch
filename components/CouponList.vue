@@ -18,6 +18,7 @@
 					</view>
 				</view>
 				<text class="card-desc">{{ coupon.description }}</text>
+
 				<view class="card-footer">
 					<text class="valid-date">{{ formatDateRange(coupon.start_date, coupon.end_date) }}</text>
 					<text class="status-text" :class="{ 'valid': coupon.is_valid, 'invalid': !coupon.is_valid }">
@@ -37,11 +38,15 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useUserStore } from '@/stores';
 
 // 定义组件名称
 defineOptions({
 	name: 'CouponList'
 });
+
+// 获取用户 store
+const userStore = useUserStore();
 
 // 定义props
 const props = defineProps({
@@ -50,6 +55,8 @@ const props = defineProps({
 		default: () => []
 	}
 });
+
+
 
 // 计算属性
 const couponCount = computed(() => {
@@ -171,6 +178,30 @@ const formatDateRange = (startDate, endDate) => {
 				padding: 16rpx;
 				border-radius: 12rpx;
 				border-left: 4rpx solid #10b981;
+			}
+
+			.card-id {
+				font-size: 24rpx;
+				color: #64748b;
+				margin-bottom: 16rpx;
+				padding: 8rpx 16rpx;
+				background: #fef3c7;
+				border-radius: 8rpx;
+				border-left: 3rpx solid #f59e0b;
+				display: flex;
+				align-items: center;
+				gap: 8rpx;
+
+				.id-label {
+					font-weight: 600;
+					color: #92400e;
+				}
+
+				.id-value {
+					font-family: 'Courier New', monospace;
+					color: #b45309;
+					font-weight: 500;
+				}
 			}
 
 			.card-footer {

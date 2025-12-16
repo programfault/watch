@@ -42,7 +42,7 @@
 		<FloatingServiceButton />
 
 		<!-- 底部标签栏 -->
-		<CustomTabBar v-show="true" />
+		<CustomTabBar v-show="true" @tab-click="handleTabClick" />
 	</view>
 
 </template>
@@ -408,11 +408,11 @@ const onBrandClick = async (brand) => {
 				await productListRef.value.searchByBrand(brand.id, brand)
 				console.log('品牌筛选完成')
 
-				uni.showToast({
-					title: `已切换到${brand.name_cn}`,
-					icon: 'success',
-					duration: 1500
-				})
+				// uni.showToast({
+				// 	title: `已切换到${brand.name_cn}`,
+				// 	icon: 'success',
+				// 	duration: 1500
+				// })
 			} catch (error) {
 				console.error('品牌筛选调用失败:', error)
 				uni.showToast({
@@ -428,11 +428,11 @@ const onBrandClick = async (brand) => {
 					await productListRef.value.searchByBrand(brand.id, brand)
 					console.log('品牌筛选完成')
 
-					uni.showToast({
-						title: `已切换到${brand.name_cn}`,
-						icon: 'success',
-						duration: 1500
-					})
+					// uni.showToast({
+					// 	title: `已切换到${brand.name_cn}`,
+					// 	icon: 'success',
+					// 	duration: 1500
+					// })
 				} catch (error) {
 					console.error('品牌筛选调用失败:', error)
 					uni.showToast({
@@ -513,8 +513,8 @@ onShow(() => {
 		searchStore.hidePanel()
 	}
 
-	// 设置当前页面的tabBar状态
-	tabBarStore.setActiveTab('index')
+	// 设置当前页面的tabBar状态（注意：使用'home'以匹配CustomTabBar中的name）
+	tabBarStore.setActiveTab('home')
 
 	// 统一隐藏所有loading状态
 	setTimeout(() => {
@@ -547,6 +547,64 @@ const leftClick = () => {
 		})
 	}
 }
+
+// TabBar 点击事件处理 - 刷新首页
+const handleTabClick = async (tabName) => {
+	console.log('==========================================')
+	console.log('🔄 [Index页面] 收到 TabBar 点击事件:', tabName)
+	console.log('🔄 [Index页面] 当前激活标签:', tabBarStore.activeTab)
+	console.log('==========================================')
+
+	// 只处理点击首页的情况（注意：CustomTabBar使用的name是'home'）
+	if (tabName === 'home') {
+		// 检查是否已经在首页
+		if (tabBarStore.activeTab === 'home') {
+			console.log('✅ [Index页面] 已在首页，执行刷新操作')
+
+			// 显示加载提示
+			uni.showLoading({
+				title: '刷新中...',
+				mask: true
+			})
+
+			try {
+				// 如果在搜索结果页面，先回到首页
+				if (showSearchResults.value) {
+					console.log('📋 [Index页面] 从搜索结果返回首页并刷新')
+					showSearchResults.value = false
+					currentSearchKeyword.value = ''
+					searchKeyword.value = ''
+					searchStore.setKeyword('')
+					searchStore.hidePanel()
+					productStore.currentBrand = null
+				}
+
+				// 重新加载首页数据
+				await initData()
+
+				uni.showToast({
+					title: '刷新成功',
+					icon: 'success',
+					duration: 1500
+				})
+			} catch (error) {
+				console.error('❌ [Index页面] 刷新失败:', error)
+				uni.showToast({
+					title: '刷新失败，请重试',
+					icon: 'none',
+					duration: 2000
+				})
+			} finally {
+				uni.hideLoading()
+			}
+		} else {
+			console.log('⚠️ [Index页面] 不在首页，跳过刷新')
+		}
+	} else {
+		console.log('⚠️ [Index页面] 点击的不是首页标签，跳过处理')
+	}
+}
+
 
 </script>
 

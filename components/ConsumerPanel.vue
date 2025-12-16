@@ -111,7 +111,8 @@
 							@click="toggleCouponSelection(coupon.id)"
 						>
 							<view class="card-content">
-								<text class="card-title">{{ coupon.name }}</text>
+                                <!-- Admin 专用：显示优惠券 ID -->
+								<text class="card-title"> {{ coupon.name }} </text>
 								<text class="card-description">{{ coupon.description }}</text>
 								<view v-if="coupon.end_date" class="card-date">
 									<text class="date-label">截止日期：</text>
@@ -234,7 +235,7 @@ const props = defineProps({
 		default: 0
 	}
 })
-
+import { useUserStore } from '@/stores';
 // 定义事件
 const emit = defineEmits(['close', 'success'])
 
@@ -245,7 +246,12 @@ const showPopup = ref(false)
 const openPanel = () => {
 	showPopup.value = true
 }
-
+// 判断是否为 admin 用户
+const isAdmin = computed(() => {
+    const userStore = useUserStore()
+    console.log('User Info:', userStore.userInfo);
+	return userStore.userInfo?.role === 'admin' || userStore.userInfo?.is_admin === true;
+});
 const closePanel = () => {
 	showPopup.value = false
 	resetSelections()
@@ -327,7 +333,7 @@ const filteredCoupons = computed(() => {
 		return props.coupons
 	}
 	// 赠送模式需要过滤积分门槛
-	return props.coupons.filter(coupon => {
+	const result =  props.coupons.filter(coupon => {
 		// 如果没有积分门槛，则显示
 		if (!coupon.points_threshold && coupon.points_threshold !== 0) {
 			return true
@@ -335,6 +341,7 @@ const filteredCoupons = computed(() => {
 		// 用户积分大于等于门槛积分
 		return props.userPoints >= coupon.points_threshold
 	})
+    return result.sort((a, b) => a.id - b.id)
 })
 
 // 格式化日期
@@ -827,7 +834,6 @@ defineExpose({
 		flex: 1;
 		min-width: 0; /* 允许弹性元素缩小 */
 		padding-right: 15rpx;
-
 		.card-title {
 			display: block;
 			font-size: 28rpx;
