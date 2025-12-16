@@ -121,10 +121,10 @@
               如您对本协议有任何疑问，请通过以下方式联系我们：
             </text>
             <view class="contact-info">
-              <text class="contact-item">公司名称：大连天辰表行</text>
-              <text class="contact-item">联系地址：大连市相关地址</text>
-              <text class="contact-item">联系电话：400-xxx-xxxx</text>
-              <text class="contact-item">电子邮箱：service@tianchenwatch.com</text>
+              <text class="contact-item">公司名称：大连天辰表行有限公司</text>
+              <text class="contact-item">联系地址：大连市中山区友好路15号友好大厦2010室</text>
+              <text class="contact-item">联系电话：0411-82520856</text>
+              <text class="contact-item">电子邮箱：wangli@timepalace.cn</text>
             </view>
           </view>
         </view>

@@ -540,11 +540,11 @@ const leftClick = () => {
 		// 回到主页时清空品牌信息
 		productStore.currentBrand = null
 
-		uni.showToast({
-			title: '已返回首页',
-			icon: 'success',
-			duration: 1000
-		})
+		// uni.showToast({
+		// 	title: '已返回首页',
+		// 	icon: 'success',
+		// 	duration: 1000
+		// })
 	}
 }
 

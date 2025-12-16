@@ -215,7 +215,7 @@
               </view>
               <view class="contact-item">
                 <text class="contact-label">客服热线</text>
-                <text class="contact-value highlight-text">400-xxx-xxxx</text>
+                <text class="contact-value highlight-text">0411-82520856</text>
               </view>
               <view class="contact-item">
                 <text class="contact-label">服务时间</text>
@@ -223,11 +223,11 @@
               </view>
               <view class="contact-item">
                 <text class="contact-label">总部地址</text>
-                <text class="contact-value">辽宁省大连市中山区XXX街XXX号</text>
+                <text class="contact-value">大连市中山区友好路15号友好大厦2010室</text>
               </view>
               <view class="contact-item">
                 <text class="contact-label">官方邮箱</text>
-                <text class="contact-value">service@tianchenwatch.com</text>
+                <text class="contact-value">wangli@timepalace.cn</text>
               </view>
             </view>
 
