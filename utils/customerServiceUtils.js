@@ -63,11 +63,12 @@ export const openCustomerService = async (options = {}) => {
     const { scene = getSceneIdentifier(), corpId = CORP_ID, sendProductCard = true, product = null } = options
 
     console.log('📞 打开微信客服...', { scene })
-
+    console.log(product)
     try {
         // 获取动态客服 URL
-        const kfServiceUrl = await fetchCustomerServiceUrl(scene)
-
+        // const kfServiceUrl = await fetchCustomerServiceUrl(scene)
+        const kfServiceUrl = 'https://work.weixin.qq.com/kfid/kfc222a4433ef7716d7'
+        console.log('🔍 使用客服 API:', kfServiceUrl ? '已找到' : '未找到')
         // 打开客服会话
         const api = uni.openCustomerServiceChat || wx?.openCustomerServiceChat
 
@@ -89,8 +90,7 @@ export const openCustomerService = async (options = {}) => {
         }
         if (sendProductCard && product) {
             chatConfig.showMessageCard = true
-            chatConfig.sendMessageTitle = 'productTitle'
-            chatConfig.sendMessageImg = 'productImage'
+            chatConfig.sendMessageTitle = product.name || '产品咨询'
             chatConfig.showMessageCard = true
         }
         api(chatConfig)

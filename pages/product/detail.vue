@@ -89,7 +89,7 @@
                         <text class="action-text">客服</text>
                     </view>
                     <view class="icon-btn favorite-btn favorite-wrapper" :class="{ 'favorited': isFavorited }" @click="handleFavorite">
-                        <up-icon name="heart" size="26" :color="isFavorited ? '#ff4d4f' : '#666'"></up-icon>
+                        <up-icon :name="isFavorited ? 'heart-fill' : 'heart'" size="26" :color="isFavorited ? '#ff4d4f' : '#666'"></up-icon>
                         <text class="action-text">{{ isFavorited ? '已收藏' : '收藏' }}</text>
                     </view>
                 </view>
@@ -140,7 +140,14 @@ const { isLoggedIn } = storeToRefs(userStore)
 
 const watchId = ref(null)
 const handleServiceClick = async () => {
-  await openCustomerService()
+    await openCustomerService({
+        product: {
+        id: currentWatch.value?.id,
+        name: currentWatch.value?.name_cn || currentWatch.value?.name,
+        model: currentWatch.value?.model,
+        price: currentWatch.value?.price
+        }
+    })
 }
 // 收藏状态
 const isFavorited = computed(() => {

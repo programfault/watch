@@ -20,9 +20,7 @@
             <text class="content-text">
               大连天辰表行创立以来，始终秉承"专业、诚信、品质"的经营理念，致力于为顾客提供最优质的名表产品与服务。我们是辽宁地区领先的高端腕表零售商，汇聚了全球30+顶级腕表品牌。
             </text>
-            <text class="content-text">
-              作为多个国际知名品牌在辽宁地区的独家代理商，我们始终坚持正品保障，为每一位顾客提供放心的购表体验。
-            </text>
+
           </view>
         </view>
 
@@ -44,12 +42,16 @@
               </view>
             </view>
             <view class="brand-category">
-              <text class="category-title">独家代理品牌</text>
+              <text class="category-title">代理品牌</text>
               <view class="brand-tags">
-                <text class="brand-tag special">西铁城（辽宁独家）</text>
-                <text class="brand-tag special">ARMANI（辽宁独家）</text>
-                <text class="brand-tag special">Swatch（大连总代理）</text>
-                <text class="brand-tag special">精工（大连总代理）</text>
+                <text class="brand-tag special">西铁城）</text>
+                <text class="brand-tag special">ARMANI</text>
+                <text class="brand-tag special">Swatch</text>
+                <text class="brand-tag special">精工</text>
+                <text class="brand-tag special">欧米茄</text>
+                <text class="brand-tag special">宝玑</text>
+                <text class="brand-tag special">百达翡丽</text>
+                <text class="brand-tag special">浪琴</text>
               </view>
             </view>
             <text class="content-text tip">

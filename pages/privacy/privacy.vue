@@ -108,20 +108,9 @@
             <view class="sub-list">
               <text class="list-item">• 微信小程序平台服务</text>
               <text class="list-item">• 地图导航服务</text>
-              <text class="list-item">• 支付服务</text>
             </view>
             <text class="section-content">
               这些第三方服务有其独立的隐私政策，我们建议您仔细阅读相关条款。
-            </text>
-          </view>
-
-          <view class="section-item">
-            <text class="section-title">7. 未成年人保护</text>
-            <text class="section-content">
-              我们非常重视未成年人的隐私保护。如果您是未成年人，请在监护人陪同下阅读本政策，并在监护人同意后使用我们的服务。
-            </text>
-            <text class="section-content">
-              如果我们发现在未获得监护人同意的情况下收集了未成年人的个人信息，我们会尽快删除相关信息。
             </text>
           </view>
 
@@ -161,9 +150,9 @@
             </text>
             <view class="contact-info">
               <text class="contact-item">公司名称:大连天辰表行有限公司</text>
-              <text class="contact-item">联系地址:辽宁省大连市中山区XXX街XXX号</text>
-              <text class="contact-item">客服热线:400-xxx-xxxx</text>
-              <text class="contact-item">电子邮箱:service@tianchenwatch.com</text>
+              <text class="contact-item">联系地址:大连市中山区友好路15号友好大厦2010室</text>
+              <text class="contact-item">客服热线:0411-82520856</text>
+              <text class="contact-item">电子邮箱:wangli@timepalace.cn</text>
               <text class="contact-item">客服时间:周一至周日 9:00-21:00</text>
             </view>
             <text class="section-content">
